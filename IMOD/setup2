@@ -367,6 +367,7 @@ if ("$qtVersion" == "") set qtVersion = 4
 set subVersion = `qmake -version | sed -n '/Using Qt version [0-9]\.\([0-9]*\).*/s//\1/p'`
 if ("$subVersion" == "") set subVersion = 0
 @ subVersion = $subVersion
+if (-e "$QTDIR/include/qt") set qtincdir = '$(QTDIR)/include/qt'
 if ($qtVersion > 4) then
     set qt_flags = "$qt_flags "'-I$(QTINCDIR)/QtWidgets -I$(QTINCDIR)/QtPrintSupport'
     #
