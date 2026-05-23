@@ -1,0 +1,36 @@
+# Upstream Mercurial clone
+/upstream-hg/
+
+# Local user-space dependency environments
+/.conda/
+
+# IMOD generated build files and binaries inside the tracked source tree
+/IMOD/bin/
+/IMOD/buildlib/
+/IMOD/configure
+/IMOD/.options
+/IMOD/.distname
+/IMOD/**/*.o
+/IMOD/**/*.a
+/IMOD/**/*.so
+/IMOD/**/qconfigure
+
+# Per-version install products and large logs
+/versions/*/install/
+/versions/*/build-logs/*.full.log
+
+# Archives and downloads
+/downloads/
+*.tar
+*.tar.gz
+*.tgz
+*.zip
+*.pkg
+imod_*.sh
+IMOD*.sh
+
+# Editor and OS noise
+*~
+.DS_Store
+.vscode/
+AGENTS.md
