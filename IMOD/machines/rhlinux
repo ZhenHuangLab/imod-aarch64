@@ -528,9 +528,22 @@ if ($?CUDA_DIR) then
     if ($cudamajor >= 4) set cuda_arch_opts = '-arch sm_20'
     if ($cudamajor >= 9) set cuda_arch_opts = '-arch sm_30'
     if ($cudamajor >= 11) set cuda_arch_opts = '-arch sm_35'
+    if ($cudamajor >= 13) set cuda_arch_opts = '-arch sm_121'
+    if ($?IMOD_CUDA_ARCH) then
+        set cuda_arch_opts = "-arch $IMOD_CUDA_ARCH"
+    endif
+    if ($?IMOD_CUDA_ARCH_OPTS) then
+        set cuda_arch_opts = "$IMOD_CUDA_ARCH_OPTS"
+    endif
     set cudalibdir = "$CUDA_DIR/lib"
     if ($cudamajor > 2 && $m64bit == true) set cudalibdir = "$CUDA_DIR/lib64"
+    if (! -e "$cudalibdir/libcudart.so" && -e "$CUDA_DIR/lib/libcudart.so") then
+        set cudalibdir = "$CUDA_DIR/lib"
+    endif
     set nvcc_flags = "$cuda_arch_opts $nvcc_flags -DUNIX -Xcompiler -fno-strict-aliasing -O3"
+    if ($?IMOD_CUDA_CCBIN) then
+        set nvcc_flags = "$nvcc_flags -ccbin $IMOD_CUDA_CCBIN"
+    endif
     if ($cudamajor < 3) set nvcc_flags = "$nvcc_flags --host-compilation C"
     if ($cudamajor > 4 && $debug == false) set nvcc_flags = "$nvcc_flags -Wno-deprecated-gpu-targets"
     if ($cudamajor >= 10 && $debug == false) set nvcc_flags = "$nvcc_flags -Wno-deprecated-declarations"

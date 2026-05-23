@@ -24,6 +24,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include "general.h"
 
+using Livewire::byte;
+
 // For color-space conversion, the following variables and equations are used:
 
 // R : 0-255
