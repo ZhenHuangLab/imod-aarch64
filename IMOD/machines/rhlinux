@@ -123,6 +123,7 @@ endif
 #
 if ($?HDF5_DIR) then
     set hdflibdir = ${HDF5_DIR}/lib
+    set defines = "$defines -DH5_USE_110_API"
     if (${HDF5_DIR} == $usrlibdir) then
         set hdflibdir = ${HDF5_DIR}
     else
