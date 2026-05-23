@@ -37,3 +37,20 @@ Key dependency choices:
 - Mercurial: conda-forge `mercurial` 7.1.2
 - C/C++/Fortran compilers: system `gcc`, `g++`, and `gfortran`
 - OpenGL/X11/HDF5/FFTW/TIFF/JPEG headers and libraries: conda-forge environment
+
+## Configure Attempts
+
+### Clean baseline
+
+- Command: `./setup -c gfortran -i "$IMOD_CPU_PREFIX"`
+- Log: `build-logs/setup-cpu.log`
+- Result: failed before Makefile generation completed.
+- Failure:
+
+```text
+WARNING: no definition for aarch64__Linux__6.17.0-1018-nvidia__all
+aarch64__Linux__6.17.0-1018-nvidia__all error
+You need to specify a machine; the generic settings are not usable
+```
+
+Conclusion: upstream IMOD 4.11.25 does not recognize Linux/aarch64 in `setup2`. The next step is a minimal source-level porting patch for a Linux aarch64 target that reuses the existing `machines/rhlinux` settings without adding x86-only `-m64` flags.

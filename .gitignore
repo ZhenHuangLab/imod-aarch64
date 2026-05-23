@@ -14,6 +14,20 @@
 /IMOD/**/*.a
 /IMOD/**/*.so
 /IMOD/**/qconfigure
+/IMOD/3dmod/imodhelp.h
+/IMOD/ctfplotter/imod_assistant.cpp
+/IMOD/ctfplotter/imod_assistant.h
+/IMOD/include/endian.inc
+/IMOD/include/imodconfig.tmp
+/IMOD/include/recl_bytes.inc
+/IMOD/midas/imod_assistant.cpp
+/IMOD/midas/imod_assistant.h
+/IMOD/qttools/mrc2tif/iiqimage.cpp
+/IMOD/qttools/mrc2tif/tiff.c
+/IMOD/qttools/qtassist/imod_assistant.cpp
+/IMOD/qttools/qtassist/imod_assistant.h
+/IMOD/qttools/qtassist/setqtlibpath.cpp
+/IMOD/qttools/sendevent/setqtlibpath.cpp
 
 # Per-version install products and large logs
 /versions/*/install/
