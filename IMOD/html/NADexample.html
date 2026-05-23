@@ -1,0 +1,157 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+  <head>
+    <title>NAD Filtering Example</title>
+    <META HTTP-EQUIV="Content-Type" Content="text/html;
+                                             charset=Windows-1252">
+      <style type="text/css"> <!-- BODY { font-family:"Arial" }
+        TD { font-size:16 }
+        -->
+        p.style1
+        {margin-bottom:.3em;
+        margin-top: 0em;
+        }
+        
+      </style>
+    </head>
+    <body BGCOLOR="#ffffff" TEXT="#000000">
+        <p class="style1" align=center><b><font size="5" 
+            style="text-align: center">Filtering with Nonlinear
+            Anisotropic Diffusion (NAD)
+          </font></b></p>
+      <p class="style1" align=center>(IMOD 4.11)</p>
+      <p class="style1" align=center style="font-weight: bold">University of Colorado, 
+        Boulder</p>
+  <p class="style1">
+    <o:p>&nbsp;</o:p></p>
+        <p class="style1">
+          This tutorial will guide you through filtering a cryo data set with Nonlinear
+            Anisotropic Diffusion (NAD).
+    Filtering with NAD is relatively slow and involves adjusting two parameters to 
+    give the desired amount of filtering.&nbsp; The strategy is to do the operation 
+    on a small test volume and compare the results from different parameter settings 
+    in order to pick the right setting.&nbsp; After that, the full volume is 
+    filtered by breaking it into chunks so that multiple processors can be used.&nbsp; </p>
+      <p class="style1">
+        &nbsp;</p>
+      <p class="style1">
+        Filtering is done with the program nad_eed_3d, contributed to IMOD by Frangakis 
+        and Hegerl.&nbsp; The <a href="man/nad_eed_3d.html#TOP">man page</a> for that program has a bit more information and a 
+        reference to their paper.</p>
+      <p class="style1">
+        &nbsp;</p>
+        <p class="style1" style="text-decoration: underline">
+          Getting started:</p>
+        <ul>
+          <li>This example uses the &quot;cryo&quot; reconstruction produced in our &nbsp;<a 
+              href="cryoExample.html#TOP">basic cryo tutorial</a>.&nbsp; If you have done 
+            that tutorial, cd to the directory where that reconstruction is located and skip 
+            to the last step in this section.</li>
+          <li>Otherwise, <a href="http://bio3d.colorado.edu/imod/files/cryoSubvol.tar.bz">
+            download</a> the trimmed reconstruction from our web site.</li>
+          <li>Move the data set file &quot;cryoSubvol.tar.bz&quot; to the directory where you want to 
+            work on it.&nbsp; Its contents will unpack a file &quot;cryoSubvol.rec&quot; into a 
+            subdirectory named &quot;cryo&quot;.</li>
+          <li>cd to the directory with the file &quot;cryoSubvol.tar.bz&quot;</li>
+          <li>Enter the command:<br />
+            &nbsp;&nbsp;&nbsp; imoduntar cryoSubvol.tar.bz<br />
+            or, anywhere except on Windows without Cygwin, you can use<br />
+            &nbsp;&nbsp;&nbsp; tar -xjf cryoSubvol.tar.bz</li>
+          <li>Enter the dataset directory with:<br />
+            &nbsp;&nbsp;&nbsp; cd cryo</li>
+          <li>Start Etomo by entering
+            <br />
+            &nbsp;&nbsp;&nbsp; etomo<br />
+            and press <b>Nonlinear Anisotropic Diffusion</font></b></li>
+        </ul>
+  <p class="style1">
+    <u>Extracting the Test Volume:</u></p>
+  <ul>
+  <li>
+    Press the file chooser icon on the <b>Pick a volume</b> line and select 
+    <i>cryo.rec</i> (if you did the &quot;cryo&quot; tutorial) or <i>cryoSubset.rec</i> (if 
+    you downloaded this file).</li>
+  <li>
+    Press <b>View Full Volume</b>. </li>
+  <li>
+    Zoom the Zap window up to 1 if necessary, and draw a rubber band in the middle 
+    that is about 300x300 pixels (see the size in the Zap toolbar).</li>
+  <li>
+    Scroll through the slices and set the Lo and Hi limits to extract 25-30 slices.</li>
+  <li>
+    Press <b>Get Test Volume Range from 3dmod</b> to fetch the range into Etomo.</li>
+  <li>
+    Press Extract Test Volume.</li>
+    <li>Press <b>View Test Volume </b>to make sure you got the selected area.</li>
+  </ul>
+  <p class="style1">
+    <u>Finding K Value for the Test Volume:</u></p>
+  <ul>
+  <li>
+    For <b>List of K values</b>, enter <i>0.1,1,5,10,15,25,30,50,75</i></li>
+  <li>
+    Keep the <b>Iterations</b> at <i>10</i>.</li>
+  <li>
+    Select some CPUs 
+    (up to 9 if possible) and press <b>Run with Different K Values</b>.&nbsp; It computes 
+    a volume for each K value, using multiple processors.&nbsp; The K value controls 
+    how the diffusion of density occurs on each iteration.&nbsp; Where the image 
+    gradient is higher than K, this is considered to represent an edge, and density 
+    flows along the edge and not across it.&nbsp;&nbsp; Where the image gradient is 
+    lower than K, density diffuses uniformly.</li>
+  <li>
+    When done, press <b>View Different K Values Test Results</b> to load the 
+    multiple volumes into 3dmod.&nbsp; The Zap window has a second toolbar with <b>
+    4th D</b> left and right arrows for stepping between the volumes (the keys 1 and 
+    2 can also be used).&nbsp; The toolbar also shows the name of the file being 
+    displayed.</li>
+    <li>
+      One way to compare the volumes is to step between them in one window; this is 
+      the best way to see how they change from one to the next.</li>
+    <li>
+      To see the volumes side-by-side, select <b>Linked Slicers</b> from the <b>Image</b> 
+      menu.&nbsp; A slicer will open for each volume, each one locked to that volume 
+      (note the red lock icon in the toolbar).&nbsp; The slicers will be kept at the 
+      same orientation and position, controlled by a single floating toolbar.</li>
+    <li>
+      Images look strange for intermediate K values (10 - 25), with regions of uniform 
+      intensity.&nbsp; Above this range, K is too high to stop the diffusion across 
+      places of high gradient, and diffusion is essentially isotropic.&nbsp; Within 
+      this range, diffusion is blocked across medium to high gradients, so the density 
+      probably gets trapped in medium-sized regions bounded by these gradients and 
+      becomes evenly distributed.&nbsp; Below this K range, there are many, more 
+      closely-spaced, gradients to block diffusion, and this probably prevents the 
+      noticeable uniform regions.</li>
+  </ul>
+  <p class="style1">
+    <u>Finding Iteration Number for the Test Volume:</u></p>
+  <ul>
+  <li>
+    Pick your preferred K value and enter it in the <b>K value</b> field.</li>
+  <li>
+    For <b>List of iterations</b>, enter <i>2,5,8,11,15,21</i>.</li>
+    <li>
+      Press <b>Run with Different Iterations</b>.&nbsp; This time the nad_eed_3d 
+      program runs once, saving the results at each selected iteration.</li>
+    <li>
+      Press <b>View Different Iteration Test Results</b>.&nbsp; This time it is 
+      probably easier to assess the preferred filtering by stepping through the 
+      volumes in the Zap window.</li>
+  </ul>
+  <p class="style1">
+    <u>Filtering the Full Volume:</u></p>
+  <ul>
+  <li>
+    Insert your selected K value in the <b>K value</b> field and number of 
+    iterations in the <b>Iterations</b> field.&nbsp; </li>
+    <li>
+      Select as many CPUs as possible and press <b>Filter Full Volume</b>.</li>
+    <li>
+      When it is done, you can open it with <b>View Filtered Volume</b>, and delete 
+      the test volumes with <b>Clean Up Subdirectory</b>.&nbsp; The final volume is 
+      named by adding the extension &quot;.nad&quot; to the name of the original volume.&nbsp; 
+      Note that the extensions &quot;.rec&quot; and &quot;.nad&quot; are simply conventions and do not 
+      specify a file format; this volume is an MRC file.</li>
+      </ul>
+      </body>
+</html>

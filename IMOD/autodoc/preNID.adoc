@@ -1,0 +1,95 @@
+Version = 1.0
+Pip = 1
+
+[Field = InputStack]
+short = input
+type = FN
+usage = Input image file
+tooltip = 
+manpage = Input image file.
+
+[Field = OutputFileName]
+short = output
+type = FN
+usage = Output image file, the filtered image or a mask image
+tooltip = 
+manpage = Output image file, the filtered image or a mask image
+
+[Field = AnglesFile]
+short = angles
+type = FN
+usage = Tilt angles file.
+tooltip = 
+manpage = Tilt angles file, one angle per line.
+
+[Field = Sigma]
+short = s
+type = FA
+usage = Initial sigma (in pixels), typically the radius of gold particles
+tooltip = 
+manpage = Sigma (in pixels) for initial Gaussian smoothing, typically
+approximately the same as the radius of the gold particles.  This entry is
+required.
+
+[Field = Alpha]
+short = a
+type = FA
+usage = Alpha, typical values from 0.2 to 0.5
+tooltip = 
+manpage = Alpha, the fraction of the initial sigma used as the sigma of a
+Gaussian for smoothing the difference between the initially smoothed and
+original image.  Typical values are 0.2 to 0.5; default is 0.5.
+
+[Field = Beta]
+short = b
+type = FA
+usage = Sigma beta (in pixels),  typical values from 0.5 to 8
+tooltip = 
+manpage = Sigma beta (in pixels) for Gaussian smoothing of regions above threshold
+during diffusion iterations.  Typical values are from 0.5 to 8; the default is
+0.5 and not very useful.
+
+[Field = Tau]
+short = t
+type = FA
+usage = Tau (threshold value), typical values from  0.1 to 0.2
+tooltip = 
+manpage = Tau, the threshold fraction of the maximum gradient for regions to
+be smoothed.  Typical values are from 0.1 to 0.2; the default is 0.1.
+
+[Field = Iterations]
+short = ite
+type = IA
+usage = Number of iterations in the smoothing process, typically from 3 to 20, 1 if -mask
+tooltip = 
+manpage = Number of iterations in the smoothing process, irrelevant if the
+\fB-mask\fR option is used.  The default is 1, which is not very useful; typical values
+are 3 to 20.
+
+[Field = InputMask]
+short = im
+type = FN
+usage = Input image file with mask to apply, defining areas to be smoothed
+tooltip = 
+manpage = 
+
+[Field = MaskOutput]
+short = mask
+type = B
+usage = Produce a binary mask as output
+tooltip = 
+manpage =  Produce a binary mask as output
+
+[Field = ViewsToProcess]
+short = views
+type = LI
+usage = List of views to process (not implemented)
+tooltip = 
+manpage =
+
+[Field = usage]
+short = help
+type = B
+usage = Print help output
+tooltip = 
+manpage = 

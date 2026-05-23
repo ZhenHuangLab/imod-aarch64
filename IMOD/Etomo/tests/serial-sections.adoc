@@ -1,0 +1,334 @@
+Version = 1.2
+
+[dialog = starting-serial-sections]
+copy.file = %{dataset}.st|%{dataset}.rec
+[[if = montage]]
+  copy.file = %{dataset}.st.mdoc|%{dataset}.rec.mdoc
+[[]]
+pnl.starting-serial-sections =
+set.adoc.function=serial-sections.adoc
+run.function.start =
+goto.frame.pnl.main-frame =
+
+[dialog = serial-sections]
+if.var.montage.set.var.cmd=blend
+if.not.var.montage.set.var.cmd=newst
+pnl.main-frame =
+set.adoc.function=serial-sections.adoc
+run.function.main =
+
+[function = start]
+[[if = test-gui]]
+  #test values
+  assert.tf.stack=
+  assert.rb.single-frame=on
+  assert.rb.montage=off
+  assert.cb.extract-montage-piece-list-from-mdoc-file=off
+  assert.tf.image-distortion-field-file=
+  assert.sp.binning=1
+  #test enabled
+  assert.disabled.tf.stack=
+  assert.enabled.rb.single-frame=
+  assert.enabled.rb.montage=
+  assert.disabled.cb.extract-montage-piece-list-from-mdoc-file=
+  assert.enabled.tf.image-distortion-field-file=
+  assert.enabled.sp.binning=
+  assert.enabled.bn.ok=
+  assert.enabled.bn.cancel=
+  #test empty directory error
+  bn.ok=
+  popup.invalid-dataset-directory=OK
+[[]]
+bn.stack=
+file-chooser.stack=%{dataset}.rec
+[[if = test-gui]]
+  #test wrong view type
+  if.not.var.montage.rb.montage=
+  bn.ok=
+  popup.incorrect-frame-type=OK
+  if.not.var.montage.rb.single-frame=
+[[]]
+#test montage-only behavior
+[[if = test-gui]]
+  if.not.var.montage.return=
+  rb.montage=
+  assert.enabled.cb.extract-montage-piece-list-from-mdoc-file=
+  rb.single-frame=
+[[]]
+if.var.montage.rb.montage=
+bn.ok=
+
+
+[function = main]
+run.function.initial-blend=
+run.function.align=
+run.function.make-stack=
+
+
+[function = initial-blend]
+if.not.var.montage.return=
+[[if = test-gui]]
+  #test values
+  assert.cb.use-existing-edge-displacement-file=off
+  assert.cb.treat-as-very-sloppy-montage=off
+  assert.cb.robust-fitting-with-criterion=off
+  assert.tf.robust-fitting-with-criterion=1.0
+  assert.sp.binning=1
+  #test enabled
+  assert.enabled.cb.treat-as-very-sloppy-montage=
+  assert.enabled.cb.robust-fitting-with-criterion=
+  assert.disabled.tf.robust-fitting-with-criterion=
+  assert.enabled.bn.open-raw-stack=
+  assert.enabled.bn.make-blended-stack=
+  assert.enabled.bn.open-blended-stack=
+  assert.enabled.sp.binning=
+  assert.enabled.bn.fix-edges-with-midas=
+  #test behavior
+  cb.use-existing-edge-displacement-file=on
+  assert.disabled.cb.treat-as-very-sloppy-montage=
+  cb.use-existing-edge-displacement-file=off
+[[]]
+cb.treat-as-very-sloppy-montage=on
+if.not.var.clear-view.bn.open-raw-stack=
+[[if = test-gui]]
+  #field validation
+  cb.robust-fitting-with-criterion=on
+  tf.robust-fitting-with-criterion=1.0abc
+  bn.make-blended-stack=
+  popup.field-validation-failed=OK
+  assert.disabled.bn.kill-process=
+  tf.robust-fitting-with-criterion=1.0
+  cb.robust-fitting-with-criterion=off
+[[]]
+bn.make-blended-stack=
+wait.process.initial-blend=done
+[[if = test-gui]]
+  #test values
+  assert.cb.use-existing-edge-displacement-file=on
+  #test enabled
+  assert.disabled.cb.treat-as-very-sloppy-montage=
+  #test files
+  assert.exists.image-file=%{dataset}_preblend.mrc
+  assert.exists.file=%{dataset}.ecd
+  assert.exists.file=%{dataset}.xef
+  assert.exists.file=%{dataset}.yef
+  assert.exists.file=preblend.log
+  assert.contains.file=preblend.com|$blendmont -StandardInput
+  assert.contains.file=preblend.com|ImageInputFile*mediumscansb2.rec
+  assert.contains.file=preblend.com|PieceListInput*mediumscansb2.pl
+  assert.contains.file=preblend.com|ImageOutputFile*mediumscansb2_preblend.
+  assert.contains.file=preblend.com|RootNameForEdges*mediumscansb2
+  assert.contains.file=preblend.com|ReadInXcorrs*0
+  assert.contains.file=preblend.com|OldEdgeFunctions*0
+  assert.contains.file=preblend.com|AdjustOrigin
+  assert.contains.file=preblend.com|VerySloppyMontage
+  #test tab warning
+  touch.file=%{dataset}.ecd
+  tb.initial-blend.1=
+  popup.dataset-consistency-warning=OK
+  tb.initial-blend=
+[[]]
+#with "use-existing-edge-displacement-file" on it uses the existing .ecd file and does not #remake xef and yef
+bn.make-blended-stack=
+wait.process.initial-blend=done
+[[if = test-gui]]
+  #test tab warning
+  tb.initial-blend.2=
+  popup.dataset-consistency-warning=OK
+  tb.initial-blend=
+[[]]
+#remake the .ecd file
+cb.use-existing-edge-displacement-file=off
+bn.make-blended-stack=
+wait.process.initial-blend=done
+[[if = test-gui]]
+  assert.exists.image-file=%{dataset}_preblend.mrc~
+  assert.exists.file=%{dataset}.ecd~
+  assert.exists.file=%{dataset}.xef~
+  assert.exists.file=%{dataset}.yef~
+  assert.exists.file=preblend.log~
+[[]]
+
+
+[function = align]
+tb.initial-blend.1=
+[[if = test-gui]]
+  assert.exists.file=%{dataset}_empty.xf
+  #test values
+  assert.tf.sigma-for-low-frequency-filter=0.0
+  assert.tf.cutoff-for-high-frequency-filter=0.35
+  assert.tf.sigma-for-high-frequency-filter=0.05
+  assert.cb.apply-sobel-filter=off
+  assert.cb.search-for=on
+  assert.rb.full-linear-transformation=on
+  assert.rb.rotation/translation/magnification=off
+  assert.rb.rotation/translation=off
+  assert.cb.find-warping-transformations=off
+  assert.tf.correlation-patch-size-in-x=
+  assert.tf.y=
+  assert.cb.use-boundary-model=off
+  assert.tf.limits-to-shifts-in-x=
+  assert.tf.y.1=
+  assert.cb.find-initial-shifts-with-cross-correlation=off
+  assert.tf.sections-to-skip=
+  assert.tf.fraction-to-ignore-on-edges=0.05
+  assert.sp.binning-in-search=2
+  assert.sp.binning-in-midas=1
+  #test enabled
+  assert.enabled.bn.open-stack=
+  assert.enabled.tf.sigma-for-low-frequency-filter=
+  assert.enabled.tf.cutoff-for-high-frequency-filter=
+  assert.enabled.tf.sigma-for-high-frequency-filter=
+  assert.enabled.cb.apply-sobel-filter=
+  assert.enabled.cb.search-for=
+  assert.enabled.rb.full-linear-transformation=
+  assert.enabled.rb.rotation/translation/magnification=
+  assert.enabled.rb.rotation/translation=
+  assert.enabled.cb.find-warping-transformations=
+  assert.disabled.tf.correlation-patch-size-in-x=
+  assert.disabled.tf.y=
+  assert.disabled.cb.use-boundary-model=
+  assert.disabled.bn.create/view-boundary-model=
+  assert.disabled.tf.limits-to-shifts-in-x=
+  assert.disabled.tf.y.1=
+  assert.enabled.cb.find-initial-shifts-with-cross-correlation=
+  assert.enabled.tf.sections-to-skip=
+  assert.enabled.tf.fraction-to-ignore-on-edges=
+  assert.enabled.sp.binning-in-search=
+  assert.enabled.sp.binning-in-midas=
+  assert.enabled.bn.initial-auto-alignment=
+  assert.enabled.bn.midas=
+  assert.enabled.bn.refine-with-auto-alignment=
+  assert.enabled.bn.revert-auto-alignment-to-midas=
+  assert.enabled.bn.revert-to-no-transforms=
+  #test behavior
+  cb.search-for=off
+  assert.disabled.rb.full-linear-transformation=
+  assert.disabled.rb.rotation/translation/magnification=
+  assert.disabled.rb.rotation/translation=
+  cb.search-for=
+  cb.find-warping-transformations=on
+  assert.enabled.tf.correlation-patch-size-in-x=
+  assert.enabled.tf.y=
+  assert.enabled.cb.use-boundary-model=
+  assert.disabled.bn.create/view-boundary-model=
+  cb.use-boundary-model=on
+  assert.enabled.bn.create/view-boundary-model=
+  cb.use-boundary-model=
+  assert.enabled.tf.limits-to-shifts-in-x=
+  assert.enabled.tf.y.1=
+  cb.find-warping-transformations=
+  cb.search-for=off
+  assert.disabled.tf.sigma-for-low-frequency-filter=
+  assert.disabled.tf.cutoff-for-high-frequency-filter=
+  assert.disabled.tf.sigma-for-high-frequency-filter=
+  assert.disabled.cb.apply-sobel-filter=
+  assert.disabled.tf.fraction-to-ignore-on-edges=
+  assert.disabled.sp.binning-in-search=
+  cb.search-for=on
+  #test field validation
+  tf.sections-to-skip=abc
+  bn.initial-auto-alignment=
+  popup.field-validation-failed=OK
+  assert.disabled.bn.kill-process=
+  tf.sections-to-skip=
+[[]]
+bn.initial-auto-alignment=
+wait.process.initial-xfalign=done
+[[if = test-gui]]
+  assert.exists.file=%{dataset}_auto.xcxf
+  assert.exists.file=%{dataset}_auto.xf
+  assert.exists.file=xfalign.log
+  assert.exists.file=%{dataset}.xf
+[[]]
+if.not.var.clear-view.bn.midas=
+bn.refine-with-auto-alignment=
+wait.process.refine-xfalign=done
+[[if = test-gui]]
+  assert.exists.file=%{dataset}_auto.xf~
+[[]]
+bn.initial-auto-alignment=
+wait.process.initial-xfalign=done
+[[if = test-gui]]
+  assert.exists.file=%{dataset}_auto.xcxf~
+[[]]
+[[if = montage]]
+  copy.file=%{dataset}_midas.xf
+  copy.file=%{dataset}_midas.xf|%{dataset}.xf
+[[]]
+
+
+[function = make-stack]
+tb.initial-blend.2=
+[[if = test-gui]]
+  #test values
+  assert.rb.local-fitting=on
+  assert.rb.remove-trends-in-translation=off
+  assert.rb.remove-trends-in-translation-&-rotation=off
+  assert.rb.global-alignments=off
+  assert.cb.reference-section-for-alignment=off
+  assert.sp.reference-section-for-alignment=1
+  assert.tf.size-in-x=
+  assert.tf.y=
+  assert.tf.shift-in-x=
+  assert.tf.y.1=
+  assert.sp.binning=1
+  assert.cb.fill-empty-areas-with-0=off
+  #test enabled
+  assert.enabled.rb.local-fitting=
+  assert.enabled.rb.remove-trends-in-translation=
+  assert.enabled.rb.remove-trends-in-translation-&-rotation=
+  assert.enabled.rb.global-alignments=
+  assert.disabled.cb.reference-section-for-alignment=
+  assert.disabled.sp.reference-section-for-alignment=
+  assert.enabled.tf.size-in-x=
+  assert.enabled.tf.y=
+  assert.enabled.tf.shift-in-x=
+  assert.enabled.tf.y.1=
+  assert.enabled.sp.binning=
+  assert.enabled.cb.fill-empty-areas-with-0=
+  assert.enabled.bn.make-aligned-stack=
+  assert.enabled.bn.open-aligned-stack=
+  #test behavior
+  rb.global-alignments=
+  assert.enabled.cb.reference-section-for-alignment=
+  rb.remove-trends-in-translation=
+  assert.disabled.cb.reference-section-for-alignment=
+  rb.remove-trends-in-translation-&-rotation=
+  assert.disabled.cb.reference-section-for-alignment=
+  rb.global-alignments=
+  cb.reference-section-for-alignment=on
+  assert.disabled.rb.local-fitting=
+  assert.disabled.rb.remove-trends-in-translation=
+  assert.disabled.rb.remove-trends-in-translation-&-rotation=
+  cb.reference-section-for-alignment=off
+  assert.enabled.rb.local-fitting=
+  assert.enabled.rb.remove-trends-in-translation=
+  assert.enabled.rb.remove-trends-in-translation-&-rotation=
+  rb.local-fitting=
+[[]]
+if.var.montage.rb.remove-trends-in-translation-&-rotation=
+#run newst/blend
+if.var.montage.set.var.descr=blend-serial-sections
+if.not.var.montage.set.var.descr=creating-aligned-stack
+bn.make-aligned-stack=
+wait.process.%{descr}=done
+run.function.check-image-files=
+bn.make-aligned-stack=
+wait.process.%{descr}=done
+[[if = test-gui]]
+  assert.exists.file=%{dataset}.xg~
+  assert.exists.image-file=%{dataset}_ali.mrc~
+  assert.exists.file=%{cmd}.log~
+[[]]
+if.not.var.clear-view.bn.open-aligned-stack=
+
+[function = check-image-files]
+if.not.var.test-gui.return=
+assert.exists.file=%{dataset}.xg
+assert.exists.image-file=%{dataset}_ali.mrc
+assert.exists.file=%{cmd}.log
+#assert.same.file=%{cmd}.com
+assert.contains.file=%{cmd}.com|%{comline}
+if.not.var.montage.return=
+assert.contains.file=%{cmd}.com|%{comline2}

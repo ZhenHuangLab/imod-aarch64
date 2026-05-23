@@ -1,0 +1,208 @@
+Version = 1.0
+Pip = 1
+
+[Field = WatchDirectory]
+short = watch
+type = FN
+usage = Directory in which to find tilt series stacks (default is current dir)
+tooltip =
+manpage = Directory to watch for tilt series stacks.  The default is the
+current directory.
+
+[Field = DeliverToDirectory]
+short = deliver
+type = FN
+usage = Move each stack to this directory and process in a subdirectory
+tooltip = 
+manpage = Move each stack to this directory and process it in a subdirectory.
+This entry is not needed if the batch command file has the corresponding entry,
+but it does override the one in the command file, if any.  If the program is
+being used just to deliver stacks, this option must be entered.  Even when the
+delivery is specified in the command file, the file is moved to the specified
+directory by Serieswatcher, not Batchruntomo(1), because Serieswatcher is more
+capable of moving files between filesystems.
+
+[Field = RemoteDirectory]
+short = remote
+type = FN
+usage = Path to starting directory on remote machines
+tooltip = 
+manpage = Path on remote machines to directory from which this program is
+started.  This entry is not needed if the batch command file has the
+corresponding entry, but it does override the one in the command file, if any.
+This would be necessary if you move a batch command file from the place where
+it was generated with such an entry.
+
+[Field = MatchPatternOrExt]
+short = match
+type = CH
+usage = Filename pattern or extension to match (* will be prepended if necessary)
+tooltip = 
+manpage = Filename pattern or extension to match.  This entry can have wild
+card characters for selecting filenames, namely * to match multiple
+characters, ? to match a single character, and [...] to match a single
+character matching one what is inside the brackets.  (If you enter such a
+pattern at the command line, you need to enclose it in quotes.)  If no wild
+cards are including, a "*" will automatically be added before the entry.  Thus,
+an entry of ".st" will make it watch for files with extension ".st".  The
+default pattern is ".mrc".
+
+[Field = MinimumAgeOfStacks]
+short = age
+type = F
+usage = Seconds since last modification before processing a stack if .openTS
+never seen
+tooltip = 
+manpage = Minimum time interval in seconds between the last detected change in
+the modification time of a stack and starting to process the stack when
+no ".openTS" file was ever seen.  The default is 300 seconds.
+
+[Field = MinHoursIfOpenTSPresent]
+short = opents
+type = F
+usage = Hours since last modification before processing a stack if .openTS present
+tooltip = 
+manpage = Minimum time interval in hours between the last detected change in
+the modification time of the stack and starting to process the stack when
+a ".openTS" is still present.  The default is 17 hours.  Enter a large number to
+prevent such stacks from ever being processed.
+
+[Field = MinimumTiltRange]
+short = range
+type = F
+usage = Minimum range of tilt angles required to process a stack (default 40)
+tooltip = 
+manpage = Minimum range of tilt angles before accepting an apparently mature
+stack for processing.   The default is 40; enter a larger number if there
+there is some chance that you will be restarting data sets that failed with bigger
+tilt ranges than this.
+
+[Field = MinimumNumberOfViews]
+short = views
+type = I
+usage = Minimum number of images in stack required if tilt angles cannot be used
+tooltip = 
+manpage = If the tilt range cannot be determined, the program tests whether
+the number of views in a tilt series stack meets this minimum before
+accepting an apparently mature
+stack for processing.   The default is 12; enter a larger number if there are
+no tilt angles in your stacks and 
+there is some chance that you will be restarting data sets that failed with
+bigger sizes than this.
+
+[Field = EtomoProjectRoot]
+short = project
+type = FN
+usage = Root name of starting Etomo project with .com, .adoc, and .ebt files
+tooltip = 
+manpage = Root name of starting Etomo project, including path if necessary. 
+When files are supplied in this way, the program will make a complete
+batch project that can be run in Etomo.
+There must be a ".com" and a ".ebt" file with this root name, and
+there must be at least one ".adoc" file starting with the root name.
+Specifically, if any ".adoc" file
+with the data set name included, it will use the first such file that it
+finds and ignore the master ".adoc" file without a data set name, otherwise it
+will use the master ".adoc" file.  Neither \fB-com\fR nor \fB-adoc\fR can be
+entered with this option.
+
+[Field = CommandFile]
+short = com
+type = FN
+usage = Command file for running Batchruntomo
+tooltip = 
+manpage = Command file for running Batchruntomo.  This file can be generated
+in the Etomo batch interface without adding any stacks, allowing you to
+specify a directory to deliver, templates, and the CPU and GPU resources and
+to have the remote directory set, if any.  If you do add a stack, you can also
+set whether the data sets are dual axis and whether there is gold on two
+surfaces.
+
+[Field = DirectiveFile]
+short = adoc
+type = FN
+usage = Batch directive file for processing stacks with Batchruntomo
+tooltip = 
+manpage = Batch directive file for processing stacks with Batchruntomo.  This
+option must be entered if a command file is.
+
+[Field = CheckFile]
+short = check
+type = FN
+usage = File to check for quit and finish signals
+tooltip = 
+manpage = File to check for quit and finish signals.  The default is 
+serieswatcher.###.input
+in the directory where this program is started, where ### is the process ID.
+A Q in this file will make the program kill all of the current reconstructions
+then exit; an F will make it exit and leave those to finish.
+
+[Field = DualAxis]
+short = dual
+type = I
+usage = 1 for dual-axis data, 0 if not (default 0)
+tooltip = 
+manpage = 1 for dual-axis data, 0 if not.  This option is not needed if it is
+specified in the batch directive file or a template file, but if it is entered
+it will override any directives.  The default is 0.
+
+[Field = TwoSurfaces]
+short = two
+type = I
+usage = 1 if beads are on two surfaces, 0 if not (default 0)
+tooltip = 
+manpage = 1 if beads are on two surfaces, 0 if not.  This option is not needed
+if it is specified in the batch directive file or a template file, but if it
+is entered it will override any directives.  The default is 0.
+
+[Field = CPUMachineList]
+short = cpus
+type = CH
+usage = Machines to use in parallel processing, or number of local cores
+tooltip = 
+manpage = Machines to use in parallel processing, or number of local cores.
+Each machine name can be followed by a ":" (colon), followed by the number of CPUs
+to use in that machine; e.g., druid:4,tubule:4.  This entry is required if
+there is no CPUMachineList entry in the batch command file, and it would
+override one in the command file.
+
+[Field = GPUMachineList]
+short = gpus
+type = CH
+usage = Machines to use for parallel processing with a GPU, or 1 for local GPU
+tooltip = 
+manpage = Machines to use for parallel processing with a GPU, or 1 for local
+GPU.  The list has the same format as the -G entry to Processchunks,
+with multiple or specific GPUs specified by colon-separated numbers after a
+machine name, e.g., druid:2,tubule:1:2.  The GPUMachineList entry in the batch
+command file will be used if this option is not entered, and 
+
+[Field = ParallelRuns]
+short = parallel
+type = I
+usage = Number of data sets to run in parallel
+tooltip = 
+manpage = Number of data sets to process in parallel runs of Processchunks,
+with each data set assigned to a separate set of computing resources, referred
+to as a "machine slot".
+When you select parallel runs, the total cores in the CPU list will be divided
+as evenly as possible among the machine slots.  If there are multiple
+computers being used, this may result in some slots
+having all cores on one machine and some having cores on more than one
+machine, unless the number of cores per computer is a multiple of the number
+being assigned to each slot.  The collection of GPUs will also be divided; if
+there are not enough GPUs for the slots, some will not have a GPU.
+
+[Field = debug]
+short = DebugMode
+type = B
+usage = Print debugging output
+tooltip = 
+manpage = 
+
+[Field = usage]
+short = help
+type = B
+usage = Print help output
+tooltip = 
+manpage = 

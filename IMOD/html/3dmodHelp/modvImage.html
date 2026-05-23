@@ -1,0 +1,77 @@
+<head>
+<title>Image on Model View</title>
+</head>
+<A NAME = "TOP"><H3>Image View Dialog</H3></A>
+This dialog allows you to display image planes on the model data.  
+Any of the three native orthogonal planes can be displayed, alone or 
+in combination.  Transparency can be set to allow the model to be seen
+through the image; a projection through multiple slices can also be
+displayed.
+<P>
+If data have been loaded into the program as 16-bit integers instead of bytes,
+they are first converted to bytes using the scaling determined by the
+the <B>Low</B> and <B>High</B> sliders in
+the <A HREF="infowin.html#TOP">Information window</A>.  For best results,
+be sure that the <B>Low</B> and <B>High</B> sliders are set so that images
+have a good contrast with a
+fairly wide range between the <B>Black</B> and <b>White</b> sliders.
+Using the autocontrast function generally leaves the sliders in positions that
+will allow good scaling for display.  Changing the <B>Low</B> and <B>High</B>
+sliders will change the contrast of this image display.
+<P>
+The first three check boxes (<B>View X image</B>, etc.) turn on the 
+display of the indicated image planes.  The hot key <B>Z</B> or <B>Shift+Z</B>
+will turn the Z 
+image on or off, while <B>Shift+X</B> and <B>Shift+Y</B> will toggle the X and
+Y image planes.
+<P>
+The <B>X</B>, <B>Y</B>, and <B>Z</B> sliders will track the current point 
+coordinate in 
+3dmod image display windows and can be used to adjust both the 
+current point position and the displayed slice in the model view 
+window.
+<P>
+The <B>X size</B>, <B>Y size</B>, and <B>Z size</B> sliders can be used to 
+set the size of the image that is displayed in each dimension.  The 
+displayed area will be centered on the coordinate unless that would 
+result in the displayed size being smaller than the slider value.
+<P>
+The <B># of slices</B> slider can be used to display multiple slices.  
+You will be able to see through to the last slice but not past the slices,
+unless you turn on transparency.
+<P>
+Use the <B>Transparency</B> slider to see through the image.
+<P>
+The <B>Black Level</B> and <B>White Level</B> sliders can be used to 
+adjust the contrast of the image.  You can reverse the contrast 
+by making Black be higher than White.
+<P>
+Press <B>Use 3dmod Black/White</B> to set these level sliders from the
+current values of the <B>Black</B> and <B>White</B> sliders in the 3dmod
+Information window.
+<P>
+The <B>False color</B> checkbox allows images to be displayed in the 
+standard false color scheme.  It does not appear if color images are loaded.
+<P>
+Turn on the <B>Apply global clip planes</B> checkbox to have the image clipped
+with the global clipping planes, if any are turned on.
+<P>
+The <B>Fill</B> button appears at the bottom if 3dmod is opened with an image pyramid
+  and can be used to load data into the cache for the currently
+  displayed region.  This may be necessary to get a complete display of X or
+  Y planes. When the zoom is below 1, lower resolution data are
+  accessed if available.
+<P>
+<I>Limitations of transparency</I>: Image transparency, model object 
+transparency, and the display of multiple slices all use a similar 
+method for generating transparency.  Displays will often not 
+work well when you have more than one item that relies on 
+this transparency method, because the items are not being drawn in 
+order from back to front everywhere that they overlap.  In particular, if you
+are displaying multiple slices, you will need to introduce significant image
+transparency to see any transparent objects.  You may then need to adjust the
+black and white level sliders in this dialog to compensate for the resulting
+change in brightness or contrast of the image data.
+
+<P>
+<A HREF="index.html#TOP">Help Index<A>

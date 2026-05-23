@@ -1,0 +1,79 @@
+.na
+.nh
+.TH sorttiltframes 1 4.10.10 IMOD
+.SH NAME
+sorttiltframes \- Sort filenames by tilt angle in their names
+.SH SYNOPSIS
+sorttiltframes  [options] [filenames]
+.SH DESCRIPTION
+sorttiltframes is a Python script that takes a set of filenames
+containing tilt angles in their names and sorts them so that they are
+either in numeric order or match the tilt angles in a specific tilt
+series.  Typically these would be frame files from a direct detector
+camera, named in such a way that the tilt angles in their names prevent
+them from listing in order.  The filenames can be either entered at the
+command line as non-option arguments or listed in a file to be read
+in.  When matching the tilt angles of a tilt series, the angles to
+match can be
+either extracted from the extended header of the image file or listed
+in a file.  Filenames that do not match any of those tilt angles will
+be excluded from the output.  There must be at least one file for each
+angle of the tilt series.  When there are multiple files at each angle,
+they will be listed in the output in the same order as they occurred in
+the input list.
+.P
+When not matching input angles, the tilt
+angles corresponding to the filenames can be output into a text file.
+There is also an option to output unsorted names and angles; if these
+are in the order of acquisition, they
+could be entered into Alignframes(1) along with dose information to get
+dose weighting, and Alignframes(1) would produced an ordered output
+file.
+.P
+All filenames must include a decimal point in the tilt angle and one or
+two digits after the decimal point.
+.P
+This program does not expand wild card characters in the arguments
+because that would not work with filenames containing brackets.  If you
+are running on Windows without Cygwin, where the command shell does not
+expand wild-cards either, then the only way to enter a large list of
+files at the command line is to prefix this command with "expandargs".
+.SH OPTIONS
+Sorttiltframes uses the PIP package for input (see the manual page
+for pip(1)).  Options can be specified either as command line
+arguments (with the -) or one per line in a command file
+(without the -).  Options can be abbreviated to unique letters; the currently
+valid abbreviations for short names are shown in parentheses.
+INSERT OPTION TEXT HERE
+.TP
+.B -StandardInput
+Read parameter entries from standard input
+
+.SH EXAMPLES
+If the frame files for one tilt series such as "series4" are all present in the
+current directory and end in ".mrc", enter 
+   sorttiltframes -out series4.list series4*.mrc
+
+The frames can then be aligned and a tilt series file produced with:
+   alignframes -list series4.list series4.mrc
+
+(plus whatever other Alignframes(1) options are needed).
+
+The names can have brackets in them, but if you include any brackets in
+what you enter at the command line, you must precede each bracket by a
+backslash.
+.P
+If running on Windows without Cygwin, the above command will not work.
+Use:
+   expandargs sorttiltframes -out series4.list series4*.mrc
+
+If the filenames are all listed in a file "series4_raw.list", enter:
+   sorttiltframes -list series4_raw.list -out series4.list
+.SH FILES
+If the output file already exists, a backup 
+of the original is created
+with the ~ extension.
+.SH AUTHOR
+David Mastronarde  <mast@colorado.edu>
+.SH SEE ALSO
+alignframes(1)

@@ -1,0 +1,413 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+  <head>
+    <title>Ctfplotter Example Sets</title>
+    <META HTTP-EQUIV="Content-Type" Content="text/html;
+                                             charset=Windows-1252">
+      <style type="text/css"> <!-- BODY { font-family:"Arial" }
+        TD { font-size:16 }
+        -->
+        p.style1
+        {margin-bottom:.3em;
+        margin-top: 0em;
+        }
+        
+      </style>
+  </head>
+  <body BGCOLOR="#ffffff" TEXT="#000000">
+    <basefont size="2">
+    <p class="style1" align=center><b><font size="3" style="font-size: large">
+          Finding Defocus with Ctfplotter 
+          for Three Example Tilt Series </font></b></p>
+    <p class="style1" align=center>(IMOD 4.10)</p>
+    <p class="style1" align=center style="font-weight: bold">University of Colorado, 
+      Boulder</p>
+    <p class="style1">
+      &nbsp;</p>
+    <p class="style1">
+      This document will guide you through running Ctfplotter to find defocus for three 
+      different tilt series, one where the signal of the CTF is very strong, one 
+      where it is weak, and one where it is sometimes strong and sometimes weaker.&nbsp; 
+      It will explain some of the most important aspects of 
+      the process.&nbsp; For more details, consult the
+      <a href="ctfHelp/ctfguide.html#top">Guide to Ctfplotter</a>, which fully 
+      explains each aspect of the interface and also has screen shots based on these 
+      three data sets.&nbsp; Labels in the Etomo or 3dmod interface are shown in <b>Bold</b>, and entries in fields are shown in <i>italics</i>.</p>
+    <p class="style1">
+      &nbsp;</p>
+    <p class="style1">
+      <u>Determining Defocus in a Tilt Series from a K2 Camera:</u></p>
+    <p class="style1">
+      &nbsp;</p>
+    <p class="style1">
+      This tilt series, 
+      from Cindi Schwartz, is of a flagellum of a Giardia cell, taken with a K2 camera on 
+      a Krios microscope at Janelia Farm.&nbsp; The total dose was 26 electrons/square 
+      Angstrom.&nbsp; Images were taken in superresolution mode with an exposure time 
+      of 0.5 sec to avoid having to save and align subframes, and reduced by a factor 
+      of 4 with antialiasing.&nbsp; With this protocol, they may have somewhat better 
+      high-frequency information than a typical tilt series taken in counting mode 
+      without binning, so the power spectra may be particularly good here.</p>
+    <ul>
+      <li>
+        <a href="http://bio3d.colorado.edu/imod/files/K2-CTF-Data.tar.bz2">Download</a> the sample data set from our web site.</li>
+    <li>
+        Move the data set file &quot;K2-CTF-Data.tar.bz2&quot; to the directory where you want to 
+        work on it.&nbsp; Its contents will unpack into a subdirectory named &quot;K2-ctf&quot;.</li>
+    <li>
+        cd to the directory with the file</li>
+        <LI>Enter the command:<br />
+          &nbsp;&nbsp;&nbsp; imoduntar K2-CTF-Data.tar.bz2<br />
+          or, anywhere except on Windows without Cygwin, you can use<br />
+          &nbsp;&nbsp;&nbsp; tar -xjf K2-CTF-Data.tar.bz2</li>
+  <li>Enter the data set directory with:<br />
+          &nbsp;&nbsp;&nbsp; cd K2-ctf</li>
+  <li>Start Etomo with the command<br />&nbsp;&nbsp;&nbsp; etomo WTI042413_1series4.edf</li>
+    <li>Open the <b>Final Aligned Stack</b> page and switch to the <b>Correct CTF</b> tab.
+    </li>Notice that a spherical aberration of 0 is allowed, and is
+    appropriate if data were collected on an aberration-corrected microscope,
+    as these were.</li>
+    <li>The <b>Expected defocus</b> has already been set to 6.0 in this data set.</li>
+    <li>The <b>Config file</b> has already been selected to access a configuration 
+      file listing noise files in the &quot;Janelia&quot; subdirectory of the data set directory<i>.</i></li>
+    <li>Press <b>Run Ctf Plotter</b>.&nbsp; Note that the CTF is analyzed in the raw 
+    stack, so the aligned stack does not need to exist before running
+    Ctfplottter.</li>
+    <li>Three windows open: the plotter window, a dialog for setting
+    parameters controlling which views are analyzed and various aspects of
+    the power spectrum computation, and a dialog for setting parameters for
+    fitting to the power spectra.
+    <li>The magenta curve in the plotter window shows the rotationally
+      averaged power spectrum plotted versus spatial frequency.&nbsp; The
+      green curve is a fitted curve, which in general may 
+      not fit well until fitting parameters have been adjusted.</li>
+    <li>The units of spatial frequency along the X axis are reciprocal pixels and range 
+      from 0 to 0.5/pixel.  Below the frequency labels are the corresponding
+      values for periodicity (resolution) in Angstroms.</li>
+    <li>Power is always very high at low frequencies, so the first operation is to zoom 
+      up the part of the curve that shows the CTF effect.
+      Click the mouse just under the hump in the curve after 0.1/pixel and drag the 
+      zoom area out to the right edge, just under the curve, so that the Y axis range 
+      is about -0.1 to 0.5.</li>
+    <li>Since the fitting looks good already, switch to use the <b>Current
+    defocus estimate</b> in the <b>Angle Range and Tile Selection</b> dialog.</li>
+    <li>The frequency of the first zero 
+    determined from the fit is shown at the top of the plotter window after <b>Z:</b>, 
+      and the corresponding defocus is shown after <b>D:</b>.&nbsp; 
+    It is ~4.6 microns instead of the nominal 6 microns. The fitting 
+    range in the <b>Fitting Parameters</b> dialog starts at a low frequency
+    appropriate for the higher nominal defocus but too early for this lower
+    actual defocus.&nbsp; It is best if the fitting is done to a 
+      linearly falling part of the curve and excludes the portion before that curving 
+      away from a line.&nbsp; Press <b>Start</b> to change <b>X1 Starts</b> to 
+      <i>0.17</i>.</li>
+    <li>It is not helpful to see the curves much beyond where the fitting
+    starts, so the graph can be zoomed again. Click a bit above and to the
+    left of where the fitting starts (which is at 0.17/pixel and 0.3 in Y) and
+    drag out to just below the right end of the curves to give a Y axis range
+    of about -0.05 to 0.35.</li>
+    <li>This average over many views appears to have good signal out to the
+    fourth zero, but the useful range for fitting may be less when fewer views
+    are averaged.  For now, change <b>X2 Ends</b> to 
+      <i>0.4</i>, just past the frequency of the third zero.&nbsp; Press the
+      Enter key or <b>Apply</b> (in either dialog) to fit with a changed
+      value.</li>
+    <li>Notice the entry for <b>Error:</b> on the output line in the plotter window,
+    which shows the mean deviation between the power spectrum and the fitted curve
+    over the fitting range, in the log units of the Y axis.</li>
+    <li>Turn on <b>Vary exponent of CTF function</b>; the fit looks slightly
+    better and the error drops by more than 10% (e.g., from 0.0039 to 0.0033),
+    so that is an appropriate parameter to include when fitting these
+    data.</li>
+    <li>To assess whether fitting to a single image is possible, go back to the <b>
+      Angle Range and Tile Selection</b> dialog and change the <b>Number of
+        views to fit:</b> to a smaller value, like <i>9</i>.  Notice the line
+      below this spin box, summarizing the angular range and view numbers
+      being fit.  Click the down arrow of the spinner to reduce the number of
+      views progressively down to 1.  The curve does become noisier, but the
+      fitting still appears good out to ~0.43/pixel.  
+    <li>To see whether this is still the case throughout the tilt range, leave
+    the number of views at 1 and 
+    press <b>Step Up</b> to go to the positive end of the tilt range
+    then <b>Step Down</b> to go back down to the negative end of the range.
+      The power spectrum looks good and the fitting appears reliable at each
+    tilt angle.</li>
+    <li>If the first zero appears elevated when first stepping to an angle
+    (such as 61 degrees), press <b>Apply</b> one or more times to see if the
+    fitting to the baseline improves.  In general, repeatedly computing the
+    spectrum and fit in this
+    way with each new defocus is a good way to assess the stability of fitting.</li>
+    <li>This assessment only took a few steps because the <b>Step view
+    range</b> spin box was left at its initial value of 11.  You can make this
+    value smaller to see more angles, or 1 to step through every angle.</li>
+    <li>Most of the single view spectra show signal out close to the fourth
+    zero, so change the entry for <b>X2 Ends</b> in the <b>Fitting Params</b>
+    dialog to <i>0.44</i>.
+    <li>Turn on <b>Fit each view separately</b> and press <b>Autofit All
+    Views</b>.  The fitting goes in two directions from the current
+    angle, unless that angle is at one end of the range. The table is filled
+    in as the fitting proceeds.</li>
+    <li>Press <b>Graph values</b>.  A graph of defocus versus tilt angle pops
+    up, showing variations of over 1 micron above 40 degrees.  You can
+    left-click at a point in this window and a popup will appear with its
+    coordinates (you have to left-click again to dismiss the popup).</li>
+    <li>Scroll the table in the <b>Angle Range</b> dialog to get to these
+      angles with the big &nbsp; Double-click a series of 
+      lines in the table to check the curve-fitting in this region, or set the
+      <b>Step view range</b> to <i>1</i> and use <b>Step Up</b> and <b>Step
+      Down</b> to look at successive views.&nbsp; The curve-fitting is 
+      clearly correct; the defocus changes from image to image have been measured 
+      accurately.</li>
+    <li>Now that you have gone through the basics of determining defocus, the
+    next step is to assess whether astigmatism can be determined as well.
+    When there is astigmatism, the defocus varies with direction.  In a 2-D
+    power spectrum, the Thon rings (which correspond to the dips at CTF zeros
+    in the rotationally averaged 1-D power spectra here) are approximately
+    elliptical instead of circular.  Astigmatism thus has two parameters, the
+    difference between the maximum and minimum defocus and the angle of the
+    axis of maximum defocus.  Ctfplotter finds astigmatism by measuring
+    the defocus in 1-D power spectra rotationally averaged over a restricted
+    angular ranges of the 2-D power spectrum, referred to as wedges.</li>
+      <ul>
+        <li>Return to low tilt by entering <i>0</i> in the <b>Middle tilt
+        angle</b> text box.  (The program will adjust the entry to the nearest
+        actual angle.)</li>
+        <li>Press the <b>+</b> button to the left of <b>Find astigmatism</b>
+        in the <b>Fitting Params</b> dialog
+        to open the controls for finding astigmatism.</li>
+        <li>Notice that <b>Min views for astigmatism</b> has the default value
+        of 5.  This means that wedge spectra will be combined from 5 views
+        when defocus is being found for single views.  It is generally advisable to
+        find astigmatism from more views than those used for finding defocus,
+        because the wedge spectra have less data in them than full 1-D
+        spectra, and combining more views will keep the signal-to-noise ratio
+        up and make the CTF fitting comparably reliable.  See the 
+        <a href="ctfHelp/ctfguide.html#top">Guide to Ctfplotter</a> for more
+        details on this point.</li>
+        <li>Turn on <b>Find astigmatism</b> and watch the wedge spectra as the
+        angle of the wedge changes.  It is important to see these wedge 
+        spectra initially to make sure that the fitting looks good and that
+        the spectrum does not take on a strange shape in some part of the
+        angular range.  The whole process is iterated because the astigmatism is
+        rather high for this data set.</li>
+        <li>After the analysis, the program computes a spectrum for the single
+        selected view that is fully adjusted for the astigmatism and measures
+        defocus from that.  Note that the CTF signal now appears clearly all
+        the way out to 0.5/pixel.</li>
+        <li>Check the fitting to the wedges at a few other angles by typing
+        them into the <b>Middle tilt
+        angle</b> text box, for example <i>30</i>, <i>60</i>, <i>-30</i>,
+        and <i>-60</i></li>
+        <li>Return to zero tilt by entering <i>0</i> for the <b>Middle tilt
+        angle</b>. It is generally advisable to start autofitting at zero tilt
+        because fitting is likely to be more challenging at high tilt.</li>.
+        <li>Press <b>Autofit All Views</b> to fit to all views.  The
+        programs asks if you want to remove all existing entries from the
+        table.  Press <b>Yes</b>.</li>
+        <li>You can turn off <b>Show wedge fits</b> in the <b>Fitting
+        Params</b> dialog to save time if you are confident that the wedge
+        fitting is reliable.  It can be turned on and off during autofitting,
+        so one approach is to turn it off for lower angles and turn it back on
+        as it approaches high tilt.</li>
+        <li>Press <b>Graph values</b>; this time there are graphs for the
+        astigmatism amount and axis angle as well as the defocus.  It is not
+        clear how much of the view-to-view variablity in the latter two
+        parameters is real.  There would be considerably more variability
+        with <b>Min views for astigmatism</b> set to only 1.  </li>
+      </ul>
+    <li>Press <b>Save to File</b> and exit Ctfplotter and Etomo.</li>
+  </ul>
+      <p>
+        &nbsp;</p>
+<p class="style1">
+  <u>Determining Defocus in a Tilt Series from a CCD camera:</u></p>
+<p class="style1">
+  &nbsp;</p>
+<p class="style1">This tilt series is of a preparation of bovine papilloma
+  virus (BPV), taken by Mary Morphew on 
+  an F20 with a US4000 CCD camera at a nominal defocus of -3 microns.&nbsp; It is 
+  the series used in the Ctfplotter Guide to illustrate program operations.&nbsp; 
+  Here, it illustrates some of the challenges in doing CTF correction on 
+  relatively low-defocus tilt series take with a CCD, which provides poorer 
+  information at high frequencies than a direct detector.</p>
+<ul>
+  <li>
+    If you already unpacked the data set for the SIRT tutorial, skip to &quot;Enter the 
+    data set directory&quot;.</li>
+  <li>
+    <a href="http://bio3d.colorado.edu/imod/files/CTF-SIRT-Data.tar.bz2">Download</a> the sample data set from our web site.</li>
+  <li>
+    Move the data set file &quot;CTF-SIRT-Data.tar.bz2&quot; to the directory where you 
+    want to work on it.&nbsp; Its contents will unpack into a subdirectory named 
+    &quot;ctf-sirt&quot;.</li>
+  <li>
+    cd to the directory with the downloaded file</li>
+  <LI>Enter the command:<br />
+    &nbsp;&nbsp;&nbsp; imoduntar CTF-SIRT-Data.tar.bz2<br />
+    or, anywhere except on Windows without Cygwin, you can use<br />
+    &nbsp;&nbsp;&nbsp; tar -xjf CTF-SIRT-Data.tar.bz2</li>
+  <LI>Enter the data set directory with:<br />
+    &nbsp;&nbsp;&nbsp; cd ctf-sirt</li>
+  <li>Start Etomo with the command<br />&nbsp;&nbsp;&nbsp; etomo bpv_-3_3a.edf</li>
+  <li>Open the <b>Final Aligned Stack</b> page and switch to the <b>Correct CTF</b> tab.
+  </li>
+  <li>As for the K2 data set, the <b>Config file</b> has already been selected to 
+    access a configuration file listing noise files in the &quot;F20&quot;
+    subdirectory of the data set directory<i>.</i></li>
+  <li>Set the <b>Expected defocus</b> to <i>3.0</i>.</li>
+  <li>Press <b>Run Ctf Plotter</b>.</li>
+  <li>If you press the help icon in the upper right of the Ctfplotter window, it will 
+    bring up the Ctfplotter Guide; the Examples section there shows screen shots 
+    from this data set.</li>
+  <li>The power spectrum has two dips in the falling part of the curve, neither of 
+    which correspond to zeros.&nbsp; The dip at the first zero is not evident until 
+    the curve is zoomed.&nbsp; Zoom it up by selecting the top of the second hump in 
+      the magenta curve and dragging the selection region to a point before a frequency of 
+    0.4/pixel and just below the baseline.</li>
+  <li>Double-click the left mouse button at the first zero (frequency 0.25/pixel).&nbsp; 
+    The defocus readout on the top line changes to show the defocus corresponding to 
+    this point, 3.6 microns.&nbsp; </li>
+  <li>The fitting range 
+    set from the nominal defocus is particularly inappropriate in this case.&nbsp; 
+    Set <b>X1 Starts</b> to <i>0.185</i> to fit the falling phase of the power 
+    spectrum back to where its slope changes.&nbsp; Set <b>X2 Ends</b> to <i>0.29</i> because the signal falls off there, well before the location of the 
+    second zero.&nbsp; Press the Enter key or <b>Apply</b> to fit with the changes.</li>
+  <li>You can now zoom up another step to make it easier to see the CTF signal.&nbsp; 
+    Select a point just above where the two curves diverge on the left and drag the 
+    selection box out to the right edge under the baseline.</li>
+  <li>Select <b>Current defocus estimate</b> in the Angle Range dialog now that the 
+    fitting is being done to an appropriate range.</li>
+  <li>Press <b>Step Up</b> twice to reach the positive end of the tilt
+    range, and then <b>Step Down</b> four times to get to the negative end of
+    the range.  The spectra look adequate, although at the positive end of the
+    range, the dip is less well-defined.</li>
+  <li>The dip at the positive end can be made deeper by skipping the last
+    few tilts.  One way to do this is to enter <i>1-3</i> in
+    the <B>Views to skip</b> text box, which makes the tilt range being
+    analyzed be the same as on the negative side.  This is more convenient
+    than adjusting the <b>Middle tilt angle</b> entry, and when you use
+      the <b>Step</b> buttons or autofitting, the program will continue to
+    leave these views out of the fit.</li>
+  <li>You can now press <b>Autofit All
+      Steps</b> to fit to 40-degree ranges at 20-degree intervals.</li>
+  <li>Double-click each line in the table to check the result.&nbsp; 
+    In general, if you think that the zero is not correctly found by a fit,
+    you can double-click where you think the bottom of the dip is located,
+    and 
+    press <b>Store Defocus in Table</b> to replace the value from the
+    fit.</li>
+  <li>It is possible to find astigmatism in this data set.  
+    Set <b>Min views for astigmatism</b> to <i>40</i> first, then turn
+    on <B>Find astigmatism</b> and step through the
+    tilt ranges.  However, you may find that the fitting is unstable if you
+    press <b>Apply</b> repeatedly at one high tilt end of the range.  It is
+    easy for the fitting to become unreliable with this data set; for
+    example, a <b>Baseline fitting order</b> of 0 or 2 does not work
+    throughout the tilt range.</li>
+  <li>Press <b>Save to File</b> and exit Ctfplotter and Etomo.</li>
+  <li>If you are going to do the practice SIRT reconstruction with this dataset, 
+    or if you want a corrected stack for any other reason, then select up to 12 CPUs 
+    in the parallel processing table, and press <b>Correct CTF</b> then 
+    <b>Use CTF Correction</b> when it is done.</li>
+  </ul>
+<p class="style1">
+  &nbsp;</p>
+<p class="style1">
+  <u>Determining Defocus in a Tilt Series from a DE-12 Camera:</u></p>
+<p class="style1">
+  &nbsp;</p>
+<p class="style1">
+  This tilt series, 
+  from Cindi Schwartz, is of a preparation of microtubules decorated
+  with the motor protein Eg5, 
+  taken with a DE-12 camera during a demo on the F20 microscope in Boulder.&nbsp; The 
+  tilt series had a 2 degree increment and the total dose was 
+        79 electrons/square 
+  Angstrom.&nbsp; Parts of the series have good signal for determining CTF, but 
+  not all of it.</p>
+<ul>
+  <li>
+    <a href="http://bio3d.colorado.edu/imod/files/DE-CTF-Data.tar.bz2">Download</a> the sample data set from our web site.</li>
+    <li>
+        Move the data set file &quot;DE-CTF-Data.tar.bz2&quot; to the directory where you want to 
+        work on it.&nbsp; Its contents will unpack into a subdirectory named &quot;DE-ctf&quot;.</li>
+    <li>
+        cd to the directory with the file</li>
+        <LI>Enter the command:<br />
+          &nbsp;&nbsp;&nbsp; imoduntar DE-CTF-Data.tar.bz2<br />
+          or, anywhere except on Windows without Cygwin, you can use<br />
+          &nbsp;&nbsp;&nbsp; tar -xjf DE-CTF-Data.tar.bz2</li>
+  <li>Enter the data set directory with:<br />
+          &nbsp;&nbsp;&nbsp; cd DE-ctf</li>
+  <li>Start Etomo with the command<br />&nbsp;&nbsp;&nbsp; etomo MTEg5series5D.edf</li>
+    <li>Open the <b>Final Aligned Stack</b> page and switch to the <b>Correct CTF</b> tab.
+    <li>The <b>Expected defocus</b> has already been set to 6.0 in this data set.</li>
+    <li>The <b>Config file</b> has already been selected to access a configuration 
+      file listing noise files in the &quot;DE12-Div2&quot; subdirectory of the data set directory<i>.</i></li>
+    <li>Press <b>Run Ctf Plotter</b>.</li>
+    <li>Zoom the power spectrum by clicking on the magenta curve to the left of 
+      0.1/pixel and dragging the selection region to a point before a frequency of 
+      0.4/pixel and just below the baseline.</li>
+    <li>The power spectrum shows a clear signal out to the third zero and the green 
+      fitted curve matches the location of the zeros fairly well, so the defocus 
+      estimate is good.&nbsp; Select <b>Current defocus estimate</b>.
+    <li>In the <b>Fitting Params</b> dialog, set <b>X1 Starts</b> 
+      to <i>0.11</i>, since it is not helpful to fit any farther to the left
+      of the first zero. &nbsp; Set <b>
+      X2 Ends</b> 
+      to <i>0.25</i> to fit out to the third zero, and press the Enter key or <b>Apply</b>.</li>
+    <li>Turn on <b>Vary exponent of CTF function</b>; the fit does not look
+      significantly better 
+      so there is no reason to leave this option on.&nbsp; When 
+      the signal is weak, adding this fifth parameter to the fit can
+      reduce the reliability and stability of the fits.&nbsp; Turn it off.</li>
+    <li>To see if single images can be fit, set the <b>Number of views to fit</b> to <i>1
+      </i>.&nbsp; This curve is noisier but the 
+      fitting still seems reasonable.</li>
+    <li>To see if fitting is good at other tilt angles, sample some angles by
+      pressing <b>Step Up</b> and <b>Step Down</b>.  You can lower the <b>Step view
+        range by</b> entry to sample more finely.  Most of the negative angles
+      give plausible fits, but many positive angles have much less signal and
+      cannot be fit reliably, particularly around 20-30 degrees. 
+      Since inaccurate defocus values can do more harm than good, we need to fit to 
+      multiple views instead, with the reduced goal of estimating the trend in defocus 
+      through the series.</li>
+      
+    <li>Now switch <b>Number of views to fit</b> to <i>4</i> to fit to 8
+      degree ranges, and set <b>Step view range by</b> to <i>2</i>.  Step
+      through some angles in the troublesome range.  The signal is still quite
+      weak in some spectra but the fit appears to work.</li>
+    <li>Now assess whether and how to find astigmatism by pressing
+      the <b>+</b> button next to <b>Find astigmatism</b>.  Set <b>Min views
+      for astigmatism</b> to <i>8</i> to start with, to maintain the same
+      signal-to-noise ratio in the wedge spectra as in the full spectra.
+      Set <b>Middle tilt angle</b> to <i>0</i> and turn
+      on <b>Find astigmatism</b>.  The wedge spectra all look good and the
+      astigmatism is about 0.6 microns.</li>
+    <li>Set <b>Middle tilt angle</b> to <i>21</i>; notice that the spectrum
+      changes shape dramatically and that the signal after the first zero
+      essentially vanishes in some parts of the angular range.  The
+      astigmatism estimate is over 1.0, which is too big a change from zero
+      degrees to be plausible.  These data must be averaged over many more
+      views to give reliable estimates of astigmatism.</li>
+    <li>Set <b>Min views for astigmatism</b> to <i>20</i>.  The fits may
+      appear better, but then set <b>Middle tilt angle</b> to <i>45</i>.
+      The spectrum still flattens out for some wedges, and you will probably
+      see jumps up and down and failures of the baseline fitting.</li>
+    <li>Given this result, we need to fall back to finding one astigmatism
+      estimate for the whole tilt series.  Set <b>Min views for
+      astigmatism</b> to <i>100</i> (or any value as big as the number of
+      views).  The wedge spectra all look good.</li>
+  <li> Set the <b>Middle tilt angle</b> of <i>0</i>
+      and press <b>Autofit All Steps</b>.&nbsp; Notice that it does not repeat
+      the wedge fitting at each angle.</li>
+  <li>Press <b>Graph Values</b> to see the graph of defocus versus tilt
+    angle.  There are still some sizable variations at positive tilt angles.
+    Double-click the lines in the table at some of these angles to see how
+    reliable these 
+    fits look.&nbsp; The signal gets rather low at some tilts, but the noise is 
+    low enough to allow you to see that the defocus is being found
+    adequately.</li>
+</ul>
+</body>
+</html>

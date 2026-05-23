@@ -1,0 +1,24 @@
+.na
+.nh
+.TH wmod2imod 1 2.20 IMOD
+.SH NAME
+wmod2imod \- Make an IMOD model file from a wimp model file.
+.SH SYNOPSIS
+wmod2imod  [options]  WIMP_model  IMOD_model
+.SH DESCRIPTION
+The WIMP model format is the model format used internally
+by the Fortran programs
+in the IMOD distribution.  All Fortran programs can read WIMP or IMOD 
+files and output an IMOD model flie.  wmod2imod is also available for
+converting a model.
+
+.SH OPTIONS
+.TP
+.B -z <value>
+Sets the z-scale for the IMOD model with the give value.
+.SH AUTHOR
+Jim Kremer 
+.SH SEE ALSO
+.SH BUGS
+
+Email bug reports to mast@colorado.edu.

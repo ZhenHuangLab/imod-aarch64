@@ -1,0 +1,148 @@
+#!/usr/bin/python -u
+# csvtohtml - converts csv file to html table
+# The csv file must start with a title row, an html header row, and a table header row
+#
+# Author: David Mastronarde
+#
+# $Id$
+
+# Find index of last non-empty string in the row
+def lastNonEmptyIndex(row):
+   last = -1;
+   for ind in range(len(row)):
+      if len(row[ind]):
+         last = ind
+   return last
+
+import csv, sys
+sys.path.insert(0, '../pysrc')
+from imodpy import *
+
+insertTag = 'INSERT CSV FILE'
+
+if len(sys.argv) < 3:
+   prnstr('Usage: csvtohtml [-m #] csv_file output_file [insert_into_file]')
+   prnstr('       -m option specifies maximum columns to use')
+   prnstr('       -s option specifies a column to skip (can be entered more than once)')
+   prnstr('       insert_into_file must have all HTML starting and ending codes')
+   prnstr('       and a line with just ' + insertTag + ' on it')
+   sys.exit(1)
+
+insertLines = []
+maxUse = 1000000
+argInd = 1
+skipCols = []
+while True:
+   if sys.argv[argInd] == '-m':
+      maxUse = int(sys.argv[argInd + 1])
+      argInd += 2
+      continue
+   if sys.argv[argInd] == '-s':
+      skipCols.append(int(sys.argv[argInd + 1]))
+      argInd += 2
+      continue
+   else:
+      break
+
+if len(sys.argv) > argInd + 2:
+   insertLines = readTextFile(sys.argv[argInd + 2])
+
+csvfile = open(sys.argv[argInd], 'r')
+reader = csv.reader(csvfile)
+needTitle = True
+needHeader = True
+needTableHead = True
+lastBlank = False
+headlines = []
+toclines = []
+outlines = []
+
+if insertLines:
+   for insertInd in range(len(insertLines)):
+      if insertTag in insertLines[insertInd].strip():
+         break
+      headlines.append(insertLines[insertInd])
+   else:   # ELSE ON FOR
+      prnstr('ERROR: Could not find a line with ' + insertTag + ' in ' + \
+                sys.argv[argInd + 2])
+      sys.exit(1)
+
+   insertInd += 1
+   
+else:
+   headlines = ['<HTML>',
+               '<HEAD>']
+
+inrows = []
+maxlen = 0
+for row in reader:
+   if not (len(row) and row[0].startswith('#')):
+      inrows.append(row)
+      maxlen = min(maxUse, max(maxlen, len(row)))
+
+for row in inrows:
+   lastNonEmpty = lastNonEmptyIndex(row)
+   tdtag = 'TD'
+   if needTitle:
+      if insertLines:
+         needTitle = False
+         continue;
+      if lastNonEmpty < 0:
+         continue
+      headlines += ['<TITLE>' + row[0] + '</TITLE>',
+                   '</HEAD>',
+                   '<BODY>',
+                   '<A NAME = "TOP">']
+      needTitle = False
+      continue
+
+   elif needHeader:
+      if lastNonEmpty < 0:
+         continue
+      headlines += ['<H2 ALIGN=center>' + row[0] + '</H2>']
+      outlines =['<TABLE BORDER COLS=2>',
+                   '<THEAD>']
+      needHeader = False
+      continue
+   
+   elif needTableHead:
+      if lastNonEmpty < 0:
+         continue
+      tdtag = 'TH'
+
+   line = '<TR>'
+   for ind in range(maxlen):
+      if ind + 1 in skipCols:
+         continue
+      if ind <= lastNonEmpty:
+         cell = row[ind]
+      else:
+         cell = ''
+      if cell == '':
+         cell = '&nbsp;'
+      if lastBlank and lastNonEmpty == 0 and ind == 0:
+         sectag = cell.replace(' ', '_')
+         line += fmtstr('<{}><A name="{}"><B>{}</B></A></{}>', tdtag, sectag, cell, tdtag)
+         toclines.append(fmtstr('<A HREF="#{}">{}</A><BR>', sectag, cell))
+      else:
+         line += fmtstr('<{}>{}</{}>', tdtag, cell, tdtag)
+   line += '</TR>'
+   outlines.append(line)
+   lastBlank = lastNonEmpty < 0
+   if needTableHead:
+      outlines += ['</THEAD>',
+                    '<TBODY>']
+      needTableHead = False
+
+outlines += ['</TBODY>',
+             '</TABLE>']
+
+if insertLines:
+   outlines += insertLines[insertInd:]
+else:
+   outlines += ['</BODY>',
+                '</HTML>']
+toclines.append('<P></P>')
+
+writeTextFile(sys.argv[argInd + 1], headlines + toclines + outlines)
+sys.exit(0)

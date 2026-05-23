@@ -1,0 +1,24 @@
+.na
+.nh
+.TH imod2rib 1 2.00 IMOD
+.SH NAME
+imod2rib \- Make a RIB model from an IMOD model file.
+.SH SYNOPSIS
+imod2rib  [options]  IMOD_model  meta_model
+.SH DESCRIPTION
+Convert an IMOD model file to the RIB file format used
+by Pixar's Renderman Interface.  The model will have similar attributes
+set by those seen in 3dmodv.
+
+The Renderman (R) Interface Procedures and RIB Protocol are:
+Copyright 1988,1989, Pixar.
+All rights reserved.
+RenderMan (R) is a registered trademark of Pixar.
+ 
+.SH OPTIONS
+None
+.SH AUTHOR
+Jim Kremer 
+.SH SEE ALSO
+.SH BUGS
+Email bug reports to mast@colorado.edu.

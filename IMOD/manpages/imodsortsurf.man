@@ -1,0 +1,57 @@
+.na
+.nh
+.TH imodsortsurf 1 3.6.6 IMOD
+.SH NAME
+imodsortsurf \- Sort contours into surfaces or surfaces into objects
+.SH SYNOPSIS
+imodsortsurf  [options]  input_model  output_model
+.SH DESCRIPTION
+This program can do three different operations related to surfaces.
+  1) It can
+use the mesh produced by imodmesh to analyze the connections between contours, 
+and assign each set of connected contours a separate surface number.
+If you then want the mesh for these objects to have the new surface
+numbers, it is necessary to remesh the objects with "imodmesh -S" or
+the "Surface" option in the "Meshing" panel of the 3dmod(1) Model View
+Object Edit dialog.
+  2) It can analyze a mesh in an object without contours (such as is produced
+by saving an object from the isosurface display in 3dmod(1) Model View) and
+sort it into separate, unconnected surfaces, each with a different
+surface number.
+  3) It can place each surface into a separate object.  This operation can
+be done either on existing surfaces or on the surfaces produced by analyzing
+the mesh.  It works by moving the contours themselves for a
+conventional object, or by moving the mesh components for an object
+without contours.  When contours are moved, the objects must all be
+meshed to see the surfaces.
+.SS OPTIONS
+.TP
+.B -o \fIlist\fR
+Restrict the sorting to objects in the given list of object numbers, which
+can consist of a comma-separated set of ranges.  The default is to do all
+objects.
+.TP
+.B -s
+Split surfaces into new objects.
+.TP
+.B -e
+Use existing surfaces when splitting them into new objects.  The default is
+to analyze the surfaces from the mesh instead.  With this option, no mesh is
+required.
+.TP
+.B -c
+Make new objects the same color as the object from which they are derived.
+Most other display properties are transferred from the existing object to the 
+new object.
+.TP
+.B -k
+Keep the surface numbers when moving contours into new objects.  The default
+is to set surface numbers to zero.
+
+.SH AUTHOR
+David Mastronarde,  mast@colorado.edu
+.SH SEE ALSO
+imodmesh(1), 3dmod(1)
+.SH BUGS
+When surfaces are split into new objects, contour and surface labels will be
+lost.  Also, stored view information will not be copied to the new objects.

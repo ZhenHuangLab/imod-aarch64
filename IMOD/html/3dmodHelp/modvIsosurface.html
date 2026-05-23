@@ -1,0 +1,374 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+<HEAD>
+	<META HTTP-EQUIV="CONTENT-TYPE" CONTENT="text/html; charset=utf-8">
+	<TITLE>Isosurface View</TITLE>
+	<META NAME="GENERATOR" CONTENT="OpenOffice.org 2.0  (Unix)">
+	<META NAME="CREATED" CONTENT="20080425;13470700">
+	<META NAME="CHANGEDBY" CONTENT="Xiong Quanren">
+	<META NAME="CHANGED" CONTENT="20080425;15212900">
+</HEAD>
+<BODY LANG="en-US" DIR="LTR">
+<A NAME = "TOP"><H3>Isosurface View Dialog</H3></A>
+<P>
+This dialog allows you to display isosurfaces of the input volume
+or a subvolume of it.  An isosurface is a surface generated at places where
+the intensity values cross a threshold value set by the user.
+The subvolume is specified by a bounding box whose position and size
+are set by sliders.  Isosurfaces are displayed when this dialog is
+opened but will be removed when you close the dialog. 
+<P>
+The isosurface mesh and the bounding box are stored in two "extra objects".
+Their display properties can be edited in the Model View Object Edit dialog.
+The extra objects that can be edited are listed after the last regular object
+in the model; just use the slider or spin box there to get to them.
+<P>
+If you click on a position in the isosurface with the right mouse button,
+that position becomes the current point within 3dmod, thus allowing
+you to find corresponding features in the image data.
+<P>
+The isosurfacing is always computed on a subvolume of byte values, even 
+if data have been loaded into the program as 16-bit integers instead of bytes.
+In the latter case, the scaling to bytes is determined by the
+the <B>Low</B> and <B>High</B> sliders in
+the <A HREF="infowin.html#TOP">Information window</A>.  In order to have good
+dynamic range in the intensity values being analyzed,
+be sure that the <B>Low</B> and <B>High</B> sliders are set so that images
+have a good contrast with a
+fairly wide range between the <B>Black</B> and <b>White</b> sliders.
+Using the autocontrast function generally leaves the sliders in positions that
+will allow good scaling for display.  Changing the <B>Low</B> and <B>High</B>
+sliders will change the effect of the threshold setting here.
+<P>
+If you have multiple volumes loaded, separate thresholds are maintained for
+each volume, so when you return to a volume, it will be shown at its own
+threshold.
+When
+you first step to a volume that has not had its threshold set yet, it will be given
+a threshold at the same percentile point in its intensity histogram as for the
+previously displayed volume.
+</P>
+<P>
+The computations will be done with multiple threads running in parallel if the
+system has multiple processors.  Doing
+so incurs some extra overhead and the computation time also does not reduce
+proportional to the number of processors used and may even increase with more
+than 4 threads on an 8-core system.  Thus, the maximum number of threads used
+is 4, regardless of how many processors are available.  Up to 4, the number of
+threads is set by the apparent number of processors on the system, or by
+the value of the environment variable IMOD_PROCESSORS if it is set.
+If your machine has hyperthreading enabled, the program will probably run
+better if you avoid using hyperthreads by setting
+IMOD_PROCESSORS to the actual number of cores on the system.
+You can experiment with your system
+by setting IMOD_PROCESSORS to various values and starting 3dmod with the
+-DU option in order to see some time outputs.  Display a large portion of a
+volume so that processing takes hundreds of milliseconds.
+<P>
+The isosurface display is based on contouring and surface smoothing
+modules from Chimera, developed at the Resource for Biocomputing,
+Visualization, and Informatics at UCSF.
+<P>
+The controls in
+this window are in two columns.  The left side has controls for setting the threshold
+and adjusting the volume being displayed; the right side presents a variety of
+options. Controls are as follows:
+</P>
+<P>
+At the top left is the <B>histogram</B> of voxel values inside the
+bounding box.  The histogram is based on the byte values stored in
+program memory, not the values in the image file.
+<P>
+The <B>Threshold</B> slider sets the constant intensity
+value at which the isosurfaces will be rendered.  When you open this dialog,
+the threshold is automatically set to a certain percentile on the low side of
+the intensity distribution so as to show dark structures.  There is an option
+in the Look/Limits tab of the 3dmod Preferences dialog to have the initial
+threshold set on the high side so as to show light structures instead.  Also,
+you can use the hot key F11 to switch the threshold to an equivalent point on
+the other side of the median.<
+<P>
+The <B>Outer limit</B> slider sets a second threshold beyond which intensity
+values will be set to the median intensity, so that you can visualize just the
+intensities between two values.  However, extreme intensities are usually
+surrounded by less extreme ones; thus, if the program removed only the extreme
+ones from consideration, you would usually see a shell around places with
+extreme intensities.  To avoid this effect, the program searches up to 16 pixels
+away from extreme pixels for ones that are above the threshold and sets those
+to the median as well, as long as they are connected to an extreme one by a chain
+of adjacent pixels above the threshold.  The outer limit is constrained to be
+on the same side of the median intensity as the threshold.  No elimination is
+done when the outer limit is at the end of the intensity range.
+<P>
+The <B>X</B>, <B>Y</B>, and <B>Z</B> sliders will track the
+current point coordinate in 3dmod image display windows and can be
+used to adjust the center position of the bounding box.  The bounding
+box will center on the coordinate unless that would result in the box
+size being smaller than the slider value. 
+</P>
+<P>
+The <B>X size</B>, <B>Y size</B>, and <B>Z size</B> sliders can be
+used to set the X, Y, and Z size of the bounding box.  The maximum
+values of these sliders are set so as to prevent you from trying to
+render too large a total volume, which is especially time-consuming when
+the threshold is near the middle of the intensity distribution.  The maximum
+number of voxels allowed, as well as the number of voxels when the display
+first opens, can be controlled in the Appearance tab of the 3dmod
+Preferences dialog.  The spin boxes there set the size of a cube equivalent to
+whatever shape of volume is displayed.  Thus, display time will increase with
+the cube of these numbers.
+</P>
+<P>
+The <B>Rubberband</B> button can be used to set the size and
+center of the bounding box in X and Y from the position of the rubber band in
+the top Zap or Slicer window with a rubber band.  For a Slicer window, the
+position of the rubber band in the viewing plane is transformed to coordinates
+in the volume to obtain the minimum and maximum X and Y coordinates to assign
+to the bounding box.  The size will be limited to the maximum size
+allowed for this display but the center position will be the same as that of
+the rubber band.
+<P>
+The <B>Contour</B> button in the "Set X/Y area from" box allows you to set the 
+size and center of the bounding box to fit the current contour when you
+are masking the volume with the current contour (see
+below).  When masking with the lasso in a Zap window, the button (now
+labeled <B>Lasso</B>) will fit the bounding box to the lasso.  When masking
+with the current object, the button (now labeled <B>Object</B>) will set the
+X/Y area based on the extent of the current object over the selected Z range.
+This button is useful for recentering if you change the current contour or
+object or the center or size in Z.
+<P>
+<P>
+<B>Painting the Mesh:</B> It is possible to set different parts of the
+isosurface to different colors or transparencies by enclosing them in the
+spheres of a scattered point object.  To activate painting, turn on
+the <B>Paint obj.</B> check box and enter the object numbers of one or more
+scattered point objects in the text box (a list with comma-separated ranges is
+allowed).  You will need to define an object as scattered point type before
+entering it, or its number will be removed from the list.
+<UL>
+<LI>There are two ways to have more than one color.  The easiest way is
+  probably to have separate objects.  However, originally, all spheres had to
+  be in one object, and it was necessary to 
+  use the <A HREF="finegrain.html#TOP">Fine Grain</A> dialog.  If for some
+  reason you still use this mechanism, it is
+  probably easiest to keep track of different colors by assigning colors to
+  individual contours instead of points.  Select the <B>Contour</B> radio
+  button at the top of the dialog and use the <B>Set</B> button in the "Line
+  color" section to set the color of the current contour.
+<LI>You can adjust sphere radius for individual points with
+  the <A HREF="contourType.html#TOP">Surface/Contour/Point</A> dialog, with the mouse scroll
+  wheel in the Zap window if <B>Set with mouse wheel</B> is checked in that
+  dialog, or directly in the Model view window with the scroll wheel and Ctrl
+  and Shift keys held down.
+<LI>Spheres can overlap.  Use overlapping spheres of the same color to paint a
+  non-spherical volume.  When two spheres of the different colors overlap,
+  there will be a sharp boundary between the two colors.  If one sphere is
+  contained entirely within another, then parts of the mesh inside the smaller
+  sphere will be that sphere's color, and parts outside that sphere will be
+  the larger sphere's color.  Thus, you can make concentric shells of
+  different colors.
+<LI>If the painting object is the current object, you can hold down Ctrl and
+  Shift keys and do several modeling operations directly in the Model View
+  window, aside from adjusting the size of the current point with the scroll
+  wheel.  You can move the mouse with the left button held down to shift the
+  current point in the X/Y plane of view.  Arrow keys and the PageUp
+  and PageDown keys (not on the numeric keypad) can be used to shift in X/Y and in Z
+  as well.  Click the middle button to insert a new point in the current
+  contour.  Use the Delete key to delete the current point.  Click the right
+  button to select a different scattered point; a point on the isosurface will
+  not be picked as long as Ctrl and Shift are held down.  There are hot keys
+  to move to the next or previous object, contour or point, listed in the "Model
+  Editing Operations" section of <A HREF =  "modvKeyboard.html#TOP">Model View
+  Keyboard Commands</A>.  Some are described in terms of taking just the Ctrl
+  key, but on a US keyboard all of them will work with Ctrl and Shift held
+  down except for Ctrl+Shift+0 (i.e., Ctrl-), which is an alternative to
+  Ctrl-} ).
+
+<LI>The "Subsets" panel of the  <A HREF="modvObjectEdit.html#Subsets">Edit Objects</A>
+  dialog has an option to display only the current point; this may be useful
+  for focusing on just one point at a time when working on the painting
+  object.
+<LI>Transparency can also be applied with a painting object, although there may be
+ limitations.  To erase a part of the mesh, the best way is to set
+ transparency to 100 in the Edit Objects dialog for the object as a whole, or
+ in the Fine Grain dialog for individual contours or points.  Rendering will
+ be slower with transparency.  Artifacts often appear when two partially
+ transparent items are superimposed.
+</UL>
+<B>View isosurfaces</B> selects whether the isosurfaces will be
+computed and displayed.
+<P>
+<B>View user model</B> selects whether the regular model is displayed
+as well.
+<P>
+<B>View bounding box</B> selects whether a bounding box around the
+data will be displayed.  When it is being displayed, it will also show
+up in the Zap window regardless of what section is being displayed.
+<P>
+<B>Keep box centered</B> controls whether the dialog will center the
+subvolume being rendered in the model view window whenever its size or
+position changes.  The subvolume is also centered when this box is turned
+on, so you can use it to center the volume even if you do not want to
+leave it on.
+<P>
+<B>Link to global X, Y, Z</B> controls whether the coordinates selected in the
+sliders on the left will be linked to the current point coordinate in 3dmod image
+display windows.  If it is on, then changing these sliders will change the
+current point in 3dmod and affect other displays; also, any change in current
+point within 3dmod will change the center position of the bounding box.  If it
+is off, then the coordinates selected here become independent of the current
+point.  Turning the option off allows you to right-click on the isosurface
+without having the isosurface display move to a new position.  It is also
+useful when modeling scattered points directly in the Model View window in
+order to paint the isosurface (see below).  Finally, if the button is off, a
+masked isosurface will change dynamically as the masking contour, object, or
+lasso or modified in a Zap window.
+<P>
+<B>Binning</B> selects the amount of binning of the data in 3D; e.g., with a
+binning of 2, each voxel used for computing the isosurface will be the average
+of 8 adjacent voxels.  Binning will both increase the speed of the display and
+smooth the surface considerably.
+<P>
+<B>Filter sigma</B> selects a sigma value for filtering the
+image data in 3D with a Gaussian kernel.  This filter is applied after
+binning, if any, and the sigma is in binned pixels.  Sigma can range from 0.5
+to 3.0, with the kernel going from 3x3x3 at sigmaup to 1.0, to 5x5x5 at sigma
+up to 2.0, and 7x7x7 above that.  This filtering can produce a smoother
+surface than binning alone, but it can be time-consuming with
+larger kernel values and a large volume to filter.  The best approach for a
+smoother surface and fewer disconnected pieces would be to bin less than is
+needed, then try filtering with sigmas around 1 - 1.5.
+<P>
+<B>Smooth mesh</B> selects the number of iterations of a smoothing
+routine that moves each vertex of the isosurface toward the average of
+neighboring vertices.  Some of the change in appearance when you turn
+on smoothing may reflect a change in the way the normals to the
+surface are computed.  These normals control how light reflects from
+the surface.  With no smoothing, they are computed from the image data
+by the Chimera code, but with smoothing, they are recomputed from the triangles
+in the usual way for IMOD meshes.  Note that binning and kernel filtering will
+are both ways of smoothing that reduce extraneous pieces and protusions due to
+noise, while this method is less effective for that purpose.
+<P>
+<B>Delete small pieces</B> can be turned on to eliminate small
+pieces not connected to the rest of the surface.  The threshold size for
+eliminating pieces can be adjusted with the <B>Min size</B> spin box, which
+sets the minimum number of triangles required in order to retain a piece.
+There is significant computation involved in identifying the small pieces, so
+you may need to turn this option off while adjusting other features, then turn
+it back on.
+<P>
+<B>Cap at box faces</B> can be turned on to close off
+isosurfaces that go to the edge of the bounding box.  Otherwise, you will see
+into the inside of any isosurface that is cut by the bounding box.
+<P>
+<B>Masking:</B> It is possible to restrict the region within the bounding box
+that is rendered with one of the selections in the <B>Mask</B> box.
+<UL>
+<LI>Select <B>Current contour</B> to see isosurfaces just inside the current
+  contour, provided the current object is closed type.  The same area will be
+  shown for all planes in Z being displayed. When you first select the option,
+  the bounding box size and center will be adjusted to just fit the contour if
+  possible; if the contour is too large, the size will be restricted but the
+  center will be set the same.  However, the subvolume will not be continually
+  refit if you change contours or modify
+  the current contour, unless the <B>Link to global X, Y, Z</B> button is
+  turned off.  Press the <B>Contour</B> button in the "Set X/Y area" box to
+  refit to a new or modified contour.
+<LI>Select <B>Current object</B> to see isosurfaces inside of contours of the
+  current object, provided it is closed type.  The Z size and center sliders
+  control the range of data that will be displayed in Z.  You need not have a
+  contour on each section in the range; the program can smoothly interpolate
+  between the contours that you have drawn.  Specifically, for a section that
+  has no contours, the program finds the nearest sections above and below in Z
+  that have contours. If there is only one contour on each section, an
+  interpolated contour is computed by forming a mesh between the two given
+  contours and is used to constrain the isosurface on that section.  However,
+  the interpolation is not possible if there is more than one contour on one
+  of the sections, in which case it just uses the contour(s) on the nearest
+  section.  Other than this limitation, there is no problem with having more
+  than one contour on a section.  Just as described for <B>Current
+  contour</B>, the bounding box will be set in X and Y to fit the object when the
+  option is first selected, but if you change the current object, you need to
+  push the <B>Object</B> button to refit the subvolume.
+<LI>Select <B>Sphere</B> to see isosurfaces within the largest sphere that
+  fits inside the bounding box.  The sphere will be centered on the position
+  indicated by the X, Y, and Z sliders, unless the sphere would be truncated
+  at that position.  Thus, if you make the bounding box large enough so that it
+  does not change when you move one of these sliders, you can move the sphere
+  around within a fixed subvolume.
+<LI>Select <B>Ellipsoid</B> to see isosurfaces within an ellipsoid that
+  touches all the faces of the bounding box.  Use the <B>X, Y, Z size</B> sliders
+  to adjust the shape of the ellipsoid.
+<LI>Select <B>Zap lasso</B> to see isosurfaces just inside the lasso in the
+  top Zap window that has a lasso drawn.  This works the same as when <B>Current
+  contour</B> is selected, except in one respect.  There are two ways of
+  shifting the lasso in a Zap window: directly with the first or second mouse
+  button when it is within 10 pixels of the lasso contour; or using the
+  contour shifting/transforming enabled with the <B>Shift+P</B> hot key when no
+  current contour is selected.  With the first way, the isosurface is updated
+  only when the lasso movement is stopped (provided that <B>Link to global X,
+  Y, Z</B> is turned off).  With the second way, the isosurface is updated as
+  the lasso is shifted or transformed, just as when masking with the current
+  contour.
+</UL>
+<P>
+<B>Save Object</B> is used to create two new objects containing copies of the
+isosurfaces and the bounding box.  Until you do this, these items are
+kept in "extra objects" that are not saved with the model.  This button and
+the next one are the
+only way to save the isosurfaces in a model file and reload them.
+When the bounding box is saved, it will stop being displayed on all
+sections in the Zap window.  After you save the objects, the model
+view window will show both the isosurfaces in the extra object and the
+saved objects, unless you turn one or the other off.  If you have painted the
+isosurfaces, the current painting is stored as part of the new object and
+cannot be modified.
+<P>
+<B>Sort & Save</B> is used to sort the triangles in the isosurfaces into
+different mesh components for each physically separate piece.  These meshes
+are given different surface numbers and stored in one new object (the bounding
+box is stored in another object as well).  Once a mesh with surface numbers
+has been saved, the following capabilities are available for working with such
+objects:
+<UL>
+<LI> Whenever the current object
+contains only meshes and they have surface numbers, the program maintains a
+current surface number for mesh-only objects.  Right clicking on the display
+of the object will set this current mesh surface number.  
+<LI> The <A HREF="contourType.html#TOP">Surface/Contour/Point</A> dialog both shows 
+what surface is selected and allows you to change the current surface.  For
+example, you could choose <B>Surface only</B> in the "Subsets" panel of
+the <A HREF="modvObjectEdit.html#Subsets">Edit Objects</A> dialog then step
+though the surfaces to see one at a time.
+<LI> The <A HREF="finegrain.html#TOP">Fine Grain</A> dialog allows you to modify
+  the properties of the current mesh surface once you have
+  selected <B>Surface</B> at the top.  The four items meaningful in the 3D
+  display can be modified: line color, fill color, transparency, and 3D line
+  width.  This dialog keeps track of the last change applied, and the hot
+  key "Ctrl-F" in Model View will make it apply that change to the current
+  selection, if the <B>Last</B> button for the particular change is still
+  enabled.  Thus, you can easily color multiple surfaces by repeatedly right
+  clicking on a surface to select it and then typing "Ctrl-F".  If part of the
+  mesh was painted before saving, the painting will be retained because it
+  consists of fine grained changes inside the mesh that override changes at
+  the surface level.
+<P>
+<B>Information Stored in the Model</B>
+Several settings are stored in the model structure and also in the model file
+when it is saved: the outer limit, binning, sigma for 
+kernel filtering, smoothing iterations, whether small pieces are deleted and
+the minimum box size, and whether to cap at the faces of the box.  Only one
+value of these settings is saved, but the threshold is saved by time index if
+multiple image files are loaded.  The
+threshold is stored by its corresponding value in the image file, so that is
+it possible to reopen 3dmod with different scaling of the data and achieve a similar
+effective threshold.  The paint objects are also flagged as such in the model,
+so the list of paint objects will be restored when reopening 3dmod or the
+isosurface display.  With all these items being stored, it should be possible
+to reopen an image file being painted and have the display restored to its
+previous state.
+<P><A HREF="index.html#TOP">Help Index</A></P>
+</BODY>
+</HTML>

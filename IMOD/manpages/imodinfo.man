@@ -1,0 +1,259 @@
+.na
+.nh
+.TH imodinfo 1 2.30 IMOD
+.SH NAME
+imodinfo \- Prints information about IMOD files.
+.SH SYNOPSIS
+imodinfo  [options]  IMOD_filename
+.SH DESCRIPTION
+Prints information about an IMOD model to standard output.
+The types of information output vary, depending upon the options.
+Typical uses include printing out 
+lists of objects, contours and
+point data in an IMOD file; 
+printing out areas, lengths and centroids of contours;
+and printing out surface areas and volumes of objects or surfaces.  The
+measurements of lengths, areas, and volumes are generally expressed in terms
+of the units of the pixel size defined in the model header (e.g., nm or
+microns), if one is defined.  A Z-scale in the model header is also applied as
+appropriate.  However, reported positions are always in pixels.
+
+The program computes surface area and volume in several different ways,
+depending upon whether an object is meshed or not:
+.br
+     1) If there is no mesh information, volume is computed 
+by taking the area of each contour times the thickness of
+the sections (defined by pixel size and Z-scale), summed over all of the
+contours.  This is referred to as cylinder volume.  It will be inaccurate
+if you skipped sections in modeling, especially if you skipped sections
+routinely.  Other than this, it will be very close to correct.
+.br
+     2) If there is no mesh information, surface area is computed by taking
+the length of each contour times the section thickness, summed over all
+contours.  This is referred to as cylinder surface area and it is grossly
+inaccurate.
+.br
+     3) With mesh information, the program determines which contours are
+connected to other contours or to cap points by a mesh, and sums the area of
+contours times the distance to the connected contours in Z.  This measure is
+now referred to as the contour volume.  (It used to be referred to as mesh
+volume because it uses mesh information, even though it is not the volume
+inside the mesh.)  It handles the problem of skipped sections and also gives a
+slightly more accurate volume measurement for the capped regions because it
+integrates with a trapezoidal approximation.  This computation is valid only
+for closed contour, planar objects.
+.br
+     4) With a mesh, the program also computes a volume from the mesh by
+summing the volumes of tetrahedra formed between each mesh triangle and a
+single point at the center of the mesh.  This is referred to as the volume
+inside the mesh.  It will be slightly more accurate than the contour volume if
+the mesh completely encloses the volume, but it can be quite inaccurate if the
+mesh is not capped.  This computation is valid for any fully meshed volume,
+including tubular meshes around an open contour, as well as saved isosurface
+objects.  Such a volume can be computed for each surface if the option to
+use surface information was used when meshing.
+.br
+     5) With a mesh, surface area is computed by adding the areas of all the
+triangles in the mesh.  This is referred to as mesh surface area and it is
+an exact measure of the area of the mesh.  However, to the extent that the
+mesh is not smooth, it can overestimate the true surface
+area of the object.
+.br 
+If any of your model objects has complex topology, with contours inside of
+other contours, the computed volumes will not be correct unless the program
+analyzes for inside contours, which it does not do by default.  Use
+.B -i
+option to have the program do this analysis.  However, if you use
+.B -x
+or
+.B -y
+to specify
+a subset range in X or Y, or use 
+.B -t
+to restrict the analysis with clipping planes, the inside-contour
+analysis is done automatically and you do not need to specify
+.B -i
+separately.  With these other options, the program will give the same outputs
+as with the
+.B -i
+option.
+
+The options 
+.B -a
+, 
+.B -c
+, 
+.B -e
+, 
+.B -l
+, 
+.B -L
+, 
+.B -F
+, 
+.B -p
+, 
+.B -r
+and 
+.B -s 
+are mutually exclusive.
+.SH OPTIONS
+.TP
+.B -a
+Print ascii readable IMOD output. Not all of the types
+of data stored in a binary model are printed in an ascii
+model file, but all contour and mesh data are printed.  Also, slicer angles,
+clipping planes, and general values assigned to contours and points will be
+printed.
+.TP
+.B -c
+Print volume, surface area, and center of gravity for each object in
+column output.  For closed contour objects, the centroid is computed from the
+area enclosed inside each contour.  For open contour objects, the centroid
+is computed from the line segments themselves.
+.TP
+.B -l
+Print lengths of open contours in column output.
+.TP
+.B -L
+Print lengths of contours broken out by fine-grained color, if any,
+and excluding gaps.
+For each object, a table is printed for each color used.  This table shows the
+contour number and the length of the portion assigned that color, for each contour
+that uses the color.  If the 
+.B -h
+option is given, only summary information on total and mean lengths os
+printed.  Unlike in other length reports, this one excludes gaps from
+the total length, so this option is useful for getting correct lengths
+of what is drawn when there are gaps, even if there are no fine-grained
+colors.
+.TP
+.B -s
+Print volumes and surface areas for each separate surface in an object, as
+defined by contour surface numbers and possibly by mesh surface
+numbers.  The maximum extent, or biggest distance
+between any two points in the surface contours, is also reported.  If a
+mesh is available, the cylinder surface area is omitted from the
+report.  If any meshes have a surface number greater than 0, the volume
+inside the mesh (mesh volume) will be reported for each surface.  If
+such information seems to be available for all surfaces, the cylinder
+volume will be omitted.  To get mesh volumes, be sure to cap and to select
+the option to use surface information when meshing.
+.TP
+.B -p
+Print point size information, including a summary of mean radius, and the
+implied total surface area and volume of scattered points.  There will
+be a size output for every point in any contour that has
+points with non-zero size.  If there is a default point size for the
+object, that size will be listed when there is no size defined for an
+individual point.  For closed and open contour objects, points will be
+output only for contours having points of non-zero size, unless the
+\fB-v\vR option is given, in which case they will be output for all
+points in an object with a non-zero object point size defined.  
+These sizes will be in the model units.  Note that the
+ascii model output will also show point sizes in pixels for each point that
+has one defined.
+.TP
+.B -r
+Print ratio of length to area for closed contours.
+.TP
+.B -e
+Print properties of equivalent ellipses for closed contours.  The
+equivalent ellipse is the one with the same second moments as the area
+enclosed by a contour.  If limits are entered with \fB-x\fR, \fB-y\fR,
+or \fB-z\fR, only contours with center coordinates within the limits are
+in reported.  Only the X and Y coordinates of the points are
+considered when computing these ellipses.  For each contour, the values
+reported are the X and Y center coordinates of the ellipse (i.e, the
+centroid of the contour area), the average Z coordinate of the contour
+points, all in pixels, the semi-major and semi-minor axes in scaled
+units, the eccentricity as usually defined (a value between 0 for a
+circle and 1 for a maximally elongated ellipse), and the angle of the
+semi-major axis (a
+value between 0 and 180 except as described next).  If the range of
+angles is less than 80 degrees, then numbers will be
+reported that are suitable for simple averaging.  This is accomplished
+based on the angle of the first contour for an object: if it is less than 44, then all
+subsequent angles greater than 136 will have 180 subtracted to give
+negative angles; if it is greater than 136, 180 is then added to angles less
+than 45.  Means and standard deviations are also reported for these
+four measures; the mean of the angles will be adjusted to be between 0
+and 180.  BEWARE: if the range of angles is greater than 88 degrees,
+the mean will be meaningless unless the distribution of angles does not
+wrap around at 0 or 180, so you need to examine the individual angles
+before using the mean.
+.TP
+.B -F
+Print full report on the objects, a collection of summary information.
+.TP
+.B -o \fIlist\fR
+Print data only from the objects given in the list, a comma-separated list
+of ranges.
+.TP
+.B -i
+Analyze for inside contours and adjust computed volume by subtracting
+rather than adding the areas of contours that represent inside-out surfaces.
+This option works only for closed contours.  It is invoked automatically if
+you analyze a subset in X or Y, or use clipping planes.
+Individual contour data will not be printed for closed contour 
+objects.
+.TP 
+.B -x \fImin,max\fR
+.TP
+.B -y \fImin,max\fR
+.TP
+.B -z \fImin,max\fR
+Compute areas and volumes within the subvolume specified by the minimum and
+maximum values.  One or two of these three options may be entered if
+desired.  Subvolume analysis works only with closed contour and scattered
+point objects.  It works for options that print surface areas and volumes and 
+with the
+.B -p
+option.  In the standard output, the number of scattered points within 
+the subvolume will be reported for each object.
+.TP
+.B -t \fI1/-1\fR
+Truncate objects by their respective clipping planes; enter 
+.B -t 1
+or
+.B -t -1
+to use region shown or not shown by the clipping planes, respectively.
+All currently active object clipping planes will be applied, as well as
+any active global clipping planes for objects that do not have the setting to 
+skip the global planes.  
+Like the subvolume analysis, this option
+works only with closed contour and scattered
+point objects, and for options that print surface areas and volumes and
+with the
+.B -p
+option.
+Clipping plane truncation
+can be used together with subvolume analysis.
+.TP
+.B -v[v]
+Print more verbose output. The 
+.B -vv
+option will increase the level of output information even further.  These 
+options override the
+.B -h
+option.
+.TP
+.B -h
+Suppress the information about each contour in the standard model output.
+Use this option to extract summary information more easily from large models.
+.TP
+.B -f \fIfilename\fR
+Write output to given filename instead of to standard output.
+.SH AUTHORS
+.nf
+Jim Kremer 
+David Mastronarde
+.fi
+.SH SEE ALSO
+3dmod(1)
+.SH BUGS
+Cylinder surface areas are erroneous because they do not account for the 
+obliquity of the surface; for a sphere the area will be underestimated by
+22%.  Use mesh surface areas whenever possible.
+
+Email bug reports to mast@colorado.edu.

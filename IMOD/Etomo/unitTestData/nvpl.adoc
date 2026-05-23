@@ -1,0 +1,5 @@
+this.pair.has.no.value =
+Version = 1
+units.speed = GHz
+max.tilt = 12.
+max.volcombine = 8

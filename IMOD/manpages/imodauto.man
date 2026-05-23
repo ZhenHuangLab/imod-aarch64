@@ -1,0 +1,278 @@
+.na
+.nh
+.TH imodauto 1 2.02 IMOD
+.SH NAME
+imodauto \- creates a model from an mrc image stack.
+.SH SYNOPSIS
+imodauto  [options]  MRC_image_file  output_model_file
+.SH DESCRIPTION
+imodauto creates an IMOD model from an MRC image stack using
+a simple image thresholding.  Both a low and a high threshold may be set; 
+contours are drawn around groups of pixels that are below the low threshold
+and around pixels above the high threshold.  Image data are read from the file
+and scaled to values between 0 and 255, just as when reading into 3dmod(1).
+The thresholds may be specified as values either before or after this scaling.
+In addition, thresholds may be specified as absolute values or as
+multiples of the mean image intensity.  The default behavior is for thresholds
+to be interpreted as absolute values after scaling, in which
+case they will correspond to thresholds set in the 3dmod autocontouring window.
+.P
+Typically, you would enter either a low or a high threshold, but not both.
+However, if your images have annular regions of pixels, you can get contours
+drawn both inside and outside the regions by having the same value for the
+low and the high threshold.  The details of making this work right are handled
+by the
+.B -n
+option.  Using that option,
+you would enter the threshold once, as either a low or a high threshold, 
+depending on whether the features of interest are dark or light.  The 
+program will set the other threshold equal to the given one, and follow 
+diagonals (connect pixels touching only on their corners) and eliminate 
+contours touching edges as appropriate.  For example,
+if you enter a high threshold, then imodauto will follow diagonals when
+finding areas above threshold, but not when finding 
+areas below threshold.  This subtlety is needed
+to achieve sensible nested contours.  In this example, the program
+will also
+eliminate any contours touching the edges of the image area when 
+finding areas below threshold; otherwise a large contour enclosing most of
+the image would be produced.
+.P
+Imodauto can also be used to make contours around areas containing a
+particular uniform value, regardless of the values of neighboring pixels.
+This feature is useful if an image volume has already been segmented by other
+means to produce a volume in which different
+regions are marked with one or more values.  Use the 
+.B -E
+option to specify an exact value to generate contours around.  The value may
+be a scaled value, as read out of 3dmod(1), or it may be the actual value in
+the file if the 
+.B -u
+option is used.  The 
+.B -f
+option can be used to follow diagonals, but 3 is the only meaningful value.
+Inside contours can be found with the 
+.B -n
+option.  One problem with the model output is that it will be appear jagged as it
+follows the edges of pixels, since the interpolation method used with normal
+image data is assumed to be meaningless and is not applied.  There are three
+tools available for getting a smoother model.  1) Use the 
+.B -R
+option with a value of 0.5 to remove all points within 0.5 pixel of the
+remaining lines.  This method will still leave some jaggedness but contours
+will still follow the edges of the region fairly well.  2) Use Smoothsurf(1)
+solely to smooth the contours in 2D by entering parameters such as:
+.br
+     smoothsurf -nz 1 -dist 3 -cont 3
+.br
+This may produce smoother output than the first method, but may deviate more
+from the region at sharp corners.  3) Use the contour smoothing option in
+Drawing Tools, available from the Special menu of 3dmod(1).  Check the option
+to "ALLOW POINTS TO BE MOVED" and reduce the "min distance to move" to 0.1.
+This may be the best method.
+.P
+The program is parallelized with OpenMP by having multiple sections
+be analyzed in parallel.  This high level of parallelization
+requires multiple copies of several arrays as large as the image area
+being analyzed.  For large images, the number of threads will be
+limited to keep the memory usage under 2 GB.
+.SH OPTIONS
+.TP
+.B -l \fIvalue\fR
+Specifies the low threshold level.
+Contours will be generated around pixels that map to levels below the low
+threshold level.
+The default value is 0, which will give no contours for areas below threshold.
+.TP 
+.B -h \fIvalue\fR
+Specifies the high threshold level.
+Contours will be generated around pixels that map to levels above the high
+threshold level.
+The default value is 255, which will give no contours for areas above
+threshold.
+.TP
+.B -E \fIvalue\fR
+Specifies an exact value to generate contours around, regardless of whether
+surrounding pixels are high or lower than this (see description above).
+The
+.B -l, -h,
+and
+.B -d
+options may not be entered together with this option.
+.TP
+.B -d \fIvalue\fR
+Determines how the low and high threshold levels are computed.
+The default value is d = 1, in which case the low and high values are used
+directly.  When d = 2, the high and low values are treated as 
+factors to be applied to the mean of the image file (after loading into the
+program).  If an
+image file's mean value is 50 and the low value is 0.5 then
+the low threshold will be set to 25.  When d = 3, the low and high values 
+are factors applied to the mean of each individual section.
+.TP
+.B -u
+Specifies that the entered threshold values are to be interpreted as unscaled,
+corresponding to the actual values in the image file.  By default,
+threshold values are instead interpreted as scaled values to be applied after
+the images are scaled to the range of 0 to 255. 
+.TP
+.B -f \fIvalue\fR
+Determines whether diagonals are followed when finding groups of connected
+pixels.  The default value is 0, meaning that diagonals will not be
+followed.  With a value of 3, diagonals will always be followed.  With 1 or 2
+diagonals will be followed only for areas above the high threshold or below
+the low threshold, respectively.
+.TP
+.B -n
+Find inside contours in closed, annular regions.  To use this option, enter
+one threshold as appropriate for defining your regions of interest.
+.TP
+.B -m \fIvalue\fR
+Minimum area for each contour, in square pixels.
+Any values less than 1 will be treated as 1.
+The default value is 10.
+.TP
+.B -M \fIvalue\fR
+Maximum area for each contour, in square pixels.  If this option is not used,
+no maximum size will be enforced.
+Any value entered should be greater than
+the minimum area specified by
+.B -m.
+.TP
+.B -e \fIvalue\fR
+Criterion for eliminating contours based on the number of edges of the image
+that they touch.  Values from 1 to 4 are meaningful; for example, a value of
+2 will eliminate contours that touch 2 or more edges.  The default is zero,
+for no selection on the basis of edges touched.
+.TP
+.B -r \fIvalue\fR  
+Resolution for point shaving, in which points are removed when they are closer
+than the given distance apart.  This method of point removal will eliminate
+some detail and might be useful for smoothing; otherwise, the 
+.B -R
+option is preferable.
+The default value is 0.0, which turns this feature off.
+.TP
+.B -R \fIvalue\fR  
+Resolution or tolerance for point reduction
+when generating the final model.  Points are eliminated if they are within this
+distance of the lines connecting the remaining points, just as with the -R
+option in imodmesh(1) and the resolution feature when autocontouring in
+3dmod(1).  This method of point removal will preserve detail as well as
+possible, unlike the 
+.B
+-r
+option.
+Values in the range 0.25 to 0.5 are often useful.
+The default value is 0.0, which turns this feature off.
+.TP
+.B -s \fImin,max\fR
+Set the intensity scaling for the image data, so that
+.I min
+is mapped to 0 and
+.I max
+is mapped to 255.  The default for these values are the minimum and maximum
+from the image file header.
+.TP
+.B -X \fImin,max\fR
+Load and model a subset in X from 
+.I min
+to
+.I max,
+where the coordinates are numbered from 0.  
+.TP
+.B -Y \fImin,max\fR
+Load and model a subset in Y from 
+.I min
+to
+.I max,
+where the coordinates are numbered from 0.  If the 
+.B -e
+option is used with
+.B -X
+or
+.B -Y,
+then decisions about contours are made based on the edges of the loaded
+subset of the image, not of the full image.
+.TP
+.B -Z \fImin,max\fR
+Load and model a subset in Z from 
+.I min
+to
+.I max,
+where the coordinates are numbered from 0.
+.TP
+.B -B \fIfilename\fR
+Specify a model with boundary contours around the region(s) to be modeled.
+These contours should all be in one closed contour object.  More than one
+contour can be drawn on each section.  By default, when there are any boundary
+contours, each section will use the contours on the nearest section; thus,
+only one or a few contours may be needed.  Use
+.B -e 1
+to eliminate contours that touch the boundaries.  There is one flaw in
+this elimination if inside contours are being found: inside contours may be
+produced that are no longer surrounded by an outer contour, because the outer
+contour was eliminated while the inner ones were retained.
+.TP
+.B -S
+Apply the boundary contours only on the same sections as they are drawn;
+sections without boundary contours will be analyzed in their entirety.
+.TP
+.B -O \fIvalue\fR
+Specify the object number that contains boundary contours in the boundary
+model.  By default, the program will use the first closed contour object in
+the model.
+.TP
+.B -k \fIsigma\fR
+Smooth the data with a kernel filter whose Gaussian sigma is given by the
+entered value.  This filter is the same as the smoothing filter in the
+3dmod(1) image processing window or in Clip(1).  Use a value of 0 to select the
+simple default filter instead of the Gaussian kernel.
+.TP
+.B -z \fIvalue\fR
+Set the zscale for the model.  The zscale is a factor that compensates for
+3 dimensional data that is sampled at a different z resolution than the
+x-y plane data.  If the images have 25nm pixels and 100nm z slice size then the
+z-scale factor would be 4.0.
+.TP
+.B -c \fIr,g,b\fR
+Set the color of the model object by specifying red, green, blue values
+separated by commas.  The values can range from 0 to 1 or from 0 to 255;
+i.e., 1.0,0.5,0 and 255,128,0 could both be used to specify orange.
+.TP
+.B -x
+Expand areas by one pixel before enclosing them in contours, just as in 
+3dmod autocontouring.
+.TP
+.B -i
+Shrink areas by one pixel before enclosing them in contours, just as in 
+3dmod autocontouring.
+.TP
+.B -o
+Smooth areas before enclosing them in contours.  As in 3dmod autocontouring, 
+this is implemented by expanding then shrinking.
+.P
+The segmentation used by imodauto is a simple threshold.
+Each pixel lying between the low and high thresholds
+is thrown out.  Then, the program finds all of the separate areas lying
+below the low or above the high threshold.
+Groups of pixels with area
+greater then the value given by the -M option or area
+less then the value given by the -m option are thrown out.
+Next, contours are drawn around each remaining area.
+.P	
+If the -r option has a value greater than 0, then points are eliminated 
+from each contour if
+they are less than the given distance apart.  After that,
+if the -R option has a value greater than 0, points are eliminated
+if they are within the given distance from the lines between
+remaining points.
+.SH FILES
+If the model file already exists, it becomes a backup file with ~ added to its
+name.
+.SH AUTHORS
+Jim Kremer and David Mastronarde
+.SH SEE ALSO
+3dmod(1), 3dmodv(1), imodmesh(1), contourmod(1)
+.SH BUGS
+Email bug reports to mast@colorado.edu.

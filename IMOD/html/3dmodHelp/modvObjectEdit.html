@@ -1,0 +1,355 @@
+<head>
+<title>Model View Object Edit</title>
+</head>
+<A NAME = "TOP"><H2>Model View Object Edit</H2></A>
+
+This dialog box contains many controls for changing how individual objects are
+displayed, as well as some features governing the overall model display.
+The top sections contains some general controls and the bottom section shows
+one out of several available panels with more specialized controls.
+<P>
+Several hot keys are active only when this dialog is open because they depend
+on the object selected for editing here.  They are listed in the "Drawing Type
+and Clipping Plane Operations" section of
+<A HREF =  "modvKeyboard.html#TOP">Model View Keyboard Commands</A>.
+
+<BR><A HREF = "#LineColor">Line color</A>
+<BR><A HREF = "#FillColor">Fill color</A>
+<BR><A HREF = "#Material">Material</A>
+<BR><A HREF = "#Points">Points</A>
+<BR><A HREF = "#Lines">Lines</A>
+<BR><A HREF = "#Values">Values</A>
+<BR><A HREF = "#Clip">Clip</A>
+<BR><A HREF = "#Move">Move</A>
+<BR><A HREF = "#Subsets">Subsets</A>
+<BR><A HREF = "#MeshDraw">Mesh draw</A>
+<BR><A HREF = "#Meshing">Meshing</A>
+
+<A NAME = "General Controls"><H3>General Controls</H3></A>
+Select the current object with the <B>Object</B> spin box or the slider.
+<P>
+The <B>Edit</B> Each/All/On's/Group option menu allows one to edit just the 
+current
+object, all objects at once, just the objects that are
+currently turned On, or objects belonging to a group selected in the Object
+List window.  Features that can be edited in tandem for
+many objects include: point size, line width, material
+properties, drawing data type (contours or mesh) and style, and meshing
+parameters.  Line color can also be changed in tandem if a separate check box
+is selected.
+When <B>On's</B> is
+selected, and the current object is not On, then it will not be changed, but
+a nearby object that was changed will be made the current one so that the
+dialog can reflect your change.  Similar behavior occurs when <B>Group</B> is
+selected and the current object is not a member of the group defined in the
+Object List window.  For a feature that
+cannot be edited in multiple objects, this setting has no effect - the
+current object is the only one changed.
+<P>
+The name of each object can be edited using the text edit box.
+<P>
+The <B>Synchronize with current model object</B> checkbox allows you to keep
+the object being edited here the same as the current object in 3dmod (it
+appears only after starting the program as 3dmod).  When this is checked,
+changing the selection here will change the current object in the 3dmod
+Information window, and vice versa; otherwise the two objects are independent.
+<P>
+The numbered check boxes allow one to conveniently turn selected
+objects on and off.  When an object is turned on, it becomes the
+current object.  Only 48 checkboxes will be displayed here; if you have more
+objects, use the Edit - Object List menu entry to bring up a complete Object 
+List window.
+<P>
+The <B>Draw</B> option selects which type of data to draw.
+You can select to draw contour data or mesh data.  There is also an entry
+to turn drawing <B>Off</B>, and an entry to turn the drawing back <B>On</B>
+without having to select contour or mesh type.  The latter is useful when you
+want to turn all items back on after turning them off.
+<P>
+The <B>Style</B> option selects the drawing style.
+You can select between drawing points, lines, filled or
+filled outline.
+<P>
+To select which parameter group is displayed in the panel in the lower right
+part of the window,
+use the mouse to select one of the entries in the list box in the lower left.
+The controls in each group are listed below.
+
+<A NAME = "LineColor"><H3>Line color</H3></A>
+Use the <B>Red</B>, <B>Green</B>, and <B>Blue</B> sliders to adjust the
+line color of the current object.  This also sets the
+fill color unless a separate color is selected in the <B>Fill Color</B> panel.
+The <B>Transparency</B> slider selects object
+transparency.  Transparency is only an approximation and can
+easily generate artifacts.  To minimize these artifacts, the back
+face of the object will not be displayed unless the
+<B>Light Both Sides</B> button is selected in the 
+<B>Material</B> panel.  Try it both ways to see which looks best. 
+<P>
+By default, color changes will be applied to only one object in one
+model.  Check <B>Change multiple objects</B> to modify more than one object
+at a time.   The setting of the <B>Edit</B> combo box and the <B>Edit</B>
+radio buttons in the Model Edit window will then control which objects
+are changed together with the current object.
+
+<A NAME = "FillColor"><H3>Fill color</H3></A>
+Use the sliders to adjust the fill color of the current object. 
+Select <B>Use fill color</B> to have this color used instead of the line
+color whenever the object is being displayed as filled.  Select
+<B>Use for spheres</B> to have the fill color used just for display of
+spheres.  This would allow you to have a surface of one color studded with
+spheres of another color at selected points.
+
+<A NAME = "Material"><H3>Material</H3></A>
+The <B>Ambient</B> slider adjusts ambient, or non-directional, light
+hitting the object.
+The <B>Diffuse</B> slider adjusts light hitting the object from the
+light source, which then diffuses in a direction-dependent way. 
+The <B>Shininess</B> and <B>Specularity</B> sliders together adjust the
+shininess or highlights of the object.
+<P>
+Select <B>Light Both Sides</B> to have the object
+lit on both its outside and inside surfaces.  If you just want to have the
+inside surface show up less dark than it does by default, try increasing the 
+<B>Ambient</B> value and decreasing the <B>Diffuse</B> value to compensate.
+<A NAME = "Points"><H3>Points</H3></A>
+This panel controls the rendering of spheres that are displayed at individual
+points.  The sphere radius can be incremented, decremented, or typed
+into the spin box.  Note that setting the radius non-zero will cause
+points to be displayed at each point, even for open and closed contour
+objects.  The quality of the spheres is controlled by the
+two quality spin boxes, one to set the quality for the particular
+object, and one to set the overall minimum quality for all objects. 
+The display quality for an object is the maximum of its own
+quality setting and the global setting (range 1 - 4).  The global
+setting can also be controlled by the <B>G</B> and <B>Shift+G</B> hot keys.
+
+<A NAME = "Lines"><H3>Lines</H3></A>
+This panel has controls that affect the drawing of lines in the model view
+window, as well as some other object properties that you might want to 
+change for multiple objects at once.
+<UL>
+<LI> The <B>2D Line Width</B> slider changes the line width used when drawing the model in image display windows in 3dmod. 
+<LI> The <B>3D Line Width</B> slider
+changes the line width used to draw 
+draw the objects in the model view window.  
+<LI> The <B>Anti-alias rendering</B> check box
+selects anti-alias rendering for lines. 
+Lines will look smoother with this option on; however,
+some artifacts may be noticed.
+<LI> The <B>Thicken current contour</B> check
+box can be used to highlight the current contour by drawing it thicker
+than other contours.  This will
+have an effect only for objects whose drawing style is <B>Lines</B>. 
+This feature is most useful when using the third mouse button to select
+contours.
+<LI> The <B>Open object type</B> check box is enabled when the object type is
+closed or open, and can be used to switch objects between open and closed.  If
+the <B>Edit</B> combo box is set to <B>All</B> or <B>On's</b>, then changing 
+this setting for the current object will affect all open and closed
+contour objects, or all that are turned on.
+<LI> The <B>New contour at new Z</B> check box is enabled for open contour
+objects and controls whether a new contour is started automatically when 
+drawing on a new section in the Zap window.  If
+the <B>Edit</B> combo box is set to <B>All</B> or <B>On's</b>, then changing 
+this setting for the current object will affect all open
+contour objects, or all that are turned on.
+</UL>
+
+<A NAME = "Values"><H3>Values</H3></A>
+This panel controls the display of values that have been stored in the
+model in one of two ways.  Some programs will now store values for
+each contour or point using the fine-grained storage capabilities.
+The sda program stored surface density values in the mesh as the
+magnitude of the surface normals.  The radio buttons at the top allow
+you to select whether to <B>Show stored values</B> or to
+<B>Show normal magnitudes</B>.  
+<P>
+The <B>Black</B> and <B>White</B> sliders adjust the contrast range
+of the displayed values.  The intensity ramp can be inverted by setting the
+<B>Black</B> slider higher than the <B>White</B> one. 
+<P> 
+By default, the values
+will be shown as an intensity modulation of the
+object's color.  Use the <B>False color</B> checkbox to display the
+values in false color instead.  Alternatively, the <B>Fixed color</B> checkbox
+can be used to keep the color constant instead of modulating it with the
+stored values.
+<P>
+The <B>Turn off Low</B> and <B>High</B> buttons can be used to turn off the
+drawing of contours or points whose stored values fall below the lower of the
+Black and White levels or above the higher of the two levels, respectively.
+This feature does not work for mesh displays.  If you do not
+want to view values in false color, you can used the <B>Fixed color</B> option
+to distinguish clearly between items below and above the low threshold
+(otherwise, items just above the threshold will be too dark to see).
+<P>
+Note that once the drawing of stored values is turned on, it is applied
+to model features drawn in the image display windows, if any.
+<A NAME = "Clip"><H3>Clip</H3></A>
+These controls allow you to set up clipping planes for an
+individual
+object as well as global clipping planes that will be applied to all
+objects.  The position and orientation of a plane is adjusted by
+holding down the Ctrl key and doing the same operations that would
+ordinarily move or rotate the model.
+<P>
+The controls at the top of the panel affect the behavior of the program rather
+than applying to the current object.  Select <B>Show current plane</B> to have
+the current plane drawn as a semi-transparent plane so that you can see its
+position better.  When you switch planes or objects, you will see the new
+current plane, if any.
+Use the <B>Object</B> and <B>Global</B> radio buttons to select
+whether to adjust global planes or planes for the current object. 
+<P>
+The remaining controls affect stored properties of the global clipping planes,
+or the current object and its
+clipping planes.
+If you want the current object to be clipped only by its own planes
+and not by any global planes, turn on <B>Skip global planes</B>. 
+The <B>Plane #</B> spin box allows you to select the current plane, the one
+that is adjusted by the remaining controls.  
+Use <B>Clipping plane ON</B> to toggle the current clipping plane on or off.
+The <B>Plane #</B> spin box always allows you to select
+one plane past the highest one that has already been defined, so you can add
+another plane just by selecting the next available number and turning the
+plane on.
+<P>
+The <B>Reset X, Y, Z</B> buttons move the plane back to its default location
+through the middle of the object or model and orient it perpendicular to the
+X, Y or Z axis.  The <B>Invert</B>
+button inverts the direction of the clipping plane.
+Turn on <B>Adjust all planes</B> to operate on all of the object or
+global planes at once; these operations include moving, rotating, and
+turning on or off.  This option is useful if you have set up several
+planes to enclose a box and want to shift or rotate the box as a unit.
+<P>
+Once the current plane is turned on, hold down the Ctrl key
+to move and rotate the plane instead of the model.  Use the left mouse
+button or the arrow keys to move the plane, and the middle mouse button
+or the keypad keys to rotate the plane.
+<P>
+Up to 6 clipping planes may be defined for each object, as well as 6
+global planes.  However, the OpenGL implementation on your machine
+limits the total number of planes that can be applied to an object. 
+There are guaranteed to be at least 6 but probably are only 6.  If this
+limit comes into play, object planes count first toward the limit.
+
+<A NAME = "Move"><H3>Move</H3></A>
+This panel allows one to view orthogonal faces of the model. 
+Each column of buttons will move by 90 degree rotations about
+one of the three axes. 
+The <B>Center on Object</B> button will center the display on the 
+current object.
+
+<A NAME = "Subsets"><H3>Subsets</H3></A>
+This panel allows one to view the current object, surface or
+contour of the model, if one is selected, or just the current point in a
+scattered point object.  <B>Current Surface
+Only</B> or <B>Current Contour Only</B> will show only the current
+surface or contour in the current object.  <B>Surface & Other
+Objects</B> or <B>Contour & Other Objects</B> will show the current
+surface or contour in the current object, plus all other objects
+that are turned on.  <B>Point & Other Objects</B> is available only when the
+current object type is scattered points and will show only the current
+point in the current object, along with all other objects that are turned on.
+
+<A NAME = "MeshDraw"><H3>Mesh draw</H3></A>
+This panel has some options to control how the meshed surface is displayed.
+<P>
+You can display a surface with separation between the inner and outer sides 
+by setting <B>Surface thickness</B> non-zero.  A pair of meshes will then be
+drawn separated by this thickness, one lit from the inside and one from the
+outside.  The two meshes are created equidistant from the original mesh.  For
+example, if you want the surface to pass through both edges of a membrane,
+model the middle of the membrane and adjust the thickness to the membrane
+thickness in pixels.
+<P>
+Select <B>Draw mesh on images</B> to have mesh lines drawn on the images in
+Zap and Slicer windows.  This is the only way to see the mesh lines in an
+isosurface object.  For drawn objects, such lines will ordinarily fall on the regular
+contour lines in the Zap window, so they would be useful only to see the
+lines of a paired mesh display with a surface thickness set.  In the Slicer,
+the entire mesh is drawn in 3D and lines will show up at any angle,
+particularly if the model thickness selected to be be drawn there is
+increased.  Color changes introduced with the Fine Grained dialog or by
+painting an isosurface will be reproduced in the drawn lines, but other
+fine-grained changes in the mesh (transparency, 3D width, or general values) will not.
+Note that complex meshes, especially painted isosurfaces, may take
+significant time to drawn in the Slicer, since repeated drawing is not
+accelerated with vertex buffers as it is in Model View.
+
+<A NAME = "Meshing"><H3>Meshing</H3></A>
+This panel allows the current object to be meshed if it is an open or closed
+object.  The various controls correspond to options in 
+<A HREF = "../man/imodmesh.html#TOP">Imodmesh</A>; see that man page 
+for more details.  If the object has been meshed before, the
+parameters for that meshing will be used to set these controls.  In addition,
+any parameters set through Imodmesh but not appearing here, such as X or Y
+limits or lists of Z values to not cap to, will still be
+applied when remeshing through this interface.  If you changing the meshing
+parameters for more than one object (i.e., with an <B>Edit</B> option of with
+editing of multiple models enabled), then an object will be changed only if
+the particular parameter change is relevant for that kind of object or
+appropriate given the other parameters set for that object.
+<P>
+The controls are:
+<UL>
+<LI><B>Skip:</B> Connect contours across sections with no contours (-s
+option).  By default, connections are made only between adjacent sections.  If
+  sections have been either completely skipped or completely modeled for this
+  object, then this option alone is enough to mesh the object.  If some
+  sections are partially modeled, the <B>Passes</B> option is needed as well.
+<LI><B>Tube:</B> Make a tubular (cylindrical) mesh around open contours (-t option).
+<LI><B>Low res:</B> Make a low resolution mesh separate from the regular one
+  and keep the regular mesh (-l option).  Once a low resolution mesh has been
+  made, the only way to delete is to run 
+<A HREF =  "../man/imodmesh.html#TOP">Imodmesh</A> with the -l and -e options.
+<LI><B>Surface:</B> Use surface numbers for connections; only connect contours
+in the same surface (-S option).
+<LI><B>Cap:</B> Normally, cap all unconnected ends of the object (-C option).
+When <B>Tube</B> is selected, this checkbox controls whether the ends of tubes
+are capped (-E option).
+<LI><B>Dome cap:</B> When <B>Tube</B> is selected, you can use this option to
+get hemispherical caps on the ends of tubes (-H option).  It is not necessary
+to turn on <B>Cap</B> also.
+<LI><B>Passes:</B> Number of passes for connecting contours farther apart in Z
+(-P option).  If sections have been completely skipped when modeling, it is
+  best to use the <B>Skip</B> option to get across them.  If <B>Passes</B> is
+  also needed to connect across partially modelled sections, using
+  the <B>Skip</B> option as well will allow a smaller number of passes, which
+  will help prevent spurious connections.
+<LI><B>Diam:</B> Diameter for tube meshing (-d option).  If the value is 0,
+the 3D line width will be used; for -1 or negative numbers between 0 and -1,
+the sphere size will be used; for -2 or negative numbers less than -1, the symbol
+size will be used.
+<LI><B>Tol:</B> Tolerance for point reduction; points will be removed if they
+are within this distance of the remaining lines (-R option).  A separate value
+is maintained for regular and low resolution meshing.
+<LI><B>Z inc:</B> Increment in Z at which to mesh contours (-i option).  A
+separate value is maintained for regular and low resolution meshing.
+<LI><B>Flat crit:</B> Criterion Z extent of contours; if any contours vary by
+more than this amount in Z, then each surface will be analyzed for the
+orientation of its contours and the tilted contours will be meshed (-F
+option).  A value of 0 disables the analysis.
+<LI><B>Z:</B> Starting and ending Z of range over which to mesh, numbered from
+1 (-z option, except that is numbered from 0).  Enter a single number to mesh
+a single pair of planes, as long as the Z increment is 1; e.g., "23" will mesh
+sections 23 and 24.
+</UL>
+Pressing <B>Mesh One</b> will start the meshing on the current object on a
+separate thread, so you
+can continue using the program before the mesh is done.  When the mesh is
+done, the drawing of the object will be switched to Mesh and Fill if
+appropriate.  The resolution mode will be switched to match the resolution of
+the mesh just computed.  Note that the hot key <B>Ctrl+R</B> is used to switch between
+resolutions.
+<P>
+Pressing <B>Mesh All</B> will mesh all closed and open contour objects in the
+model.  The meshing parameters used for each object will be the ones defined
+for that object, if it has been meshed before, or it will be the default
+parameters that you would see in this panel if you switched to that object.
+The parameters visible for the current object are not necessarily the defaults
+for the other objects.
+<P>
+<A HREF="index.html#TOP">Help Index<A>

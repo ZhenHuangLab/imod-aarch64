@@ -1,0 +1,465 @@
+#!/bin/csh -f
+# Script to add Qt libraries and links to a distribution file, and copy other
+# files as needed for particular system
+#
+#  $Id$
+#
+
+# get the install directory
+#
+set instdir = `sed -n '/INSTDIR/s/^.*= *//p' configure`
+
+# Copy Qt plugins to imodplug since it is present everywhere
+#
+@ plugnum = 1
+while ($plugnum < 100)
+    set plugdir = `sed -n "/QTPLUG_SRCDIR$plugnum/s/^.*= *//p" configure`
+    if ("$plugdir" == "") break
+    set pluglist = `sed -n "/QTPLUGS_TOCOPY$plugnum/s/^.*= *//p" configure`
+    foreach i ($pluglist)
+        if (-e $QTDIR/plugins/$plugdir/$i) then
+            mkdir -p $instdir/lib/imodplug/$plugdir
+            \cp $QTDIR/plugins/$plugdir/$i $instdir/lib/imodplug/$plugdir
+            chmod -R 755 $instdir/lib/imodplug/$plugdir
+        endif
+    end
+    @ plugnum++
+end
+
+if ($#argv > 0) then
+    if ("$argv[1]" == '-p') exit 0
+    echo "The only allowed argument is '-p' to install Qt plugins only"
+    exit 1
+endif
+
+#
+# Get list of install files and copy them to install directory
+#
+set instlist = `sed -n '/INSTALL_FILES/s/^.*= *//p' configure`
+if ("$instlist" != "") then
+    foreach i ($instlist)
+        \cp dist/$i $instdir
+    end
+endif
+
+#
+# Get list of install files that need renaming and copy them to install directory
+#
+set instlist = `sed -n '/INSTALL_RENAME/s/^.*= *//p' configure`
+while ($#instlist > 1)
+    \cp dist/$instlist[1] $instdir/$instlist[2]
+    shift instlist
+    shift instlist
+end
+
+# Get list that need renaming to be called through wrappers for Vista UAC
+# Scripts must already have the final name in order for .cmd wrapper to work
+#
+set wraplist = `sed -n '/UAC_WRAPPERS/s/^.*= *//p' configure`
+while ($#wraplist > 1)
+    set fromname = $instdir/bin/$wraplist[1]
+    set toname = $instdir/bin/$wraplist[2]
+    \mv $fromname.exe $toname.exe
+    shift wraplist
+    shift wraplist
+end
+
+# Get the subdirectory to copy the libraries to
+#
+set qtlibdir = `sed -n '/QTINSTLIBDIR/s/^.*= *//p' configure`
+
+if ($#qtlibdir == 0) set qtlibdir = ""
+
+# Copy Qt assistant to this location, or to bin if not defined
+#
+set assistdir = $qtlibdir
+if ($assistdir == "") set assistdir = bin
+if (! -e $instdir/$assistdir) mkdir -p $instdir/$assistdir
+
+# Qt assistant could be an exe or a .app directory
+#
+set assistname = `\find $QTDIR/bin -maxdepth 1 -name 'assistant' -print`
+if ("$assistname" == "") set assistname = `\find $QTDIR/bin -maxdepth 1 -name '[Aa]ssistant.app' -print`
+if ("$assistname" == "") set assistname = `\find $QTDIR/bin -maxdepth 1 -name 'assistant.exe' -print`
+if ("$assistname" != "") then
+    \cp -RL $assistname $instdir/$assistdir
+else
+    echo "Qt Assistant not found in $QTDIR/bin"
+    exit 1
+endif
+
+# For Mac, we can no longer use a wrapper script since Assistant won't terminate
+# through it, but we need to know where the executable is
+# 
+if (-e $instdir/qtlib) then
+    set app = `\find $instdir/qtlib -name '*ssistant.app' -print`
+    if ("$app" != "") set assistdir = $assistdir/Assistant.app/Contents/MacOS
+endif
+
+# Now that the location of assistant executable is known, copy the SQL plugin
+set plugdir = `sed -n "/QTSQL_SRCDIR/s/^.*= *//p" configure`
+set sqlplug = `sed -n "/QTSQL_TOCOPY/s/^.*= *//p" configure`
+set assistplug = $instdir/$assistdir/plugins/$plugdir
+mkdir -p $assistplug
+if (-e $QTDIR/plugins/$plugdir/$sqlplug) then
+    \cp $QTDIR/plugins/$plugdir/$sqlplug $assistplug
+    chmod -R 755 $assistplug
+endif
+
+# Get a DLL destination dir
+#
+set dlldestdir = `sed -n '/DLLDESTDIR/s/^.*= *//p' configure`
+set dlldestorig = $dlldestdir
+if ("$dlldestdir" == "") set dlldestdir = $qtlibdir
+
+# Done if no destination location defined
+#
+if ($dlldestdir == "") exit 0
+
+# Get the dynamic library extension, which can be recursively defined
+#
+set libext = `sed -n '/^LIBEXT.*=/s/^.*= *//p' configure`
+set dllext = `sed -n '/^DLLEXT.*=/s/^.*= *//p' configure | sed "/.*LIBEXT.*/s//$libext/"`
+set dllrenlist = `sed -n "/DLLSTORENAME/s/^.*= *//p" configure`
+
+# Keep track of names of all copied items to make a file list for Windows
+set libList = ""
+
+#
+# Copy DLL's from various places to the install directory
+#
+@ dllnum = 1
+while ($dllnum < 100)
+    set dlldir = `sed -n "/DLLSOURCEDIR$dllnum /s/^.*= *//p" configure`
+
+    set dlllist = `sed -n "/DLLSTOCOPY$dllnum /s/^.*= *//p" configure`
+    if ("$dlllist" != "") then
+        foreach i ($dlllist)
+            \cp -R "$dlldir"/$i.*$dllext* $instdir/$dlldestdir
+            set libList = ($libList $i.$dllext)
+        end
+    else
+        break
+    endif
+    @ dllnum++
+end
+
+# Not currently used...
+if ("$dllrenlist" != "") then
+    pushd $instdir/$dlldestdir
+    foreach i ($dllrenlist)
+        foreach j (${i}*)
+            \mv $j imod-$j
+            @ ind = 1
+            while ($ind <= $#libList)
+                if (libList[$ind] == $j) libList[$ind] = imod-$j
+                @ ind++
+            end
+        end
+    end
+    popd
+endif
+
+# If the destination dir was qtlib, then all programs need wrapper scripts
+#
+if ("$dlldestorig" == "qtlib") then
+    set dpilist = `sed -n '/NEED_DPI_WRAPPERS/s/^.*= *//p' configure`
+    pushd $instdir/bin
+    set envar = LD_LIBRARY_PATH
+    if ("$dllext" == "dylib") set envar = DYLD_LIBRARY_PATH
+    mkdir -p realbin
+    foreach i (*)
+        file $i | grep '\-bit.*executable\|Mach-O.*executable \|shared object' >& /dev/null
+        if (! $status) then
+            mv $i realbin
+            cat << EOF > $i
+#!/bin/sh
+export ${envar}="\${IMOD_DIR}/qtlib:\${IMOD_DIR}/lib:\$$envar"
+"\$IMOD_DIR/bin/realbin/$i" "\$@"
+EOF
+        chmod a+rx $i
+        endif
+    end
+
+    # Fix 3dmodv link to have its own script with the -view option
+    #
+    if (-l 3dmodv) then
+        rm 3dmodv
+        sed '/mod\" \"/s/ / -view /' < 3dmod >! 3dmodv
+        chmod a+rx 3dmodv
+    endif
+    
+    # If there is a list of ones needing the DPI set (Linux) then add the line
+    #
+    if ("$dpilist" != "") then
+        foreach i ($dpilist)
+            sed '/bin\/sh/aexport IMOD_PHYSICAL_DPI=`imodqtassist -db`' $i >! $i.temp
+            \mv $i.temp $i
+            chmod a+rx $i
+        end
+    endif
+    popd
+endif
+
+
+# Now done if no Qt library location defined
+#
+if ($qtlibdir == "") exit 0
+
+# Make directory, copy the real file, make the links
+#
+if (! -e $instdir/$qtlibdir) mkdir -p $instdir/$qtlibdir
+
+#
+# Get names of libs to copy
+#
+set qtlibs = `sed -n '/QTLIBSTOCOPY/s/^.*= *//p' configure`
+
+# Get source for Qt libs if any
+#
+set qtlibsrc = `sed -n '/QTLIBSRC/s/^.*= *//p' configure`
+if ("$qtlibsrc" == "") set qtlibsrc = $QTDIR/lib
+
+# If the library goes to bin, it is Windows and need to copy a dll
+# First get rid of any lib's that installed into the bin with the dll's
+#
+if ($qtlibdir == "bin") then
+    \find $instdir/$qtlibdir -name '*.lib' -print -exec \rm '{}' \;
+    foreach i ($qtlibs)  
+        \cp  $qtlibsrc/${i}.dll $instdir/$qtlibdir
+        if ($status) then
+            echo "INSTALLQTLIB CANNOT FIND LIBRARY ${i}.dll IN $qtlibsrc"
+            exit 1
+        endif
+        set libList = ($libList ${i}.dll)
+    end
+
+    # 6/25/04: discovered these were not coming through right, and it matters
+    # 3/13/09: also need u+w, so just do 755
+    chmod 755 $instdir/$qtlibdir/*.dll $instdir/$qtlibdir/assistant*
+
+
+    # Now copy redistributable directory and install manifests
+    #
+    if ($?MSVCREDIST) then
+        set manifest = `sed -n '/MANIFEST/s/^.*= *//p' configure`
+        set redist = "$MSVCREDIST:t"
+
+        # If there is a manifest inside, copy the directory as a whole, otherwise copy dlls
+        if (-e "$MSVCREDIST/$redist.manifest") then
+            \cp -R "$MSVCREDIST" $instdir/bin
+            chmod -R 755 $instdir/bin/$redist
+            set libList = ($libList $redist)
+        else
+            set manifest = $manifest:h/win10.manifest
+            pushd "$MSVCREDIST" ; set msvcdlls = `ls *.dll` ; popd
+            foreach i ($msvcdlls)
+                \cp "$MSVCREDIST/$i" $instdir/bin
+                chmod 755  $instdir/bin/$i
+                set libList = ($libList $i)
+            end
+        endif
+        foreach i ($instdir/bin/*.exe)
+            if ("$i:t" != $assistname) then
+                set icyg = `cygpath -w $i`
+                foreach loop (0 1 2)
+                    set errout = `mt "-outputresource:$icyg;#1" -manifest $manifest`
+                    set errstat = $status
+                    if (! $errstat) break
+                    if ($errstat) then
+                        if ($loop == 2) then
+                            \echo "Error code $errstat running: mt -outputresource:$icyg;#1 -manifest $manifest"
+                            echo "$errout"
+                            exit 1
+                        else
+                            echo "error running mt on $i  - trying again"
+                            sleep 2
+                        endif
+                    endif
+                end
+            endif
+        end
+    endif
+
+    # Copy dll's that are missing in some fresh Win 10 installs
+    if ($?WINKITREDIST) then
+        if (-e "$WINKITREDIST") then
+            pushd "$WINKITREDIST"; set kitdlls = `ls *.dll` ; popd
+            foreach i ($kitdlls)
+                \cp "$WINKITREDIST/$i" $instdir/bin
+                chmod 755  $instdir/bin/$i
+                set libList = ($libList $i)
+            end
+        endif
+    endif
+
+    if ($?IMOD_SIGNWRAPPER) then
+        pushd $instdir
+        set exes = `\find . -name '*.exe' -print`
+        set dlls = `\find . -name '*.dll' -print | grep -v api-ms`
+        foreach i ($exes $dlls)
+            @ try = 0
+            while ($try < 5)
+                @ try++
+                "${IMOD_SIGNWRAPPER}" $i
+                if (! $?) break
+            end
+        end
+        popd
+    endif
+
+else
+
+    #
+    # Mac and Linux: add lib to front of name
+    #
+    foreach i ($qtlibs)  
+        if (-d $qtlibsrc/$i.framework) then
+
+            if (! -e $instdir/$qtlibdir/$i.framework) then
+
+            # A Framework 
+            cp -R $qtlibsrc/$i.framework $instdir/$qtlibdir
+            \find $instdir/$qtlibdir/$i.framework -depth -name Headers -exec \rm -rf '{}' \;
+            \find $instdir/$qtlibdir/$i.framework -depth -name '*debug*' -exec \rm -rf '{}' \;
+            endif
+        else
+            set files = `\find $qtlibsrc -maxdepth 1 -name "lib${i}.*${dllext}*" -print | grep -v debug`
+            if ("$files" == "") then
+                echo "INSTALLQTLIB CANNOT FIND ANY lib${i}.${dllext} in $qtlibsrc"
+                exit 1
+            endif
+            \cp -R $files $instdir/$qtlibdir 
+        endif
+    end 
+endif
+
+pushd $instdir
+set allowDYLD = "../sysdep/mac/osxAllowDYLD.plist"
+if ($?IMOD_MAC_DEV_APP_ID && -e $allowDYLD) then
+    set signArgs = "-f --options runtime --strict --entitlements $allowDYLD --timestamp --identifier"
+    set verify = "--verify --deep --strict --verbose=2"
+    set preserve = "--preserve-metadata=entitlements,requirements,runtime"
+
+    # Do all dylibs in lib
+    set dylibs = `find lib -name '*.dylib' -print`
+    foreach lib ($dylibs)
+        set rootname = $lib:t
+        codesign -s "$IMOD_MAC_DEV_APP_ID" $signArgs $rootname $lib
+        codesign $verify $lib
+        if ($status) exit 1
+    end
+
+    # qtlib has frameworks with a lib inside
+    foreach i (qtlib/*framework)
+        set rootname = $i:t:r
+        set lib = $i/Versions/Current/$rootname
+        if (-e $lib) then
+            codesign -s "$IMOD_MAC_DEV_APP_ID" $signArgs $rootname $lib
+            codesign $verify $lib
+            if ($status) exit 1
+        endif
+    end
+
+    # Do all dylibs in qtlib but preserve if already signed
+    set dylibs = `find qtlib -name '*.dylib' -print`
+    foreach lib ($dylibs)
+        set rootname = $lib:t
+        if (! -l "$lib") then
+            codesign $verify $lib |& grep -q 'not signed'
+            if (! $status) then
+                codesign -s "$IMOD_MAC_DEV_APP_ID" $signArgs $preserve $rootname $lib
+                codesign $verify $lib
+                if ($status) exit 1
+            else
+                codesign -s "$IMOD_MAC_DEV_APP_ID" $signArgs $rootname $lib
+                codesign $verify $lib
+                if ($status) exit 1
+            endif
+        endif
+    end
+
+    # do every app in bin and qtlib
+    foreach i (bin/*.app qtlib/*.app)
+        set rootname = $i:t:r
+
+        # Do the executables
+        foreach exe ($i/Contents/MacOS/*)
+            if ("$exe:t" != "droplet" && (! -d "$exe")) then
+                codesign -s "$IMOD_MAC_DEV_APP_ID" $signArgs $rootname $exe
+                codesign $verify $exe
+                if ($status) exit 1
+            endif
+        end
+
+        # Do everything not empty in resources, do not go down, it didn't want to do those
+        if (-e $i/Contents/Resources) then
+            foreach res ($i/Contents/Resources/*)
+                if ("$res:t" != "empty.lproj") then
+                    if (! -d "$res") then
+                        codesign -s "$IMOD_MAC_DEV_APP_ID" $signArgs $rootname $res
+                        codesign $verify $res
+                        if ($status) exit 1
+                    endif
+                endif
+            end
+        endif
+    end
+
+    # Do every executable in realbin
+    foreach i (bin/realbin/*)
+        set rootname = $i:t
+        codesign -s "$IMOD_MAC_DEV_APP_ID" $signArgs $rootname $i
+        codesign $verify $i
+        if ($status) exit 1
+    end
+
+endif
+popd
+
+#
+# Now handle the libs package: get some names
+#
+set qtlibPackName = `sed -n '/QTLIB_PACK_NAME/s/^.*= *//p' configure`
+set qtlibURL = `sed -n '/QTLIB_URL/s/^.*= *//p' configure`
+if ("$qtlibPackName" == "" || "$qtlibURL" == 0) exit 0
+
+set version = `sed '/[^0-9.]/s///g' .version`
+set distName = ""
+if (-e .distname) set distName = `sed '/[[:cntrl:]]/s///g' .distname`
+
+set imodSrcDir = `pwd`
+set tarList = $imodSrcDir/tarListTemp
+
+# Go to the install directory and make the LibsNeeded file with URL of the package,
+# plus all the individual files for Windows
+# Also make the list of files to tar or exclude
+pushd $instdir
+set libPack = imod_$qtlibPackName$distName.tar.gz
+set nolibBase = $imodSrcDir/imod_${version}_no$qtlibPackName$distName
+echo $qtlibURL/$libPack >! LibsNeeded
+if ("$qtlibdir" == "bin") then
+    \rm -f $tarList
+    touch $tarList
+    foreach i ($libList)
+        echo bin/$i >> $tarList
+        echo $i >> LibsNeeded
+    end
+    echo bin/PackageLibs >> $tarList
+else
+    echo qtlib >! $tarList
+endif
+
+# Go up and tar and make installer for IMOD package without libs
+cd ..
+tar -czf $nolibBase.tar.gz -X $tarList imod_${version}
+cat $imodSrcDir/dist/installStub.sh $nolibBase.tar.gz >! $nolibBase.sh
+chmod a+rx $nolibBase.sh
+
+# Go back down and package the libs and their copy of the manifest
+cd $instdir
+\cp LibsNeeded $qtlibdir/PackageLibs
+tar -czf $imodSrcDir/$libPack -T $tarList
+\rm -f $tarList
+popd
+exit 0

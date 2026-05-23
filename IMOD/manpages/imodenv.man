@@ -1,0 +1,451 @@
+.TH imodenv 1 3.10 IMOD
+.na
+.nh
+
+.SH NAME
+Description of IMOD environment variables
+
+.SH DESCRIPTION
+This page describes all of the environment variables that can be set for use
+with IMOD programs.
+
+.SS User-level variables
+
+.TP
+.B ANALYZEDM3_DEBUG
+Set this variable (no value needed) to get debugging output from the
+function that analyzes DigitalMicrograph dm3 or dm4 files for header data.
+.TP
+.B AUTODOC_DIR
+Alternative directory to search for an autodoc file when a program uses PIP
+for input.
+.TP
+.B ETOMO_LOG_DIR
+Directory into which Etomo will place error log files named by date and time,
+instead of into $HOME/.etomologs.  Set this to a non-existent name (e.g.,
+stuffAndNonsense) to have sequentially numbered error logs kept in the
+directory from which Etomo was started.
+.TP
+.B ETOMO_LOGS_TO_RETAIN
+Set this to the number of log files named by date and time to retain in the 
+directory where they are kept.  The default is 31 if this variable is not set.
+.TP
+.B ETOMO_MEM_LIM
+Memory limit for running etomo.  Define this as a number of megabytes followed
+by the letter "m".  The default of 512m is set in the etomo startup script.
+Larger values will allow larger final alignment logs to be displayed.
+.TP
+.B ETOMO_NAMING_STYLE
+The naming style when starting a project in Etomo: 0 for
+old-style with descriptive extensions, 1 for extension ".mrc", or 2 for
+extension ".hdf".  The --namingstyle option to Etomo overrides this 
+variable setting.  Note that without this variable set, setting
+IMOD_OUTPUT_FORMAT to MRC or HDF will make Etomo assume naming style 1
+or 2, respectively, but setting this ETOMO_NAMING_STYLE overrides this
+effect of IMOD_OUTPUT_FORMAT on the naming style.
+.TP
+.B FINDWARP_LEGACY_RATIOS
+Set to 1 to force Findwarp(1) to use an older method of computing the
+ratio of measurements to unknown values even for new data, or -1 to
+make it use the newer method even with older data.
+.TP
+.B IMOD_ALL_BIG_TIFF
+Set to 1 to make all new TIFF files be opened in the newer format that allows
+files bigger than 4 GB, even when it is not known at the time of
+opening that the file will be large.  Currently only Mrc2tif(1) and
+Newstack(1) will write a multi-image TIFF file bigger than 4 GB in the
+correct format.  This variable would need to be set to get other 
+other programs to write large TIFF files correctly.  However, with it
+set, smaller TIFF files written by those programs (except 3dmod
+snapshots) will be unreadable by other software that does not read
+large files.
+.TP
+.B IMOD_AUTOSAVE
+Interval at which 3dmod should autosave the model, in minutes (superceded by
+setting in 3dmod preferences).
+.TP
+.B IMOD_AUTOSAVE_DIR
+Directory into which 3dmod should autosave the model (superceded by
+setting in 3dmod preferences).
+.TP
+.B IMOD_BRIEF_HEADER
+If this variable is set (no value needed), all Fortran programs except
+header(1) will output a brief header with the dimensions, pixel size,
+mode, minimum, maximum, and mean value, and the first and last title.
+If it is set to a value greater than 1, the blank line at the end will
+also be omitted.
+.TP
+.B IMOD_CALIB_DIR
+Directory in which IMOD-related information can live, unaffected by upgrading
+the main IMOD directory.  Set by startup scripts to /usr/local/ImodCalib.
+.TP
+.B IMOD_DIR
+The path to the top IMOD directory; set by startup scripts, or can be set
+before startup script is run.
+.TP
+.B IMOD_DUMP_FSCACHE
+Makes 3dmod tell the system to dismiss the file system cache while
+loading a file on Linux.  This behavior was originally the default because,
+on early 64-bit systems with files bigger
+than about half of the system memory capacity,
+the system would swap out data within 3dmod while loading.
+This bad system behavior was no longer observed in testing on FC4, RHEL4 and 
+RHEL5.  Set this variable (no value needed) for working on systems that
+show this problem or to clear the cache in order to experiment with
+file access times.
+.TP
+.B IMOD_FORCE_OMP_THREADS
+Sets the number of threads for operations in IMOD parallelized with
+OpenMP.  Almost all such operations set an optimal thread number based on the
+size of the computation (e.g., image size), to avoid inefficient use
+of resources.  They then call the library
+function numOMPthreads, which limits this number both by the number of
+physical cores and by a value set by the environment variable
+OMP_NUM_THREADS.  If IMOD_FORCE_OMP_THREADS is set, it overrides all of these
+limits and sets the thread number directly.  Set it to a specific number, to
+ALL_CORES for the number of physical cores, or to ALL_HYPER for the
+number of logical cores with hyperthreading, if any.  Some routines
+have arrays of fixed sizes used for threads; these will still use no
+more than 16 threads.
+.TP
+.B IMOD_HDF_COMPRESSION
+Sets the index for ZIP compression when writing to an HDF file.
+Compression values can range from 1 (fastest, least compressed) to 9
+(slowest, most compressed).  A value set by this variable is overridden
+by an explicit entry to a program that provides an option for setting
+this compression level (e.g., the \fB-compression\fR option
+Newstack(1), or the \fB-quality\fR option to Makepyramid(1)).
+.TP
+.B IMOD_JAVADIR
+Location of Java to be used to run Etomo; $IMOD_JAVADIR/bin is put on the
+front of the path in the etomo startup script.
+.TP
+.B IMOD_JPEG_QUALITY
+Sets the quality level for JPEG output from programs other than
+Mrc2tif and 3dmod; values between 25 and 100 are meaningful.
+.TP
+.B IMOD_JPEG_RESOLUTION
+Sets the resolution in dots per inch stored in JPEG files produced by programs other
+than Mrc2tif and 3dmod.  This is limited to a 16-bit integer (65535)
+and cannot encode pixel sizes below 400 nm.
+.TP
+.B IMOD_M1_CURSOR_FIX
+If this variable is set (no value needed), it activates the fix for cursor
+problems originally present on the M1 Mac.  The problem seems to have been
+solved in OS 11.5, so the fix is not used by default.
+.TP
+.B IMOD_NO_IMAGE_BACKUP
+If this variable is set (no value needed), virtually all programs that create
+image files will no longer back up an existing file by adding ~ to the name.
+Instead, they will overwrite the file.
+.TP
+.B IMOD_OUTPUT_FORMAT
+Sets the default file format for new files created by virtually all
+IMOD programs.  Possible settings are MRC, HDF, TIFF (or TIF), and
+JPEG (or JPG).  TIFF and JPEG
+output will work only for programs that output data as whole images
+instead of in chunks; JPEG output must be byte or RGB mode and will only
+work when writing a single section to the output file.
+.TP
+.B IMOD_PLUGIN_DIR
+Main directory for IMOD plugins; set by startup scripts to be inside IMOD.
+.TP
+.B IMOD_PROCESSORS
+Number of processors in the computer; used by slicer to decide how many threads
+to run in parallel.  Also used to create a parallel processing table when
+cpu.adoc is not found.
+.TP
+.B IMOD_PS_FONT
+Name of a font (instead of Helvetica) to use in the Postscript output from 
+various graphics programs; Arial is good for going to Illustrator.
+.TP
+.B IMOD_QTSCALE_MIN_DPI
+Minimum DPI for 3dmod, Midas, and Ctfplotter to scale fonts and
+spacings on Linux by physical DPI divided by 96.  The default value is
+120 when this variable is not set.
+.TP
+.B IMOD_QUEUE_INIT_WAIT
+Wait time in seconds after running the command to initialize a queue in
+Processchunks(1).  The value must be -1 for an indefinite wait, or a
+positive value up to 2000000.
+.TP
+.B IMOD_QTLIBDIR
+Directory in which IMOD's copy of Qt lives, if any.  Set by IMOD startup
+scripts.
+.TP
+.B IMOD_READ_EER_SUPER_RES
+Amount of super-resolution to retain when reading from a file with the
+EER format.  Set to 0 for no super-resolution, 1 for 2x2 subpixel
+resolution, or 2 for 4x4.  This setting affects all programs that do
+not have options to manage the resolution themselves (currently 3dmod(1),
+Clip(1), and Alignframes(1)).
+.TP
+.B IMOD_READ_EER_Z_SUMMING
+Number of frames to sum when reading from a file with the EER format.
+When the summing value does not evenly divide 
+the total number of frames, the specified frame summing is the
+maximum summing that will occur, and the frames will be distributed as evenly
+as possible, with the summing lower by 1 at the beginning of the stack.
+This setting affects all programs that do not have options to manage
+the resolution themselves (currently 3dmod(1), Clip(1), and Alignframes(1)).
+.TP
+.B IMOD_STEREO_COMMAND
+When using obsolete hardware stereo, system command for switching the
+monitor to display left and right buffers in overlapping fashion.
+.TP
+.B IMOD_STEREO_RESTORE
+System command for switching the monitor back to normal mode.
+.TP
+.B IMOD_STEREO_TBOFFSET
+Default value of vertical offset when using top/bottom stereo display.
+.TP
+.B IMOD_TIFF_COMPRESSION
+Sets the type of compression for TIFF files output by programs other
+than Mrc2tif.  Must be set to an integer value: 1 for none, 5 for LZW,
+7 for JPEG, 8 for ZIP, or other values listed in the Mrc2tif manpage.
+.TP
+.B IMOD_TIFF_QUALITY
+Sets the quality level for TIFF compressed files output by programs
+other than Mrc2tif.  Values should be between 1 and 9 for ZIP
+compression and between 25 and 100 for JPEG compression.
+.TP
+.B IMOD_TIFF_RESOL_PER_INCH
+Set this variable to any value to have the pixel size stored in a TIFF
+file as dots per inch instead of dots per cm, as they were prior to
+IMOD 4.11.  This does not apply to
+3dmod snapshots, which are always saved with dots per inch.
+.TP
+.B IMOD_NO_TIFF_MEM_MAP
+Set this variable to any value to disable memory mapping when
+reading TIFF files, which can greatly increase the memory usage for
+large files.
+.TP
+.B IMOD_TMPDIR
+Path for temporary directory used by scripts.  On Windows, this can be in
+Cygwin or Windows format, with forward or back slashes.
+.TP
+.B IMOD_USE_GPU
+.TP
+.B IMOD_USE_GPU2
+These variables will tell the Tilt and Ctfphaseflip programs
+to use the GPU on a CUDA-capable NVIDIA graphics card.  Set the
+variable to 0 to use the best available GPU, or to a positive number to
+specify the GPU to use.  If there is only one GPU, 0 and 1 have the same
+effect.  The setting with IMOD_USE_GPU is overridden by the UseGPU entry to
+the program, if any, while a setting with IMOD_USE_GPU2 overrides the UseGPU entry.
+.TP
+.B INVERT_MRC_ORIGIN
+This variable can be used to override the default setting for whether
+origin values are written to an MRC file with the internal IMOD
+convention, in which subareas have more negative origin values, or with
+an inverted sign that corresponds to the MRC standard.  Set the
+variable to 1 to have origins written with the MRC standard sign, or 0
+to have them written with the internal IMOD sign.  The 
+default was changed in IMOD 4.10.44 to write with the MRC standard sign.
+.TP 
+.B MIDAS_BIN_TO_TARGET
+Set this variable to a desired size to have Midas(1) set the image binning
+to the value that makes the binned size closest to the specified size.
+The geometric mean of the sizes in X and Y is used for the image size.
+For example, a value of 1200 makes it set the binning to 2 for images
+of 1600 to 2800 pixels, 3 for images of 2800 to 4110 pixels, etc.
+Entering a specific binning with the \fB-B\fR option will override this
+automatically selected binning.
+.TP
+.B MODEL2POINT_INTEGERS
+Set this variable to any value to make Model2point output integers by
+default, its behavior before IMOD 4.10.35.
+.TP
+.B PARALLEL_BOUNDARY_SIZE
+Set this variable with the default number of pixels to use for the
+boundary region when writing in parallel to an MRC file.  This value
+will override the built-in default of 2048 provided that it is greater
+than that default; options to Splittilt(1), Sirtsetup(10),
+Splitcorrection(1), and Splitblend(1) for setting the size of the
+boundary region will in turn override this value.
+.TP
+.B PARALLEL_HDF_BUF_SIZE
+Set this variable with the number of megabytes to allocate for
+buffering data when writing to an HDF file in parallel from multiple
+processes.  The default is 20.
+.TP
+.B PIP_PRINT_ENTRIES
+Set this variable to 1 to enable printing of all options entered into a program
+using PIP input or 0 to disable it.  The variable is automatically
+set to 1 when running programs through command files (i.e., vmstocsh and
+vmstopy both add lines to their output to set the variable to 1).
+Thus, if you leave the variable unset in your environment, entries will be
+printed in programs run through "subm" but not when programs are run at the
+command line.  If you want the output when running at the command line, set
+the variable to 1 in your environment.  To avoid this output when running 
+a command file, add a line
+.br
+    $setenv PIP_PRINT_ENTRIES 0
+.br
+at the beginning of the file.
+.TP
+.B PLAX_REDRAWS
+If there is trouble with the "plax" window used by Fortran graphics programs
+not updating properly, set this variable to the number of times for it be
+drawn (try 2 or 3).  These programs include nda, sda, mtk, genhstplt,
+mtoverlap, mtpairing, avgstatplot, and filterplot.
+.TP
+.B QT_SCALE_FACTOR
+Can be set on Linux to override the high-DPI scaling determined by
+3dmod, Midas, and Ctfplotter on program startup.
+.TP
+.B RAPTOR_BIN
+Directory where alternative RAPTOR executables are located; leave this
+undefined to run the executables in IMOD.
+.TP
+.B READ_MODE0_SIGNED
+Set this variable non-zero to override the default for whether an MRC file in
+mode 0 should be read as signed or unsigned bytes.  Potential values are:
+.br
+   -2   to read all mode 0 files as unsigned, even ones with an IMOD stamp
+.br
+   -1   to read mode 0 files lacking an IMOD stamp as unsigned
+.br
+   1    to read mode 0 files lacking an IMOD stamp as signed
+.br
+   2   to read all mode 0 files as signed, even ones with an IMOD stamp
+.br
+The values of -1 and 1 could be useful if a file header has incorrect entries
+for the minimum and maximum.  Values of -2 or 2 would be needed if other
+software changed the representation of bytes in a file without modifying the
+IMOD stamp and flag values. 
+.TP
+.B RUNCMD_VERBOSE
+Set this variable to 1 to have the runcmd function called by Python programs
+print each command, input to the command, and the output of the command unless
+the output was already printed on standard out.
+.TP
+.B SUBM_LOG_TYPE
+Set this variable to a positive value up to 4 to have subm (submfg) produce
+sequentially numbered log files with the given number of digits, or to -1 to
+-3 to have a date-time stamp attached the log file name.
+.TP
+.B SUBM_MESSAGE
+Set this variable to an alternative message to be used when subm (submfg)
+completes execution of a command file.
+.TP
+.B TIFF_RES_PIXEL_LIMIT
+This variable sets an upper limit on the pixel size, in microns, that is set
+when reading a TIFF file that has resolution tags in it.  This setting affects
+whether tif2mrc(1) automatically puts a pixel size from the TIFF input into the
+output file, and whether 3dmod(1) thinks that a read-in TIFF file has a pixel
+size other than 1.  The default value is 3.0 microns.
+.TP
+.B TILECACHE_LIMIT_MB
+The variable sets the default limit on the size of the tile/strip cache in 3dmod(1)
+when an image pyramid is displayed and the cache size is not specified with
+the
+.B -C
+or
+.B -CT
+option.  The value should be an integer specifying the size in megabytes.  The
+default in 3dmod is 20000.
+.TP
+.B WRITE_MODE0_SIGNED
+Set this variable to 0 to have all MRC files in mode 0 written as
+unsigned bytes, which was the convention used by IMOD prior to 4.8.24
+but is contrary to the current MRC standard.
+
+.SS Build and Test Variables
+
+.TP
+.B BRT_TEST_OPTIONS
+When the Batchruntomo test is run in the nightly ImodTests, this
+variable can be set to provide options in place of "-cpu 2".
+.TP
+.B BRT_TEST_SOURCE_DIR
+If this environment variable is set to a location where the stacks
+BBa.st and BBb.st are located, the nightly tests in ImodTests
+will include a reconstruction of this data set with Batchruntomo.
+.TP
+.B CUDA_DIR
+Directory with CUDA toolkit, must be defined to enable building with CUDA.
+.TP
+.B CUDA_BIN_PATH
+On Windows, this must be defined as the location of CUDA binaries if they are
+not in $CUDA_DIR/bin
+.TP
+.B CUDA_LIB_PATH
+On Windows, this must be defined as the location of CUDA libraries if they are
+not in $CUDA_DIR/lib
+.TP
+.B IMOD_ALTOOL_USERNAME
+Apple ID to be used as a username when attempting to notarize a Mac
+installer package with the script notarize.sh.  This script expects
+that the password used with the notarizing command is in the login
+toolchain and named ALTOOL_PASSWORD.
+.TP
+.B IMOD_DEBUG_CHECKSUM
+If defined, enables output of components of the model checksum.
+.TP
+.B IMOD_FFTW_TIMING
+If defined, enables output from the FFTW wrapper routine about the number of
+threads used and the time consumed.
+.TP
+.B IMOD_MAC_DEV_INST_ID
+If defined with the name of a Mac Developer Installer ID, the IMOD build
+script will skip building an installer package built when a release is
+being done.  The script dist/Mac-Packages/notarize.sh can then be run
+from a Terminal; IMOD_ALTOOL_USERNAME must also be defined.
+.TP
+.B IMOD_MESH_TIMING
+If defined, enables output from the imeshSkinObject function about 
+the time consumed in each step.
+.TP
+.B IMOD_PHYSICAL_DPI
+Used in 3dmod, Midas, and Ctfplotter startup scripts on Linux to
+tell the programs the physical monitor DPI.
+.TP
+.B IMOD_REPORT_CORES
+If defined, enables output from the numOPMthreads routine about the
+number of physical and logical processors and its decision on how to
+limit the number of threads.
+.TP 
+.B IMOD_SETUP_USE_MKL
+Make the default for IMOD setup to be to use MKL.
+.TP 
+.B IMOD_TEST_SECTION
+This is passed to the uitest script when running Etomo tests.  It is used to
+choose one of the tests in uitest.adoc.
+.TP
+.B IMOD_UITEST_DATA
+When running Etomo tests, the root directory for data files.
+.TP
+.B IMOD_UITEST_SCRIPT 
+This is used in uitest.make.  It should be set to the
+location of the uitest script
+.TP
+.B IMOD_UITEST_SOURCE
+When running Etomo tests, the location of the uitest.adoc and all
+autodocs it refers to.
+.TP
+.B JAVA_DIR
+Location of Java SDK to be used by the IMOD build and test script.
+.TP
+.B MSVCREDIST
+Location of Microsoft Visual C redistributable run-time libraries that are
+to be copied when building a distribution.  When this is defined, manifests
+are also added to all executables.
+.TP
+.B QTDIR
+Location of Qt, or at least of Qt bin directory if include is elsewhere.
+.TP
+.B SCRIPT_TEST_DIR
+An alternate location for Python source scripts run by the tests in
+ImodTests/scriptTests.
+.TP
+.B SOLVEMATCH_TEST
+Set this variable to prevent Solvematch from exiting with error when given a
+data set with relative coordinates.
+.TP
+.B TEST_ALIGNFRAMES_GPU
+Set this variable to run the Alignframes test ImodTests/xformTests with GPU.
+.TP
+.B WINKITREDIST
+Location of redistributable libraries in a Windows Kit to be copied
+when building a distribution.

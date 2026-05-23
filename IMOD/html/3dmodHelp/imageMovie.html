@@ -1,0 +1,159 @@
+<head>
+<title>Image Movie Control</title>
+</head>
+<A NAME = "TOP"><H3>Image Movie Control</H3></A>
+This window allows you to control the starting and ending 
+coordinates within which a movie will run, the increment between 
+successive frames, and the frame rate.  There are also controls for
+automatically taking snapshots through the range of a movie, and for
+taking a high-resolution (montaged) snapshot of the Zap or Slicer window.  The
+options set in this dialog have an effect only while the window is open, so
+you need to keep the window open to take movie snapshots.
+<P>
+Use the axis radio buttons to select whether the sliders will adjust 
+the start, end, and increment for X, Y, Z or Time.  The initial 
+default setting is for the sliders to adjust movies in Z.
+<P>
+The start and end values for Time have another function not related to movies:
+they provide the limits for changing time with the "!" and "@" hot keys.  This
+allows you to use these keys to toggle between two selected times, not just
+the first and last time.
+<P>
+The <B>Reset</B> button will reset the start, end, and increment to 
+their initial settings (the minimum and maximum coordinates and 
+an increment of 1) for all four axes.
+<P>
+The <B>Done</B> button will close the window and reset these values in 
+the same way.
+<P>
+The <B>Rate</B> text box will display the current frame rate as it is 
+changed by the down and up Arrows or by "," and "." and will 
+also allow you to enter a custom value.  You must type Enter to 
+have your value take effect.
+<P>
+The next line shows two actual frame rates, the first averaged 
+over the time since the current movie was started, the second 
+an instantaneous rate since the last frame was displayed.  The 
+actual rate will be less than the selected rate if the display is 
+too slow to keep up, and can also differ from the selected rate 
+due to lack of precision of the system clock.
+<P>
+If <B>Round Trip</B> is selected, then movies will loop from one 
+end to the other then from that end back to the start; 
+if <B>One Way</B> is selected, then movies will always go in one 
+direction and jump back to the start when the end is reached.
+<P>
+If one of the <B>Snapshot</B> buttons, <B>TIFF</B> or one of the two non-TIFF
+buttons, is selected, 
+and a movie is started in a Zap or Slicer window, then that window 
+will automatically take a snapshot of each frame in the given format for 
+one complete cycle of the movie.  The default non-TIFF formats should be JPEG
+and PNG.  To change the format of the first non-TIFF option,
+use the menu entry <B>Edit-Options</B> and
+go to the <B>Behavior</B> panel.  The second option will be PNG if the first
+one is not PNG, or JPEG if the first one is PNG.
+<UL>
+<LI>If <B>Start/end</B> is selected, the 
+movie will start at the 
+starting or the ending section depending on whether it is started 
+with the middle or the right mouse button.  It will stop when it 
+reaches the opposite end if <B>One Way</B> is selected; otherwise it 
+will loop back to the end at which it started.
+<LI>If <B>Current pt</B> is 
+selected, the movie will start at the currently displayed section and 
+top
+come back to that point in a full round trip; in this case <B>One way</B> 
+will not give useful results.
+</UL>
+<P>
+If you stop the movie before it is done, 
+then another mouse click in that or a different window will 
+start a completely new movie.
+<P>
+<H4>Montage Snapshots</H4>
+This capability can be used to get a snapshot of a display larger
+than what will fit in the Zap or Slicer window.
+<P>
+If <B>Montage</B> is selected for one of the two window types and this dialog
+is open, then a snapshot of the window (via any
+of the Ctrl and/or Shift S hot keys) will be taken as a montage of frames at a
+higher zoom.
+High-resolution display is automatically used for these frames.
+The montage is assembled in memory and
+saved as a single TIFF or non-TIFF image, depending on which hot key was used
+for the snapshot.  In addition, if you start a movie in the
+Zap or Slicer window when one of the  <B>Snapshot</B> buttons is on, a montage
+will be taken at each section in the movie range and saved as a TIFF or
+non-TIFF image, depending on which snapshot type is selected. 
+<P>
+In the Snapshot tab of the 3dmod Preferences dialog, you can set a resolution
+in dots per inch (DPI) to be stored in a TIFF or JPEG snapshot file.  That tab
+also has an option to have your specified resolution scaled up by the
+zoom factor of the montage.  With that option selected, montages based on
+different numbers of frames will all appear at the same size as an ordinary
+snapshot in viewers that pay attention to the DPI setting (e.g., Adobe
+products).
+<P>
+Another useful option is available in the File menu: <B>Gray TIF Snaps</B>.
+With this selected, all TIFF snapshots will be converted to 8-bit gray-scale.
+This setting is not stored between instances of the program.
+<P>
+On some machines you may need to make sure that there are no other windows on
+top of the Zap or Slicer window.  The settings in this section are
+saved across sessions of 3dmod, including whether to take montage snapshots
+when the dialog is open.
+<P>
+<H4>Zap Montage Snapshots</H4>
+The <B>Montage</B> button in this section of the dialog controls whether a
+montage snapshot is taken of a Zap window.
+If <B>Whole image at 1:1 zoom</B> is <I>not</I> selected, then the
+<B>by</B> spin box is used to select the amount that
+the image is zoomed up from its current zoom for the snapshot.
+Just the area of the image showing in the Zap
+window will be captured; i.e., borders are eliminated.
+<P>Select <B>Whole image at 1:1 zoom</B> to get a snapshot of the entire image
+at a zoom of 1.  The program selects a montaging factor that will work for
+capturing the whole image at zoom 1.  This feature is useful, for example, for
+getting a full-resolution JPEG snapshot of an image that is too large to fit
+on the screen.
+<P>
+If <B>Scale sizes by</B> is selected during a montage snapshot, 
+then the thicknesses of all model
+lines and the sizes of all symbols will be scaled up by the amount selected in
+the spin box.  
+These thicker, larger lines will then show up well if the image is scaled
+back down to the original size, such as when it is embedded in a figure.
+You can select either a specific scaling or <B>Auto</B> scaling
+by selecting the value below 2 in the spin box.  With auto-scaling, the sizes
+will be scaled by the product of the zoom before montaging and the montaging
+factor for zooms below 1, otherwise by the montaging factor.  This will
+produce no scaling when taking a whole image at 1:1 zoom, and scaling by the
+montaging factor in most other cases.
+<P>
+To get a Zap montage snapshot,
+the rubberband must be off, otherwise an
+ordinary snapshot of the enclosed subarea will be taken.  
+<P>
+<H4>Slicer Montage Snapshots</H4>
+The <B>Montage</B> button in the bottom section of the dialog controls whether
+a montage snapshot is taken of a Slicer window.
+The <B>by</B> spin box is used to select the amount that
+the image is zoomed up from its current zoom for the snapshot.
+The whole area of the slicer 
+window will be captured, including any borders.
+<P>
+If <B>Scale thickness by</B> is selected during a montage snapshot, 
+then the thicknesses of all model
+lines will be scaled up by the amount selected in
+the spin box.  (The methods used to draw the model in a Slicer automatically
+scale Symbols and spheres by the absolute zoom factor.)
+These thicker, larger lines will then show up well if the image is scaled
+back down to the original size, such as when it is embedded in a figure.
+You can select either a specific scaling or <B>Auto</B> scaling
+by selecting the value below 2 in the spin box.  With auto-scaling, the sizes
+will be scaled by the product of the zoom before montaging and the montaging
+factor for zooms below 1, otherwise by the montaging factor.  This will
+produce a scaling that is appropriate when the output image is scaled back to
+the size that original image would have at 1:1 zoom.
+<P>
+<A HREF="index.html#TOP">Help Index<A>

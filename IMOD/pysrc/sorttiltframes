@@ -1,0 +1,228 @@
+#!/usr/bin/env python
+# sorttiltframes - sort out filenames by tilt angles embedded in their names
+#
+# Author: David Mastronarde
+#
+# $Id$
+
+progname = 'sorttiltframes'
+prefix = 'ERROR: ' + progname + ' - '
+
+# load System Libraries
+import sys, os, glob, re, math
+
+#
+# Setup runtime environment
+if os.getenv('IMOD_DIR') != None:
+   sys.path.insert(0, os.path.join(os.environ['IMOD_DIR'], 'pylib'))
+   from imodpy import *
+   addIMODbinIgnoreSIGHUP()
+else:
+   sys.stdout.write(prefix + " IMOD_DIR is not defined!\n")
+   sys.exit(1)
+
+#
+# load IMOD Libraries
+from pip import *
+
+# Fallbacks from ../manpages/autodoc2man 3 1 sorttiltframes
+options = ["input:InputFile:FNM:", "listin:ListOfInputFiles:FN:",
+           "stack:TiltSeriesFile:FN:", "angle:TiltAngleFile:FN:",
+           "outlist:OutputFileList:FN:", "tilt:OutputTiltAngleFile:FN:",
+           "reverse:ReverseOrder:B:", "unsorted:UnsortedOutput:B:",
+           "delim:Delimiters:CH:", "fixed:FixedImageDose:F:", "dose:DoseOutputFile:FN:",
+           "help:usage:B:"]
+
+# PIP startup and help
+(opts, numNonOpts) = PipReadOrParseOptions(sys.argv, options, progname, 1, 2, 0)
+
+# Read all options
+outFile = PipGetString('OutputFileList', '')
+listFile = PipGetString('ListOfInputFiles', '')
+angleFile = PipGetString('TiltAngleFile', '')
+tiltSeries = PipGetString('TiltSeriesFile', '')
+tiltOutFile = PipGetString('OutputTiltAngleFile', '')
+delims = PipGetString('Delimiters', '[]')
+reverse = PipGetBoolean('ReverseOrder', 0)
+revEntered = 1 - PipGetErrNo()
+unsorted = PipGetBoolean('UnsortedOutput', 0)
+fixedDose = PipGetFloat('FixedImageDose', 0.)
+doseOutput = PipGetString('DoseOutputFile', '')
+
+# Check for problems and conflicting options
+if len(delims) != 2:
+   exitError('You must enter exactly two delimiting characters with -d')
+
+if unsorted and revEntered:
+   exitError('You cannot enter both -u for unsorted and -r for reverse-sorted')
+
+if (fixedDose > 0 and not doseOutput) or (fixedDose <= 0 and doseOutput):
+   exitError('You must enter both -dose and -fixed if one is entered')
+
+angles = []
+outList = []
+doseList = []
+angleTol = 0.1
+delimMatch = re.compile(delims[0] + '\\-?[0-9][0-9]?\\.[0-9][0-9]?' + delims[1])
+
+numInByOpt = PipNumberOfEntries('InputFile')
+numTotalIn = numInByOpt + numNonOpts
+
+if listFile and numTotalIn:
+   exitError('You cannot enter a list file and filenames as command line arguments too')
+
+if not listFile and numTotalIn < 2:
+   exitError('You must enter at least two filenames on the command line or a list file')
+
+# Get the filename from the list file or the non-option arguments
+if listFile:
+   fileList = readTextFile(listFile)
+else:
+   fileList = []
+   for ind in range(numTotalIn):
+      if ind < numInByOpt:
+         fileList.append(PipGetString('InputFile', ''))
+      else:
+         fileList.append(PipGetNonOptionArg(ind - numInByOpt))
+
+# If tilt angles to be matched, check for conflicts
+if tiltSeries or angleFile:
+   
+   if revEntered:
+      exitError('You cannot enter a file with angles to match and also indicate ' +\
+                   'the direction to sort')
+   if unsorted:
+      exitError('You cannot get unsorted output lists when entering a file with ' +\
+                'angles to match')
+
+   if tiltSeries and angleFile:
+      exitError('You cannot enter both "-s tiltSeries" and "-a angleFile"')
+
+   # Use extracttilts to get the tilt angles from the file
+   if tiltSeries:
+      try:
+         extractLines = runcmd('extracttilts "' + tiltSeries + '"')
+      except ImodpyError:
+         exitFromImodError(progname)
+
+      # Find first blank line from the end
+      for ind in range(len(extractLines) - 1, -1, -1):
+         if extractLines[ind].strip() == '':
+            angleText = extractLines[ind + 1:]
+            break
+      else:    # ELSE ON FOR
+         exitError('Cannot find blank line before angles in output from extracttilts')
+
+   # Or just read the tilt file
+   else:
+      angleText = readTextFile(angleFile)
+
+   # Convert the values
+   for line in angleText:
+      try:
+         angles.append(float(line))
+      except ValueError:
+         exitError('Converting angle value ' + line + ' to float')
+
+   if not angles:
+      exitError('Angle list from file is empty')
+         
+# Analyze the filenames for floating point number between delimiters
+templist = []
+fileAngles = []
+numToss = 0
+sortInds = []
+numMultiple = 0
+accumDose = 0.
+accumList = []
+for item in fileList:
+   indLast = 0
+   used = False
+   if item.strip() == '':
+      continue
+   while re.search(delimMatch, item[indLast:]):
+      if used:
+         numMultiple += 1
+         used = False
+         break
+
+      mat = re.search(delimMatch, item[indLast:])
+
+      # Try converting the number and save filename and angle to list
+      try:
+         angle = float(item[mat.start() + 1 : mat.end() - 1])
+         used = True
+         break
+      except ValueError:
+         pass
+
+   if used:
+      fileAngles.append(angle)
+      templist.append(item)
+      if fixedDose > 0:
+         accumList.append(accumDose)
+         accumDose += fixedDose
+
+   else:
+      numToss += 1
+
+
+if not fileAngles:
+   exitError('None of the entered filenames have a number with decimal point between ' +\
+                'the delimiters')
+
+if numMultiple:
+   prnstr(fmtstr('WARNING: {} - Multiple parts of the name look like a tilt angle ' +\
+                 'in {} names', progname, numMultiple))
+      
+# Make list of unique angles and sort them if no angles entered
+if not angles:
+   for tilt in fileAngles:
+      if tilt not in angles:
+         angles.append(tilt)
+   if not unsorted:
+      angles.sort(reverse = reverse)
+   
+# For each angle in list, find the file angles that match within tolerance and add to
+# output list
+outTilts = []
+for angle in angles:
+   numFound = 0;
+   for ind in range(len(fileAngles)):
+      if math.fabs(angle - fileAngles[ind]) < angleTol:
+         numFound += 1
+         outList.append(templist[ind])
+         outTilts.append(fmtstr('{:8.2f}', angle))
+         if fixedDose:
+            doseList.append(fmtstr('{}  {}', accumList[ind], fixedDose))
+
+   if not numFound:
+      exitError(fmtstr('No files were found with an angle within {} of tilt angle {}',
+                       angleTol, angle))
+
+# Give warning outputs of unused or non-matching files
+if numToss:
+   prnstr(fmtstr('WARNING: {} - {} filenames did not have a number with decimal point ' +\
+                    'between the delimiters', progname, numToss))
+   
+if len(outList) < len(fileAngles):
+   prnstr(fmtstr('WARNING: {} - {} filenames did not have a number matching any tilt ' +\
+                    'angle', progname, len(fileAngles) - len(outList)))
+
+# Output the list to file or terminal
+if outFile:
+   writeTextFile(outFile, outList)
+else:
+   for name in outList:
+      prnstr(name)
+
+if tiltOutFile:
+   writeTextFile(tiltOutFile, outTilts)
+   if not outFile and numToss:
+      prnstr(fmtstr('WARNING: {} - {} of the input filenames were omitted from the ' +\
+                    'output lists', progname, numMultiple))
+
+if doseOutput:
+   writeTextFile(doseOutput, doseList)
+
+sys.exit(0)

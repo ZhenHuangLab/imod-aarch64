@@ -1,0 +1,82 @@
+<html><head><title>Autodoc Module</title>
+<body>
+<A NAME = "TOP"></A>
+<H2  align="center">Autodoc Module</H2>
+The autodoc module contains functions for reading from and writing to autodoc
+type files, with named sections and key-value pairs within sections.  There is
+a Fortran wrapper for almost every function listed here, with the same calling
+conventions.  The only difference is that indices are numbered from 1 instead of
+0, including returned indices.  However, error codes returned to Fortran are
+not shifted up and are as listed below.  There are no wrappers yet for
+<A HREF="#AdocAppendSection">AdocAppendSection</A>,
+<A HREF="#AdocDeleteSection">AdocDeleteSection</A>,
+<A HREF="#AdocGetNumberOfKeys">AdocGetNumberOfKeys</A>,
+<A HREF="#AdocGetKeyByIndex">AdocGetKeyByIndex</A>, and
+<A HREF="#AdocGetValTypeAndSize">AdocGetValTypeAndSize</A>.  There are also no
+wrappers for a set of functions that write directly to a file without going through
+an autodoc structure; these are to support rapid writing from SerialEM.
+<P>
+The basic unit of organization in the autodoc file is the section, which
+starts with a line of the form:
+<BR>
+[SectionType = name]
+<BR>
+There can be many sections of the same type, i.e., having the same key name
+for the section, named <B>typeName</B> in the functions below.  Each of these
+would typically have a different value for the name entry, although this is
+not strictly necessary as no uniqueness is enforced and sections are not
+ordinarily looked up by name.  All of the sections of
+the same type are held in an array, referred to as a collection, and they are
+accessed by their array
+index.  Thus, functions for setting or getting values from a section all
+refer to the section by its <B>typeName</B> and its index <B>sectInd</B>.
+<P>
+Inside of a section, the autodoc contains a set lines with key-value pairs,
+of the form:
+<BR>
+key = value
+<BR>
+In general, the values are stored as strings, but functions below can be used
+for storing or retrieving the values from strings consisting of 1 to 3 floats
+or integers.  Sections of the same type do not need to have the same set of
+key-value pairs defined.
+<P>
+Every autodoc structure is initialized with a section for global data stored 
+at the start of the file, before any actual sections are defined.  These data
+are accessed by calls with a <B>typeName</B> of "PreData" and a <B>sectInd</B>
+of 0.  C programs should use ADOC_GLOBAL_NAME, which is defined as "PreData";
+Fortran programs should call
+<BR>
+integer*4 AdocGetStandardNames(globalName, zvalueName)
+<BR>
+to fetch this string and also the important string ADOC_ZVALUE_NAME, which is
+defined as "ZValue".  That function returns -1 if a string does not fit into
+the supplied character argument.
+<P>
+Comments on lines starting with # can occur anywhere in an autodoc.  They will
+be preserved when it is read in and generally be written out again in front of
+the same item.
+<P>
+An autodoc can be written as an XML file, and simple enough XML files can be
+read in and stored in the autodoc structure.  When reading from an XML file,
+the root element can be anything, although the calling program may insist on a
+particular element name.  When writing, the root element
+will be &lt;autodoc&gt; unless the autodoc was read from an XML file or the
+name was set with <A HREF="#AdocSetXmlRootElement">AdocSetXmlRootElement</A>.
+Each section is written as a top-level child of the root element in this form:
+&lt;typeName name="value"&gt;, although the
+global section is written as &lt;PreData&gt; without a name.  Key-value pairs
+within a section are all written as children of the top-level child with the
+form &lt;key&gt;value&lt;/key&gt;. Empty values are allowed and written as 
+&lt;key /&gt;.  Any
+XML file that conforms to this structure can be read in; namely, each
+top-level child must have a name attribute except "PreData", and children of
+those nodes must be simple key-value pairs with no attributes or children.
+The latter will simply be lost; see <A HREF="#AdocXmlReadStatus">AdocXmlReadStatus</A>.
+<P>
+Header to include: autodoc.h
+<P>
+LIST FUNCTIONS FROM autodoc.c
+<P>
+DESCRIBE FUNCTIONS FROM autodoc.c
+</body>

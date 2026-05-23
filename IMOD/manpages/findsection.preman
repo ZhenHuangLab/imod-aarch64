@@ -1,0 +1,164 @@
+.na
+.nh
+.TH findsection 1 4.6.34 IMOD
+.SH NAME
+findsection - Locates section boundaries in tomograms
+.SH SYNOPSIS
+findsection [options] tomogramFile(s)
+.SH DESCRIPTION
+Findsection will analyze an entire tomogram, or separate samples from a
+tomogram, to determine the boundaries of sectioned material.  It can
+create a simple model of straight lines along the top and bottom
+surfaces, suitable for use in Tomopitch(1).  It can also create a model
+with contours along the surface, suitable for use with Flattenwarp(1).
+It will also estimate the top and bottom Z levels at which various
+amounts of the material are
+present, which may be useful for setting the Z limits when combining
+two tomograms or when trimming a tomogram.  In a largely separate mode
+of operation, it can analyze the structure in a cryo-tomogram to
+determine the best orientation angles and lower and upper limits in the
+thickness dimension, then produce a model for Tomopitch(1).
+.P
+See the EXAMPLES section for command-line entries in some of these
+different cases.
+.SS Detection of Surfaces in Sectioned Material
+The detection of surfaces begins with an analysis of the standard
+deviation of image intensity in an array of overlapping boxes.  This
+analysis is done simultaneously at a number of scales or binnings.  The
+motivation for this multi-scale analysis is to find and use the scale
+at which structure is most distinct from background noise.  Although
+the options provide complete control over binning in each dimension,
+only isotropic binning makes sense from the standpoint of noise
+suppression.  However, that does not mean that the boxes themselves
+need to be cubes; instead, they can be very thin in the thickness
+dimension to provide the maximum resolution for detecting the section
+boundary. The boxes also do not need to contain the same number of
+binned pixels, as long as they are big enough to contain enough pixels
+for a good estimate of SD at the highest binning.  It thus works to
+have boxes occupy about the same volume at the different scales, so
+this happens by default.  An overlap of 50% between boxes is also a
+default, so overlap need not be specified.  In short, the two important
+entries that are needed are the number of scales to analyze and the
+unbinned box size.  Four scales are appropriate unless data are already
+binned.  Box sizes of 32x32x1 or bigger are useful.
+.P
+After SD is measured in each box, the program measures the median and
+the normalized median absolute deviation (MADN) of SD in two regions: a
+central region where SD appears to be high (which varies in depth
+across the area), and thin regions near the top and bottom in the depth
+dimension.  The number of boxes, median, and MADN of each regions are
+shown for each scaling in a table.  On the far right of the table is a
+measure of how distinct the central region is from the edge at that
+scaling; these numbers are used to pick the best scaling.
+.P
+Further analysis is done by grouping columns of the overlapping boxes
+into blocks, ideally consisting of about 
+25 boxes in X and Y.  The extent of a block in
+unbinned pixels is controlled by the \fB-block\fR option, which has
+situation-dependent defaults.  In a block, the median of the SD
+values is determined at each Z level; this median is
+insensitive to the presence of gold particles outside the section as
+long as the gold does not contribute to too many boxes.  The Z-levels at which the SD
+falls off the fastest are taken as the boundaries of the section at
+the X/Y location of the block.
+.P
+The collection of boundary points on each surface is then smoothed with a local robust
+regression; this smoothing can thus eliminate aberrant points arising
+either from gold outside the section or a small hole in density at
+the surface.  The smoothed points are used directly if a boundary model
+is being created.  To make a model for tomopitch when there are
+multiple (sample) tomograms, the program fits a
+pair of lines to the points on the two surfaces for each sample
+tomogram.  When there is a single tomogram, the program fits a pair of
+lines at a specified number of locations in Y; the fitted points may
+extend over more than one block in Y.  In either case, the lines are
+then spread apart so that they contain all of the points, with a small
+margin added based on how fast density falls at the surface.
+.P
+Regardless of whether there is a model output, when given a single
+tomogram, the program computes the median Z value at each surface, the
+Z values that contain all boundaries, and Z limits suitable for
+automatic patch fitting with Autopatchfit(1).  By default, the latter limits will
+contain at least 90% of the boundary points and the limits plus or
+minus 20 pixels will contain at least 99% of the
+points.
+.SS Analysis of High SD Values in Cryo-tomograms
+When the \fB-high\fR option is entered, the program uses a much less
+ambitious analysis. The computation of SD values in boxes proceeds as
+usual, but the statistics of the central region are obtained from a sample with
+a much bigger extent in depth, and there is no attempt to vary the
+depth of the sample.  The measure of the distinctness between center
+and edge for each scale is the fraction of boxes in the center that
+deviate by the criterion number of MADN's from the edge median.  The
+best scale is chosen from this distinctness measure.
+.P
+The program takes the lowest and highest box in each column that
+deviates sufficiently from the edge as boundary points, then searches for the rotation
+angles that minimize a measure of spread.  At each rotation angle, the
+program measures the MADN of the Z values separately for the rotated
+lower and upper boundary points.  The two MADN values are normalized by
+their values at zero rotation and averaged.  If a model of gold bead
+positions is supplied with the \fB-bead\fR option, then the lower and
+upper Z values of these positions are determined at each rotation, with
+a certain fraction of most extreme values ignored.  The difference
+between lower and upper Z values is normalized by its value at zero
+rotation and averaged in to the spread measure.
+.P
+Once the rotation angles are known, the program analyzes a histogram of
+Z values for the rotated lower boundary points, finding the point where
+rises above its baseline level when going from low to high Z.  It does
+the same analysis for the upper boundary points, but going from high to
+low Z.  These two boundary values are then spread apart by the amount
+indicated by the \fB-boost\fR option, if any.  If gold bead positions
+are also available, upper and lower limits are found for the rotated
+positions and combined with the limits from the boundary points to give
+the reported boundaries.  A model for Tomopitch(1) is using the angles
+and boundaries.
+.P
+Other methods for analyzing high SD values are still present in the code and
+there are control values for activating them, but these alternatives
+did not perform well and are not described here.
+.SH OPTIONS
+Findsection uses the PIP package for input (see the manual page
+for pip(1)).  Options can be specified either as command line
+arguments (with the -) or one per line in a command file
+(without the -).  Options can be abbreviated to unique letters; the currently
+valid abbreviations for short names are shown in parentheses.
+INSERT OPTION TEXT HERE
+.TP
+.B -StandardInput
+Read parameter entries from standard input
+
+.P
+.SH EXAMPLES
+To generate a model to use in Tomopitch(3), given a whole sample
+tomogram that has been binned by 3 or more, still in its original
+orientation:
+.nf
+  findsection -scal 2 -size 16,1,16 -block 48 -samp 5 -pitch tomopitch.mod filename.rec
+.fi
+.P
+To generate a model to use in Tomopitch(3), given three unbinned
+samples (bot.rec, mid.rec, top.rec) that each have 20 slices:
+.nf
+  findsection -scal 4 -size 50,1,20 -pitch tomopitch.mod bot.rec mid.rec top.rec
+.fi
+.P
+To generate a model to use in Flattenwarp(1):
+.nf
+  findsection -scal 4 -size 32,32,1 -surf setname_flat.mod -axis -12 setname.rec
+.fi
+where the volume should already be post-processed so that Z is the
+depth dimension, setname is the name of the dataset, and the number after
+"-axis" should be your tilt axis rotation angle.  If the aligned stack
+or tomogram was bigger or smaller than a full-sized aligned stack in X
+and Y, then you also need to add "-tilt nx,ny" where "nx" and "ny" are
+the size the raw tilt series, divided by the binning if any.
+.P
+.SH HISTORY
+.nf
+Written by David Mastronarde, September 2014, to replace an earlier
+Fortran program of the same name.
+.fi
+.SH BUGS
+Email bug reports to mast@colorado.edu.

@@ -1,0 +1,63 @@
+.na
+.nh
+.TH expandargs 1 4.8.51 IMOD
+.SH NAME
+expandargs -\ Expand wildcards in arguments and run a program
+.SH SYNOPSIS
+expandargs  <command or options>  arguments...
+.SH DESCRIPTION
+Expandargs is a Python script that can be used to expand filename wildcard
+arguments on Windows when they are too complex for the filename expansion that
+is built in to programs (if any).  It can also be used to produce a file with
+the expanded arguments in a simple list or in a form suitable for use with the
+\fB-filein\fR option to Newstack(1).  The latter may be useful on non-Windows
+systems, but there the argument list would need to be quoted to have
+it expanded by this script instead of by the shell.  The script is run
+in one of three ways:
+   expandargs command arguments...
+.br
+or
+   expandargs -o outputFile arguments...
+.br
+or
+   expandargs -o outputFile -s sectionList arguments...
+.br
+In the first form, the arguments will be expanded and the command will be run
+with those arguments.  In the second form, the filenames will be placed into
+the given output file, one per line.  In the third, the output file will
+have the following format, which can be supplied to the \fB-filein\fR option
+to Newstack(1):
+.nf
+   # of files
+   filename1
+   sectionList
+   filename2
+   sectionList
+   ...
+.nf
+The same section list will be put in the file for each line.  If the arguments
+specify a set of single-image files, simply use "-s 0".  The "-s"
+argument can also be put before the "-o" entry.
+.P
+The filenames can contain constructs like:
+.nf
+   *        matching any set of characters
+   ?        matching any one character
+   [acg]    matching any one of a, c, or g
+   [a-g]    matching any letter from a to g
+   [^acg]   matching any one character except a, c, or g
+   [^a-g]   matching any one character except one frmo a to g
+.fi
+These wild cards can occur multiple times, in different directories of
+a path.  For example "[^t]*/*[0-9][0-9][0-9].mrc" will match all files
+ending in three digits and ".mrc" in any directory except ones starting
+with "t".
+.P
+Many IMOD programs will do wild card expansion for filenames entered as
+non-option arguments (ones without an option, typically entered at the
+end of the command).  However, this works only with "*" and "?", and
+multiple expansions in different directory components of the path (such
+as occur in that last example) will work only for Python scripts.
+.SH AUTHOR
+David Mastronarde,  mast@colorado.edu
+

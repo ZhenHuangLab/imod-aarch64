@@ -1,0 +1,455 @@
+#!/bin/bash
+# A script to submit a .csh file to a queue and delete or kill a job
+#  $Id$
+#
+
+# Leave the connection timeout out of these options, there should not be
+# connection problems the way there are with 
+sshopts="-o PreferredAuthentications=publickey -o StrictHostKeyChecking=no"
+pn=queuechunk
+qstattmp=queuechunk.$$
+
+headnode=
+queuename=
+qtype=
+action=
+maui=0
+resources=
+
+# Current directory, with spaces escaped
+curdir=`pwd | sed '/ /s//\\ /g'`
+
+# FUNCTIONS
+
+# Get the job ID
+#
+getJobID() {
+    jobID=0
+    if [[ $qtype != "slurm" ]] || ! [[ -e slurmalloc.jobid ]] ; then
+        if ! [[ -e $qidname ]] ; then return ; fi
+    fi
+
+    if [[ $qtype == "pbs" ]] ; then
+        # May need to take the full server name in some cases, i.e. just cat
+        #
+        jobID=(`sed 's/[^0-9]//g' $qidname`)
+    elif [[ $qtype == "slurm" ]] ; then
+        if [[ -e slurmalloc.jobid ]] ; then 
+            # Running under a prior allocation
+            jobID=`cat slurmalloc.jobid`
+        else
+            # Running under an allocation for this chunk
+            jobID=(`sed 's/^.*job \([0-9.]*\)/\1/' $qidname`)
+        fi 
+    else
+        jobID=(`sed 's/^.*job \([0-9]*\) .*/\1/' $qidname`)
+    fi
+}
+
+# Run a command to the queue system, possibly via ssh to head node
+#
+runQcommand() {
+    qcom=$1
+#    echo $qcom
+    if [[ -n "$headnode" ]] ; then
+        if [[ $2 == "1" ]] ; then qcom="cd $curdir && ($qcom)" ; fi
+#        echo $qcom
+        ssh -x $sshopts $headnode  bash --login -c \'"$qcom"\'
+        runstat=$?
+    else
+        eval $qcom
+        runstat=$?
+    fi
+}
+
+# Get the status of a job, jobID should already be gotten
+#
+getStatus() {
+    com=qstat
+#    if [[ -n "$queuename" ]] ; then com="qstat -q $queuename" ; fi
+    if [[ $qtype == "pbs" ]] ; then
+        com="$com $jobID | tail -n 1 > $qstattmp"
+    elif [[ $qtype == "sge" ]] ;  then
+        com="$com -u \\\$user | grep \"^ *$jobID \" > $qstattmp"
+    else    # [[ $qtype == "slurm" ]]
+        com="squeue -j $jobID -h -o %t > $qstattmp"
+    fi
+    runQcommand "$com" 1
+    #echo $runstat
+    #cat $qstattmp
+    jobStat=D
+    if ! [[ -e $qstattmp ]] ; then return ; fi
+    statline=(`cat $qstattmp`)
+    rm -f $qstattmp
+    if [[ -z $qstattmp ]] ; then return ; fi
+    if [[ $qtype == "slurm" ]] ; then
+        stat=$statline
+    else
+        stat=${statline[4]}
+    fi
+    # Simplify to Q if not run yet, R if running, D if done
+    #
+    if [[ $qtype == "pbs" ]] ; then
+        if [[ $stat == "R" ]] ; then jobStat=R ; fi
+        if [[ $stat == "Q" || $stat == "H" ]] ; then jobStat=Q ; fi
+    elif [[ $qtype == "sge" ]] ; then
+        if [[ $stat == "r" || $stat == "R" ]] ; then jobStat=R ; fi
+        if [[ $stat == "qw" || $stat == "q" || $stat == "t" || $stat == "h" ]] ; then 
+            jobStat=Q
+        fi
+    else    # [[ $qtype == "slurm" ]]
+        if [[ $stat == "PD" || $stat == "CF" ]] ; then jobStat=Q ; fi
+        if [[ $stat == "R" || $stat == "CG" ]] ; then jobStat=R ; fi
+    fi    
+}
+
+# Given a Slurm allocation ID and step name, return the step ID in global 
+# stepID. This only applies when running Slurm using a prior allocation.
+#
+getSlurmStepID() {
+    allocID=$1
+    stepName=$2
+    stepID=
+    if [[ $qtype != "slurm" ]] || ! [[ -e slurmalloc.jobid ]] ; then
+        return
+    fi
+ 
+    # Get a list of step names and ids
+    com="squeue -h -s -j $allocID -o \"%j %i\" >$qstattmp"
+    runQcommand "$com" 1
+    # Pull out the id of the step with the desired name
+    stepID=`cat $qstattmp | grep $stepName | sed -e's/.* \([0-9.]*\)$/\1/'`
+    rm -f $qstattmp
+}
+
+# Start of script execution: test for usage statement
+#
+if [[ $# -eq 0 ]] ; then
+    cat <<EOF
+Usage: $pn [options] comfile_root
+Will perform an action on a batch queue for the given com file (omit .com)
+The com file root may be omitted if the action is L
+  Options:
+    -q name   Name of queue (or qos under slurm)
+    -h name   Name of head node, to be contacted via ssh
+    -t type   Type of batch manager (pbs or sge, required)
+    -a type   Action: R run, S run synchronous, P pause, K kill, L load,
+                      or C:<cmd> where <cmd> is a user-specified command
+    -w dir    Working directory
+    -l list   Resources to use instead of 'nodes=1' with qsub -l (pbs),
+              or options instead of "-n 1 -c 1" to srun or sbatch (slurm).
+EOF
+    exit 1
+fi
+
+# Scan for options.
+# 
+while getopts :a:q:h:w:t:l: opt
+do
+    case $opt in
+        a) action=$OPTARG ;;
+        q) queuename=$OPTARG ;;
+        h) headnode=$OPTARG ;;
+        w) curdir="$OPTARG" ;;
+        t) qtype=$OPTARG 
+           if [[ $qtype == "pbs-maui" ]] ; then
+               qtype=pbs
+               maui=1
+           fi ;;
+        l) resources="$OPTARG" ;;
+        ?)  echo "ERROR: $pn - unknown option $OPTARG"
+            exit 1
+            ;;
+    esac
+done
+shift $((OPTIND - 1))
+
+if ! [[ $qtype == "pbs" || $qtype == "sge" || $qtype == "slurm" ]] ; then
+    echo "ERROR: $pn - queue type must be  sge, pbs, pbs-maui, or slurm"
+    exit 1
+fi
+
+if [[ $maui == "1" && -z $queuename ]] ; then
+    echo "ERROR: $pn - queue name must be entered for pbs-maui"
+    exit 1
+fi
+
+# Get the root name unless doing load or user-defined command
+#
+if [[ $action != "L" && ${action:0:2} != "C:" ]] ; then
+    if [[ $# -ne 1 ]] ; then
+        echo "ERROR: $pn - Cannot find com file root name, remaining args $*"
+        exit 1
+    fi
+    comroot=$1
+    qidname=$comroot.qid
+fi
+
+# Prevent Ctrl C to processchunks from screwing up ssh commands
+#
+trap "" 2
+
+# Put resource request in $resources (rather default or user-supplied)
+#
+if [[ $qtype == "pbs" ]] ; then
+    # nodes=1 was needed to get one job per processor on the PBS we
+    # tested, but substitute resources if entered
+    if [[ -z $resources ]] ; then
+        resources="-l nodes=1"    # one node
+    else 
+	resources="-l $resources"
+    fi 
+elif [[ $qtype == "slurm" ]] ; then
+    if [[ -z $resources ]] ; then
+        resources="-n 1 -c 1"     # one task, one cpu
+    else
+        # Slurm doesn't accept commas. Map to spaces.
+        resources=`echo $resources | sed -e's/,/ /g'`
+    fi
+fi      
+
+# Test for the different actions
+#
+if [[ $action == "R" || $action == "S" ]] ; then
+
+    # RUN OR RUN WITH SYNC
+    #
+    jobname=$comroot.job
+    cshname=$comroot.csh
+    pyname=$comroot.py
+    runcom="csh -ef"
+
+    # Use a .py file as long as .csh is not present
+    if [[ -e $pyname && ! -e $cshname ]] ; then
+        cshname=$pyname
+        runcom="python -u"
+    fi
+
+    # 12/7/11: no longer need to add a chunk done statement for sync runs
+    # Prepare the job file
+    #
+    cat <<EOF > $jobname
+#!/bin/sh
+cd $curdir
+$runcom $cshname
+rm -f $cshname
+EOF
+    chmod +x $jobname
+
+    # Set up the command
+    #
+    if [[ $qtype == "slurm" ]] ; then
+        slurmOpts="-e /dev/null -o /dev/null -J $comroot"
+        if [[ -e slurmalloc.jobid ]] ; then
+            getJobID
+            com="srun $slurmOpts --jobid=$jobID"
+        else
+            com="sbatch $slurmOpts"
+        fi
+        if [[ -n "$queuename" ]] ; then 
+            com="$com --qos=$queuename" 
+        fi
+    else
+        com="qsub -e /dev/null -o /dev/null -r n -V"
+        if [[ -n "$queuename" ]] ; then 
+            com="$com -q $queuename" 
+        fi
+    fi
+
+    if [[ $qtype == "pbs" || $qtype ==  "slurm" ]] ; then 
+        com="$com $resources"
+    fi
+    if [[ $qtype == "sge" && $action == "S" ]] ; then 
+        com="$com -sync y"
+    fi
+    com="$com $jobname"
+
+    if [[ $qtype != "slurm" ]] || ! [[ -e slurmalloc.jobid ]] ; then
+        com="$com > $qidname" 
+    fi
+    if [[ $qtype == slurm && -e slurmalloc.jobid && $action == R ]] ; then
+        # srun in background unless sync requested
+        com="$com &"
+    fi
+
+    # Run the command, check for error there
+    #
+    runQcommand "$com" 1
+    if [[ $runstat -ne 0 ]] ; then
+        if [[ $qtype == "sge" && $action == "S" ]] ; then 
+            echo "ERROR: $pn - running $comroot synchronously"
+        elif [[ $qtype == "slurm" ]] ; then
+            if [[ $action == "S" ]] ; then
+                echo "ERROR: $pn - running $comroot synchronously"
+            else
+		echo "ERROR: $pn - running $comroot in batch mode"
+	    fi
+        else
+            echo "ERROR: $pn - Submitting $comroot to the queue"
+            rm -f $qidname
+        fi
+        rm -f $jobname
+        exit 1
+    fi
+
+    # When running under a prior allocation, srun doesnt report an ID.
+    # Get the Slurm job step id and copy to $qidname
+    if [[ $qtype == "slurm" && -e slurmalloc.jobid ]]; then
+        # Try to get the specific step id, which is want we really want.
+        # Sometimes this takes a while to appear in squeue output.
+        sleep 1
+        getSlurmStepID $jobID $comroot
+        count=1
+        while [[ -z $stepID && count -le 5 ]]
+        do
+            sleep 5
+            getSlurmStepID $jobID $comroot
+            count=`expr $count + 1`
+        done
+        if [[ -n $stepID ]] ; then
+            echo $stepID > $qidname
+        else
+            # If all else fails just use the allocation job id.
+            # Status will always appear to be R(unning) and kill
+            # will clobber all the chunks and free the allocation.
+            echo $jobID > $qidname
+        fi
+        echo $stepID > $qidname
+    fi
+
+    if [[ $action == "R" ]] ; then exit 0 ; fi
+
+    # Now deal with synchronous run for PBS
+    if [[ $qtype == "pbs" ]] # Slurm and sge have already been handled
+    then
+        sync
+        getJobID
+        while [[ 1 ]] ; do
+            getStatus
+            if [[ $jobStat == "D" ]] ; then break ; fi
+            sleep 2
+        done
+        rm -f $qidname
+    fi
+
+    # Check for CHUNK DONE
+    rm -f $jobname
+    lastline=`tail -n 1 $comroot.log | sed '/[[:cntrl:]]/s///g'`
+    if [[ "$lastline" != "CHUNK DONE" ]] ; then 
+        echo "ERROR: $pn - Running $comroot (last line $lastline)"
+        exit 1
+    fi
+
+elif [[ $action == "P" || $action == "K" ]] ; then
+
+    # PAUSE OR KILL:
+    # First get the status, then setup and run qdel
+    # Exit with 0 if something successfully killed, with 100 if it is done
+    # or 101 if pausing and it is running.
+    #
+    # 9/20/10: on our PBS system the syncs would hang for a long time and
+    # they shouldn't be needed since .qid is written and read by head node
+    #sync
+    getJobID
+    getStatus
+    if [[ $jobStat == "D" ]] ; then exit 100 ; fi
+    if [[ $jobStat == "R" && $action == "P" ]] ; then exit 101 ; fi
+#        com=qdel
+#        if [[ -n "$queuename" ]] ; then com="$com -q $queuename" ; fi
+    if [[ $qtype == "slurm" ]] ; then
+        if [[ -e slurmalloc.jobid ]] ; then
+            getSlurmStepID $jobID $comroot
+            com="scancel $stepID"
+	else
+            com="scancel $jobID"
+        fi
+    else
+        com="qdel $jobID"
+    fi
+
+    runQcommand "$com" 0
+    echo Ran $com to kill $comroot with result $runstat
+    exit $runstat
+
+elif [[ $action == "L" ]] ; then
+
+    # LOAD
+    #
+    load=NA
+    if [[ $qtype == "sge" ]] ; then
+        com="qstat -g c"
+        if [[ -n "$queuename" ]] ; then com="$com -q $queuename" ; fi
+        com="$com | tail -n 1 > $qstattmp"
+        runQcommand "$com" 1
+
+        if [[ $runstat -eq 0 && -s $qstattmp ]] ; then
+            statline=(`cat $qstattmp`)
+            load=${statline[1]}
+        fi
+    elif [[ $qtype == "pbs" ]] ; then
+
+        # PBS is more complex and not satisfactory based on our one example
+        #
+        com="qstat -B | tail -n 1 > $qstattmp"
+
+        # PBS-MAUI can be set up to show processors used in the queue's set
+        #
+        if [[ $maui == "1" ]] ; then
+            com="showq -p $queuename | grep Processors > $qstattmp"
+        fi
+            
+        runQcommand "$com" 1
+        if [[ $runstat -eq 0 && -s $qstattmp ]] ; then
+            statline=(`cat $qstattmp`)
+            nrun=${statline[4]}
+            nmax=${statline[1]}
+            if [[ $maui == "1" ]] ; then 
+                nrun=${statline[3]}
+                nmax=${statline[5]}
+            fi
+            # If the max is 0, need to read all queues and get max
+            #
+            if [[ $nmax -eq 0 ]] ; then
+                rm -f $qstattmp
+                com="qstat -Q | tail -n +3 > $qstattmp"
+                runQcommand "$com" 1
+                if [[ $runstat -eq 0 && -s $qstattmp ]] ; then
+                  nmax=`awk 'BEGIN { MAX = 0 } {if ($2 > MAX) MAX = $2} END {print MAX}' $qstattmp`
+                fi
+            fi
+            if [[ $nmax -gt 0 ]] ; then
+                load=`echo $nrun $nmax | awk '{printf "%.2f", $1 / $2}'`
+            elif [[ $nrun -gt 0 ]] ; then
+                load=$nrun
+            fi
+        fi
+    elif [[ $qtype == "slurm" ]]; then
+      # Return the number of current jobs (on specified qos, if known)
+      com="squeue -h"
+      if [[ -n $queuename ]]; then
+        com="$com -q $queuename"
+      fi
+      com="$com > $qstattmp"
+      runQcommand "$com" 1
+      if [[ $runstat -eq 0 && -s $qstattmp ]] ; then
+        load=`wc -l $qstattmp | cut -f 1 -d ' '`
+      fi
+    fi
+    if [[ $runstat -eq 0 && "$load" == "NA" ]] ; then runstat=1 ; fi
+    echo "$load"
+    rm -f $qstattmp
+    exit $runstat
+
+elif [[ ${action:0:2} == "C:" && -n ${action:2} ]] ; then
+
+    # EXECUTE USER-SUPPLIED COMMAND
+    #
+    runQcommand "${action:2}" 1
+    exit $runstat
+
+else
+    echo "ERROR: $pn - Action must be entered and be R, S, P, K, L or C:<cmd>"
+    exit 1
+fi
+
+exit 0

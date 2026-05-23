@@ -1,0 +1,1707 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+	<head>
+		<title>IMOD User's Guide</title>
+		<style type="text/css"> .style1 { COLOR: #ff0000; FONT-WEIGHT: bold }
+	</style>
+	</head>
+	<body>
+		<A NAME="TOP"></A>
+		<h1 align="center">IMOD User's Guide for Version 4.11
+		</h1>
+		<h3 align="center">University of Colorado, Boulder</h3>
+		<hr>
+		<h3>Table of Contents</h3>
+		<ul>
+			<li>
+				&nbsp;<a href="#Installation">1. Installation</a>
+				<ul>
+				  <li>
+						<a href="#InstallingJava">1.1 Installing Java for Etomo.</a>
+				  <li>
+						<a href="#SettingUpLinux">1.2 Setting Up a Linux PC to Run IMOD.</a>
+					<li>
+						<a href="#InstallingLinuxSGI">1.3 Installing IMOD on a Linux PC</a>
+					<li>
+						<a href="#InstallingMac">1.4 Installing IMOD on a Macintosh
+						running OS 10 - 12</a>
+					<li>
+						<a href="#SettingUpWindows">1.5 Setting Up a Windows PC to Run
+						IMOD with Cygwin</a>
+					<li>
+						<a href="#InstallingWindows">1.6 Installing IMOD on a Windows PC
+						with Cygwin</a>
+					<li>
+						<a href="#SettingUpNoCygwin">1.7 Setting Up a Windows PC and
+						  Installing IMOD without Cygwin</a>
+					<li>
+						<a href="#UsingBashOnWin">1.8 Using IMOD under "Bash on Ubuntu on Windows"</a>
+					<li>
+						<a href="#ParallelProc">1.9 Setting up Parallel Processing in IMOD</a>
+					<li>
+						<a href="#UsingGPU">1.10 Using a GPU for Tomography</a>
+					<li>
+						<a href="#ImodCalib">1.11 Using the ImodCalib Directory</a></li>
+					<li>
+						<a href="#TestVersion">1.12 Running a Test or Private Copy of
+						IMOD</a></li>
+          <li>
+            <a href="#HighDPI">1.13 Support for High-DPI Monitors in IMOD</a></li>
+				</ul>
+			<li>
+				<a href="#GettingStarted">2. Getting Started</a>
+			<li>
+				<a href="#QuantitativeInformation">3. Getting Quantitative Information</a>
+			<li>
+				<a href="#OtherOutput">4. Output to Other Model Formats</a>
+			<li>
+				<a href="#Special">5. Links to Help on Specific Topics</a>
+			</li>
+		</ul>
+		<p>
+			There is also a <a href="program_listing.html#TOP">Listing of All 
+					Programs</a> that gives a one-line description of each IMOD program
+					and a link to its man page.
+		</p>
+		<hr>
+		<a name="Installation">
+			<h2>1. Installation</h2>
+		</a>
+		<p>All of the IMOD programs are available via the <a href="http://bio3d.colorado.edu/imod/download.html">
+				IMOD Download Page</a>. &nbsp;The distribution is bundled together using 
+			the tar program with gzip compression, then placed in a file after a shell
+			script that can extract and install the programs.&nbsp; For Windows and
+				Mac,
+				there is an executable installer than runs this script; for Linux
+				you need to run the script yourself at the command line.&nbsp; If you are willing to 
+			install to the default location in the system and set up the IMOD environment 
+			for all users in the default way, then you can use the installers on
+				Windows and Mac, and install on Linux simply by running the
+			script, e.g.,<br>
+			&nbsp;&nbsp;&nbsp;<code>sh imod_4.11.1_RHEL6.sh</code><br>
+			<br>
+			(In this guide, the specific filenames with "4.11.1" are used as an
+			example; you should always substitute the full name of the file that you are
+			installing for the one shown here.)
+			<span style="COLOR: rgb(255,0,0)">You cannot click on the .sh file to
+install it.</span>&nbsp; This command will not work on Windows unless the
+      Cygwin toolkit is installed.  The executable installer for Windows
+      (with extension .exe) does work by clicking on it to install (either with or
+      without Cygwin).&nbsp; If you have followed
+      our recommended installation 
+			procedures in the past, you will be able to upgrade using the same 
+			method. If you want to install to a location other than the default,&nbsp; you 
+			can specify the desired location inside of which the IMOD directory will be 
+			placed, e.g.,<br>
+			<code>&nbsp; sh imod_4.11.1_RHEL6.sh -dir /opt</code><br>
+			<br>
+			Older versions will be renamed, and at the end the installation script will 
+			offer to remove them for you.
+		</p>
+    <p> After installing for the first time, you will probably need to start a
+      new terminal window to be able to run IMOD programs; on Ubuntu you will
+      probably need to log out and log back in.
+    </p>
+		<p>
+      People with special requirements not 
+			anticipated by the install script may need to work with the tar file 
+			instead.&nbsp; It can be extracted with:<br>
+			&nbsp; <code>&nbsp;sh imod_4.11.1_RHEL6.sh -extract </code>
+		</p>
+		<p>
+			The gzipped tar file and the install script will be left in a subdirectory 
+			named <code>IMODtempDir.</code>&nbsp; There are several other useful options: <code>
+				-script </code>to install startup scripts to a different location, <code>-skip</code>
+			to skip installing startup scripts, <code>-name</code> to have the IMOD 
+			directory be renamed to the given name.&nbsp; Use:<br>
+			<code>&nbsp; sh imod_4.11.1_RHEL6.sh -help<br>
+			</code>
+			<br>
+			to see all available options.&nbsp; The sections below on individual machine 
+			types describe what will be done by the default installation procedure.&nbsp; 
+			They also list the steps for doing a manual installation instead of using the 
+			self-installing package, but this should rarely be needed. 
+    </P>
+    <a name="InstallingJava"> </a>
+		<h3>1.1. Installing Java for Etomo.</h3>
+    To run Etomo, you need a Java run-time environment (JRE), version 1.7 or
+    higher, installed and accessible to IMOD.  You should use an OpenJDK
+    version of Java.  Most Linux distributions have
+    an OpenJDK package available if not in the default install.  On Ubuntu 18 and 20, 
+    OpenJDK java can be installed with<br>
+		&nbsp;&nbsp; <code>&nbsp;sudo apt install default-jre</code><br>
+    <br>
+    For Red Hat 8, the default install includes only a "headless" version and
+    you will need to install a proper version with<br>
+    &nbsp;&nbsp; <code>&nbsp;sudo yum install java-1.8.0-openjdk</code><br>
+    <br>
+    where you could use java-11-openjdk instead.<br>
+    For Windows, Mac, and other Linux
+    distributions, you will need to download a package.  A good source of
+    the latest installer packages
+    is <a href="https://adoptium.net">Adoptium</a>, where 
+    packages are referred to as "Eclipse Temurin".  Oracle now
+    requires a paid license for most Java packages and you are probably
+    not eligible to run one of their installer packages for free.  (You can
+    use one for free if your institution has a license or you are not being paid
+      to work with IMOD.)  Their "open source" packages are free but currently
+    are not installers, just compressed archives that do not make the
+    program easily runnable.  <b>On a Mac, this means that when you try to
+      run Etomo with no Java installed, if the OS puts up a message that takes
+      you to the Oracle site, you should ignore it.</b>
+    <P>Download a JRE or JDK from
+    the <a href="https://adoptium.net/releases.html">Adoptium releases
+    page</a>.  If you start at the Adoptium home page, press the "Other
+    platforms" button to get to this page; the "Latest Release" button on the
+    home page downloads a Java software development kit (JDK) that is
+    considerably larger and is not needed.  You can choose the latest release
+    or one of the releases marked as LTS (long term support); they are all
+    compatible with Etomo and all are being maintained with security updates.
+    Keep the default selection of the JVM, the HotSpot.  Download a JRE for
+    your operating system, or a JDK if a JRE is not available.
+    <P><b>Windows.</b> Click on the installer to run it and take the default
+    options, in particular the one to put Java on the path.
+    <P><b>Mac OS.</b> Click on the installer to run it.  It will install
+    to <code>&nbsp;/Library/Java/JavaVirtualMachines</code>.  By some mysterious
+    means, running <code>/usr/bin/java</code> should end up running the
+    highest version in this directory (or the most recent installation, if
+    there is both a JRE and a JDK of that version).  To verify that it is
+    running the intended version, enter<br>
+      &nbsp;&nbsp; <code> java -version<br></code>
+    <br>
+    In IMOD 4.11, the Etomo startup script in
+    these packages will look for the latest directory
+    in <code>/Library/Java/JavaVirtualMachines</code> and run the Java
+    there.  If this fails or is not running the right version, there are two
+    options:
+    <ol>
+      <li>Set the environment variable IMOD_JAVADIR to the directory in the
+        package containing the <code>bin</code> directory, for example<br>
+        &nbsp;&nbsp; <code> export
+          IMOD_JAVADIR=/Library/Java/JavaVirtualMachines/adoptopenjdk-12.jre/Contents/Home<br></code>
+        <br>
+        To set this on a system-wide basis, you can
+			  make a file <code>IMOD.sh</code> in <code>/usr/local/ImodCalib</code>
+			  with this line; or you can add the line to <code>/etc/profile</code>
+			  and <code>/etc/zprofile</code> in the place
+        where the IMOD environment is set.</li>
+      <li>Put the <code>bin</code> directory in the package on your path, for example<br>
+        &nbsp;&nbsp; <code> export
+          PATH="/Library/Java/JavaVirtualMachines/adoptopenjdk-12.jre/Contents/Home/bin:$PATH"<br></code>
+        <br>
+        To do this on a system-wide basis, make either of the two changes described
+        for option 2.</li>
+    </ol>
+    <P><b>Linux.</b> If your distribution does not provide OpenJDK packages,
+    see if you can use the RPM or DEB install packages from AdoptOpenJDK and
+    follow the instructions there for installation.  Otherwise, you will need
+    to get one of their <code>.tar.gz</code> packages and untar in a location
+    of your choice.  Then you have two options: set the environment variable
+    IMOD_JAVADIR to the top Java directory; or add the <code>bin</code>
+    directory that it contains to your PATH.  To do either of these on a
+    system-wide basis, you can put the appropriate line in 
+        files <code>IMOD.sh</code> and/or <code>IMOD.csh</code>
+    in <code>/usr/local/ImodCalib</code>.
+      <P> Java is notoriously insecure when run in browsers and requires
+      frequent updating if a browser is enabled to run Java.  The frequency of
+      security vulnerabilities when using it just to run a program like Etomo
+      is less clear; but it is a good idea to keep it up to date.
+      </P>
+      <a name="SettingUpLinux"> </a>
+			<h3>1.2. Setting Up a Linux PC to Run IMOD.</h3>
+		<P>
+      IMOD development for Linux is done on Red Hat Workstation 7 with NVIDIA
+			cards, and computation on the graphics card is supported only for NVIDIA
+			cards.  For graphics (e.g., IMOD model display), AMD cards are
+			a reasonable alternative.  We actively maintain compatibility
+			with Ubuntu, and deal with issues that come up on other
+			Linux distributions as necessary.
+		</P>
+		<P><b>NVIDIA installation.</b> Installing NVIDIA drivers is 
+			straightforward on some systems, 
+			but here are some <a href="nvidia_install.txt">instructions</a> that may be 
+			helpful for older Fedora and for Red Hat/Centos through
+			version 7. &nbsp;The latest versions of the drivers change the Driver line in 
+			/etc/X11/xorg.conf from "nv" to "nvidia" if you accept their offer to modify 
+			the file. &nbsp;For recent Fedora, search for "Install NVIDIA drivers
+			Fedora xx", where xx is your version number, and study the
+			various instructions that you find.
+			&nbsp;On Ubuntu, the automatic installation through Synaptic Package 
+			Manager or its current equivalent should be adequate.  However, on
+			laptops, it is important to know whether the NVIDIA card has Optimus
+			technology for switching between the card and built-in graphics.  If it
+			does, the regular methods will probably not work, but one solution is to
+			install bumblebee (search on bumblebee and the Linux distribution name
+			for specific instructions).  Bumblebee allows you to control which
+			graphics device programs use.  At least as of a few years ago, you could
+			direct a program to access the NVIDIA graphics by starting it with a
+			the <code>optirun</code> command.  Thus, if you simply start a new
+			shell, e.g., with <code>optirun bash</code> and run IMOD commands from
+			this shell, you should find that 3dmod uses the NVIDIA graphics and that
+			the GPU is available for reconstruction.
+		</P>
+		<p><span style="FONT-WEIGHT: bold">Java for Etomo.</span>
+      To check whether you have Java installed, run the command<br>
+      &nbsp;&nbsp; <code> java -version<br></code>
+    <br>
+    If there is no Java or it is not an OpenJDK version, see 
+    <a href="#InstallingJava">1.1 Installing Java for Etomo.</a>.
+		<p><span style="FONT-WEIGHT: bold">Python on Ubuntu 18 and 20 and Red Hat 8.</span>
+      Ubuntu 18 and 20 and Red Hat 8 install with Python 3 and not 2, and this Python runs 
+      with the command <code>python3</code>.  IMOD scripts run fine with
+      Python 2 or 3, but rely on a program named <code>python</code> being on
+      the search path.  The IMOD installer will offer to make a link from
+      <code>/usr/bin/python3</code> to <code>/usr/bin/python</code>, or you
+      can use the Python 3 just for the IMOD install, then install Python 2
+      explicitly if you want to use that for some reason.  On Ubuntu you can
+      do so with <br>
+			&nbsp;&nbsp; <code>sudo apt install python</code>
+      <br>and if the IMOD installer made a link in <code>/usr/bin</code>, it will be replaced
+      when you install Python 2.  On Red Hat 8, you can install Python 2
+      with <br>
+			&nbsp;&nbsp; <code>sudo yum install python2</code>
+      <br>but the executable is named <code>python2</code>, and if the IMOD
+      installer made a link
+      in <code>/usr/bin</code>, it will be removed.  You will need to make a
+      link yourself, with<br>
+			&nbsp;&nbsp; <code>sudo ln -s /usr/bin/python2 /usr/bin/python</code>
+    </p>
+		<p><span style="FONT-WEIGHT: bold">tcsh for Ubuntu, Fedora, or Red Hat 8.</span>
+      Only a few very specialized scripts in IMOD require <code>tcsh</code>,
+      although you would need it to install very old versions of IMOD with
+      package names ending in <code>.csh</code> instead of <<code>.sh</code>.
+      The standard Red Hat 8, Fedora, and Ubuntu installs do not include it. If you find
+      that you need it, you can install it on Ubuntu with:<br>
+			&nbsp;&nbsp; <code>sudo apt-get install tcsh</code><br>
+      or on Fedora or Red Hat 8 with:<br>
+      &nbsp;&nbsp; <code>sudo yum install tcsh</code>
+      </p>
+		<a name="InstallingLinuxSGI">
+			<h3>1.3. Installing IMOD on a Linux PC</h3>
+		</a>
+		<P>
+			The self-installing package will install to a directory named <code>IMOD</code> 
+			under <code>/usr/local</code> unless given an alternate location to <code>/usr/local</code>
+			with the <code>-dir</code> option.&nbsp; It will copy the startup scripts <code>IMOD-linux.sh
+			</code>and <code>IMOD-linux.csh </code>to <code>/etc/profile.d</code>. unless 
+			given an alternate location with the <code>-script</code> option or told to 
+			skip this step with the <code>-skip</code> option, or unless you are running 
+			an Ubuntu version before 10 or give the <code>-debian</code>
+			option.&nbsp; It the latter cases, it will
+			modify <code>/etc/bash.bashrc</code> and <code>/etc/csh.cshrc</code> to 
+			source the startup scripts from the IMOD directory, unless you give the <code>-skip</code>
+			option.&nbsp; To accomplish all of this, change directory to the place where 
+			the package is located and enter, for example:<br>
+			&nbsp;&nbsp;&nbsp;&nbsp; <code>sudo sh imod_4.11.1_RHEL7-64_CUDA8.0.sh<br>
+			</code>
+			<br>
+			You will have to open a new window, or possibly even log out and log back in, 
+			for the installation to take effect.
+		</P>
+		<P>If you are upgrading IMOD using the default procedures, and your previous 
+			installation used another method for setting the environment variables for 
+			users, be sure to remove whatever commands were used before. &nbsp;These might 
+			have been placed in <code>/etc/profile</code>, <code>/etc/cshrc</code>,
+      <code>/usr/local/etc/cshrc</code>, 
+			or users' <code>.bashrc</code>, <code>.bash_profile</code>, or <code>.cshrc</code>
+			files.</P>
+		<P>You would skip the installation of the startup scripts if you do not want a 
+			system wide installation, or if you are installing to a server to be accessed 
+			by multiple workstations. In this case, you would place the following in
+			the <code>.bashrc </code>or <code>.bash_profile</code>
+			of&nbsp; individual users running the <code>bash</code> shell (where
+			&lt;location of IMOD&gt; is the absolute path to the IMOD directory):
+		</P>
+		<P><code>export IMOD_DIR=&lt;location of IMOD&gt;</code><br>
+			<code>if [ -e $IMOD_DIR/IMOD-linux.sh ] ; then source $IMOD_DIR/IMOD-linux.sh ; fi</code>
+		</P>
+		<P>or, place the following in the <code>.cshrc</code>
+			files of individual users of <code>tcsh</code> :
+		</P>
+		<P><code>setenv IMOD_DIR &lt;location of IMOD&gt;</code><br>
+			<code>if (-e $IMOD_DIR/IMOD-linux.csh) source $IMOD_DIR/IMOD-linux.csh </code>
+		</P>
+		<P>Alternatively, if there are system-wide startup scripts sourced from
+		the users' <code>.bashrc/.bash_profile</code> or  <code>.cshrc</code>, you
+		would place these commands in the system-wide startup scripts.&nbsp; You
+		should always source the startup script that comes with an IMOD
+		distribution, not make a copy of the startup script and incorporate it
+		into other scripts, because that is the easiest way to adapt to changes in
+		the startup script between versions.
+		</P>
+		<P>If you want to run programs temporarily in a particular version of IMOD without 
+			replacing your installed version, unpack the desired version in some logical 
+			place with a command like:<br>
+			&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<code> sh imod_4.11.1_RHEL7-64_CUDA8.0 -dir 
+				testIMOD -skip</code></P>
+		<P>This will manage an installation of IMOD under the directory <code>testIMOD</code>, 
+			offering to delete other versions there.&nbsp; To run with this IMOD, cd to <code>testIMOD/IMOD</code>
+			and enter:
+		</P>
+		<P>
+			<code>&nbsp;&nbsp; export IMOD_DIR=`pwd`</code>&nbsp;&nbsp;&nbsp; (under bash, 
+			or)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <code>setenv IMOD_DIR `pwd`&nbsp;&nbsp; </code>
+			(under tcsh)<br>
+			<code>&nbsp;&nbsp; source IMOD-linux.sh</code>&nbsp;&nbsp;&nbsp; (under bash, 
+			or)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<code>source
+			IMOD-linux.csh&nbsp;&nbsp; </code>(under tcsh)</P>
+		<p><b>Manual Install. </b>&nbsp;To install manually from the tar file, do the 
+			following steps after running the self-installing file with the <code>-extract</code>
+			option:
+		</p>
+		<OL>
+			<LI>
+			Log in as root or do all of these commands with sudo
+			<LI>
+				cd to the directory where you downloaded IMOD, and
+				<br>
+				&nbsp;<code> mv imod_4.11.1_RHEL6.tar.gz /usr/local</code>
+			<LI>
+				&nbsp;<code> cd /usr/local</code>&nbsp;
+			<LI>
+				&nbsp;<code> tar -xzf imod_4.11.1_RHEL6.tar.gz</code>
+			<LI>
+				To see if you already have a /usr/local/IMOD,
+				<br>
+				<code>&nbsp; ls -l</code>
+			<LI>
+				If you do have a /usr/local/IMOD and it is a link (e.g., it shows up as <code>IMOD 
+					-&gt; imod_4.7.15</code>), then enter
+				<br>
+				<code>&nbsp; rm IMOD</code>
+				<br>
+				Otherwise, rename the existing directory, e.g.:
+				<br>
+				<code>&nbsp; mv IMOD oldIMOD</code>
+			<li>
+				&nbsp;<code> ln -s imod_4.11.1 IMOD</code>
+			<li>
+				Except on Ubuntu before version 10 and other Debian systems,<br>
+				<code>&nbsp; cp IMOD/IMOD-linux.* /etc/profile.d</code> <code></code>
+			</li>
+		</OL>
+		<P>On early Ubuntu or Debian systems, when installing manually, instead of
+			step 8, you would insert commands into <code>/etc/bash.bashrc</code>
+			and <code>/etc/csh.cshrc</code> just like 
+			those given above for inserting in users' <code>.bash_profile</code> and 
+      <code>.cshr</code> files, respectively.&nbsp;
+		</P>
+		<a name="InstallingMac">
+			<h3>1.4. Installing IMOD on a Macintosh running OS 10 - 12</h3></a>
+    <P><b>Rosetta2 for M1 Macs.</b>
+      To install IMOD 4.11 on an M1-based Mac, Rosetta2 must be installed.
+      IMOD 4.11 currently runs only through this emulator, but a package
+      compiled for M1 is available in IMOD 4.12 beta.
+    <p><b>Python for OS 12.</b> The default installation in OS 12.3 no longer
+    includes Python.  You must install a Python first to install IMOD.  The
+    recommended option is a package from <a href =
+    "http://www.python.org/downloads/macos/">python.org</a>; here is a
+<a href="http://bio3d.colorado.edu/imod/osx/python-3.9.11-macos11.pkg">Python
+  3.9.11 universal installer package</a> that runs on Intel and M1
+  processors.  Installed, this package takes about 180 MB if documentation is
+  omitted.  Another option is to install Python
+  through <a href="https://brew.sh">homebrew</a>. The third option is to
+  install the Apple Developer Command Line Tools, which the system will offer
+  to install if you enter "python3" at the command line.  This package takes
+  2.2 GB.  The IMOD installer will recognize all of these Pythons regardless
+  of whether they are on the search path, and if you
+  install some other Python, it needs to be on the search path and you will
+  probably need to use the command-line self-installing package instead of the
+  clickable installer.
+
+		<P><B>Installing IMOD</B>
+      The clickable installer (ending in ".pkg") will install to /Applications
+		  and will place appropriate source commands in <code>/etc/profile</code>,
+      <code>/etc/zprofile</code>, and <code>/etc/csh.login</code>.  You will
+      need administrative privileges to use this installer.</p>
+      <P>
+        After installing on OS 11 or 12, the Launchpad (multiple icon display) will
+        show IMOD with two tempting
+        icons inside, 3dmod and Qt Assistant.  <B>It will not work to click on
+        3dmod or Qt Assistant.</B>
+      <p> The package
+      built under OS 10.14 is fully signed and the system should not object
+      when you try to install it in OS 10.14, 10.15 or 11.0.  If for some
+      reason you need to install a package built on an earlier OS, there are
+      two options. You can click on the question mark in the upper right of
+      the message that you get when you try to run the package; it will
+      direct you to open the Settings - Security and Privacy - Private tab
+        where you can confirm the installation after dismissing the installer
+      message.  Or, you can use the command-line package described next.
+    <P>
+		  The command-line self-installing package (ending in ".sh") will install
+		  to /Applications or to an 
+		alternate location with the <code>-dir</code> option.&nbsp;
+		<span style="COLOR: rgb(255,0,0); FONT-WEIGHT: bold">The ".sh" file will
+      not work by clicking on it, only by running it at the command
+      line.</span>&nbsp; It will place appropriate "source" commands for defining the user 
+		environment in <code>/etc/profile</code>, <code>/etc/profile</code>, and
+		<code>/etc/csh.login</code>.&nbsp;You need to be able to use sudo. &nbsp;Open a 
+		terminal window (under Applications-Utilities), change directory to the place 
+		where the package is located, and enter, e.g.:<br>
+		&nbsp;&nbsp;&nbsp;&nbsp;<code> sudo sh imod_4.11.1_osx10.11_CUDA8.0.sh</code><br>
+		<P>
+		&nbsp;You will need to exit and restart Terminal for changes from the
+		installation to take 
+		effect, or you can just source <code>/etc/profile</code>&nbsp;(if you are
+		running bash), <code>/etc/zprofile</code>&nbsp;(if you are running zsh) or
+    <code>/etc/csh.login</code>&nbsp;(if you are running tcsh). If 
+		you are upgrading IMOD with the default installation procedures and your 
+		previous installation used another method of setting environment variables, 
+		then you may need to remove "source" or other environment-setting commands from 
+		various files, such as  <code>/etc/profile</code>, <code>/etc/csh.login</code>, 
+		or users' <code>.bashrc</code>, <code>.profile</code>,
+		or  <code>.cshrc</code> files.<br>
+
+    <p><b>Fixing an IMOD Installation after a System Update.</b> On OS 11 or 12,
+    system updates may replace the files in <code>/etc</code> that source the
+    IMOD environment-setting commands, and IMOD will stop working. &nbsp;To
+    recover from this without reinstalling IMOD, run the command<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;<code> sudo /Applications/IMOD/fixMacInstall</code>
+    <br>
+    or if IMOD is installed elsewhere, run<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;<code> sudo pathToIMOD/fixMacInstall</code>
+    <br>
+    where <code>pathToIMOD</code> is the full path to the IMOD directory.
+    If this command fails with "Command not found", it is probably because
+    there is no Python runnable as "python" on the path, in which case this
+    should work:<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;<code> sudo /Applications/IMOD/pythonLink/python 
+      /Applications/IMOD/fixMacInstall</code>
+    </P>
+
+		<p><b>Setting Up Ability to Click on Files or Drag
+		and Drop onto an Icon to Open them in 3dmod.</b>
+      
+		Once you have verified that IMOD programs run from the terminal after
+		installing them, you can associate 
+      files having desired extensions
+    (e.g., <code>.mrc</code> or <code>.rec</code>) with a script that will open
+    files in 3dmod.  The steps are:
+    </p>
+      <ol>
+        <li>Right click on a file with the desired extension</li>
+        <li>Select Get Info</li>
+        <li>Open the section "Open with" if it is closed</li>
+        <li>Open the combo box and select Other</li>
+        <li>Change Recommended Applications to All Applications</li>
+        <li>Check Always Open With (maybe unneeded)</li>
+        <li>Open /Applications/IMOD/bin in the chooser</li>
+        <li>Scroll down to find openIn3dmod and select it (it has the same
+        icon as 3dmod)</li>
+        <li>Press Change All button in the Info window</li>
+        <li>Press Continue that you are sure to change all similar documents</li>
+        <li>Double click the initial file or another file with the same
+        extension</li>
+        <li>A dialog may come up the first time to confirm that you want to open the
+          file with the script; do so and the file should open in 3dmod</li>
+      </ol>
+      <p>You can also drag and drop a file onto openIn3dmod to open it.  Open
+      a Finder and find /Applications/IMOD/bin/openIn3dmod.  Drag this to the
+      dock if you want it there.
+      <p>If you install IMOD in a location other
+      than <code>/Applications</code>, you will need to be able to get to it in
+      the file association chooser, or you will need to copy
+      the <code>openIn3dmod.app</code> directory to another location that you
+      can get to.
+        
+      <P>
+        In general, you cannot run 3dmod by clicking on its icon ("3D") in 
+        <code>/Applications/bin/IMOD</code>.  However, this is possible 
+        if you have installed an unsigned package built under an older OS
+        (i.e., 10.11).  In that case you can also
+		    make some links in <code>/usr/local/lib</code> to libraries in the IMOD directories 
+		    that will allow you to start 3dmod by clicking on its
+		    icon. (This is not needed
+        for the file association and drag-and-drop to work and does not work
+		    with a signed package.) &nbsp;Run the <code>linklibs-mac
+		    </code>script by entering:<br>
+		    <code>&nbsp;&nbsp; sudo $IMOD_DIR/linklibs-mac -i $IMOD_DIR</code>
+      </P>
+    <p>If this creates problems, such as conflicts with other programs that supply 
+			their own Qt libraries, you can remove the links with:<br>
+			<code>&nbsp;&nbsp; sudo $IMOD_DIR/linklibs-mac -u $IMOD_DIR</code></p>
+    <p>If you are upgrading IMOD and have done this before, you should
+				run <code>sudo $IMOD_DIR/linklibs-mac 
+				-u $IMOD_DIR</code> before installing the new version then rerun with
+				the <code>-i</code> option after installing.</p>
+    <p>Once the links are made, test that 3dmod will start by finding it in
+    the <code>IMOD/bin</code> and clicking on it.  
+
+		<p><b>Installing Java.</b>&nbsp; 
+			To check whether you have Java installed, you can try to 
+			start Etomo by entering <code>etomo</code>, or just enter <code>java
+			-version</code> in a terminal. If it is not installed, you will get a
+			message from the operating system offering to take you to the
+			Oracle site.  <B>Ignore this message</B> and see 
+      <a href="#InstallingJava">1.1 Installing Java for Etomo.</a>.
+		<p>
+			<span style="FONT-WEIGHT: bold">Using a 3-button Mouse.&nbsp; </span>The 
+			one-button mouse on the Mac can be used in <code>3dmod</code> with some 
+			keyboard modifiers, but this is painful.&nbsp; Just get a 3-button mouse.&nbsp; 
+			It may just work when you plug it in, so try it in <code>3dmod</code>
+		before installing drivers.&nbsp; Installing Logitech and some other drivers may 
+		actually make it stop working, and the solution is to uninstall the drivers.<p>
+			<b>Manual Install.</b>&nbsp; To install manually from the tar file that you can 
+			get by running the self-installing file with the <code>-extract</code> option, 
+			you have two alternatives.&nbsp;To do it from the command line, open a Terminal 
+			window and:
+		</p>
+		<OL>
+			<LI>
+				cd to the directory where you downloaded IMOD, and
+				<br>
+				&nbsp;&nbsp;<code> sudo mv imod_4.11.1_osx_intel64.tar.gz /Applications</code>
+			<li>
+				&nbsp;&nbsp;<code> cd /Applications</code>
+			<li>
+				&nbsp;&nbsp;<code> sudo tar xzf imod_4.11.1_osx_intel64.tar.gz</code>
+			<li>
+				To see if you already have a /Applications/IMOD,
+				<br>
+				&nbsp;&nbsp;<code> ls -l</code>
+			<li>
+				If you do have a /Applications/IMOD and it is a link (e.g., it shows up as <code>IMOD 
+					-&gt; imod_3.1.6</code>), then enter
+				<br>
+				&nbsp;&nbsp;<code> sudo rm IMOD</code>
+				<br>
+				Otherwise, rename the existing directory, e.g.:
+				<br>
+				&nbsp;&nbsp;<code> sudo mv IMOD oldIMOD</code>
+			<li>
+				&nbsp;&nbsp;<code> sudo mv imod_4.11.1 IMOD</code></li></OL>
+		<p>
+			You also need to add some startup commands to the system 
+			files <code>/etc/profile</code> and <code>/etc/csh.login </code>, unless they 
+			are already there from a previous installation of IMOD.&nbsp;Use sudo to invoke <code>
+				emacs </code>or <code>pico</code>&nbsp;on these files, .e.g.:<br>
+			<code>&nbsp;&nbsp; sudo emacs /etc/csh.login</code><br>
+			</code>Copy the text in <code>IMOD/mac.profile</code>&nbsp;to the end 
+			of both <code>/etc/profile</code> and <code>/etc/zprofile</code>, specifically the command
+			<br>
+			<code>[ -r /Applications/IMOD/IMOD-mac.sh ] &amp;&amp; source 
+				/Applications/IMOD/IMOD-mac.sh</code><br>
+			<br>
+			Similarly, copy the text in <code>IMOD/mac.cshrc</code>&nbsp;to the end of <code>/etc/csh.login</code>, 
+			specifically the command
+			<br>
+			<code>if (-e /Applications/IMOD/IMOD-mac.csh) source 
+				/Applications/IMOD/IMOD-mac.csh</code><br>
+				<br>
+			If you want to install at another location, change <code>/Applications/IMOD</code>&nbsp;to 
+			the name of the top IMOD directory in <code>IMOD-mac.sh</code> and
+			<code>IMOD-mac.csh</code> and in the 
+			source commands placed in <code>/etc/profile</code> and <code>/etc/csh.login</code>.
+			If you are sure you are not going to install somewhere else in the future, you 
+			can avoid modifying <code>IMOD-mac.sh</code> and <code>IMOD-mac.csh</code> by 
+			defining IMOD_DIR before the source commands, i.e. with
+			<br>
+			<code>&nbsp;&nbsp; export IMOD_DIR=&lt;Location_of_IMOD&gt;</code><br>
+			before the source command in <code>/etc/profile</code>, or with<br>
+			<code>&nbsp;&nbsp; setenv IMOD_DIR &lt;Location_of_IMOD&gt;</code><br>
+			before the source command in <code>/etc/csh.login</code>.
+		<p>
+			See the above instructions for Linux PC for other variations on installation 
+			procedures.</p>
+		<a name="SettingUpWindows">
+			<h3>1.5. Setting Up a Windows PC to Run IMOD with Cygwin</h3>
+		</a>
+    <p>To use IMOD effectively under Windows, 
+	    you need to install either a Unix-like 
+	    environment called <a href="http://www.cygwin.com">Cygwin</a> or an
+			appropriate version of Python. &nbsp;In the latter case, 
+	    everything in IMOD will work except a few
+			specialized C-shell scripts, but subtomogram averaging with PEET will
+	    not work without Cygwin.  If this is the route that you prefer, go
+	    to <a href="#SettingUpNoCygwin"> Setting Up a Windows PC and Installing
+			IMOD without Cygwin</a>.  A third, less useful way of running IMOD on a
+	    Windows PC is described in <a href="#UsingBashOnWin">Using IMOD
+	      under "Bash on Ubuntu on Windows"</a>.  In any case, you will need
+	    Java installed to run Etomo. ou  See <a href="#InstallingJava">1.1 Installing Java for
+	    Etomo</a> both for instructions and for information on license restrictions
+	    with Oracle Java.  To check whether you have Java installed,
+	    you can try to start Etomo by entering <code>etomo</code>, or just
+	    enter <code>java -version</code> in a terminal or Command Prompt window.
+    </p>
+    <p>This section deals with installing Cygwin.  We have 
+			provided both a Cygwin package and a 
+				Cygwin installer to make the installation process simpler and 
+			more predictable.&nbsp;  Use the installer when installing for the first
+			time.  This installation will occupy ~220 MB for the 32-bit version, or
+			~500 MB for the 64-bit version, all located 
+			under a single directory that can be removed easily.&nbsp; The installation 
+			will also create icons on the desktop and in the Start Menu, and make several 
+			simple entries to the Windows registry.&nbsp; To satisfy the terms of the 
+			Cygwin open source license, we also provide the
+			source code matching the binaries in our package.  The download links 
+			are in the table; the package from
+			October 2014 must be used on Windows XP; the packages from January 2017
+			or December 2020 must be used on Windows 10.  If you plan to upgrade or
+			add to your installation, get the 64-bit one because only
+			64-bit is now supported.</p>
+    <center>
+    <table border = "1">
+      <tr>
+        <td>&nbsp;Date</td> <td>&nbsp;Runs on</td> 
+      </tr>
+      <tr>
+        <td>&nbsp;December 2020 &nbsp;</td>
+        <td>&nbsp;Windows 10 &nbsp;</td>
+        <td>&nbsp;64-bit&nbsp;</td>
+        <td><a href="http://bio3d.colorado.edu/imod/windows/cygwin_installer_1220.exe">
+            &nbsp;&nbsp;Cygwin Installer&nbsp;&nbsp;</a></td>
+        <td><a href="http://bio3d.colorado.edu/imod/windows/cygwinForIMOD1220.exe">
+            &nbsp;&nbsp;Cygwin Package&nbsp;&nbsp;</a></td>
+        <td> <a href="http://bio3d.colorado.edu/imod/openSource/cygwinSource1220.zip">
+            &nbsp;&nbsp;Matching Source&nbsp;&nbsp;</a></td>
+      </tr>
+      <tr>
+        <td>&nbsp;January 2017 &nbsp;</td>
+        <td>&nbsp;Windows Vista -> 10 &nbsp;</td>
+        <td>&nbsp;32-bit&nbsp;</td>
+        <td><a href="http://bio3d.colorado.edu/imod/windows/cygwin_installer_0117.exe">
+            &nbsp;&nbsp;Cygwin Installer&nbsp;&nbsp;</a></td>
+        <td><a href="http://bio3d.colorado.edu/imod/windows/cygwinForIMOD0117.exe">
+            &nbsp;&nbsp;Cygwin Package&nbsp;&nbsp;</a></td>
+        <td> <a href="http://bio3d.colorado.edu/imod/openSource/cygwinSource0117.zip">
+            &nbsp;&nbsp;Matching Source&nbsp;&nbsp;</a></td>
+      </tr>
+      <tr>
+        <td>&nbsp;October 2014 &nbsp;</td>
+        <td>&nbsp;Windows XP -> 8 &nbsp;</td>
+        <td>&nbsp;32-bit&nbsp;</td>
+        <td><a href="http://bio3d.colorado.edu/imod/windows/cygwin_installer_1014.exe">
+            &nbsp;&nbsp;Cygwin Installer&nbsp;&nbsp;</a></td>
+        <td><a href="http://bio3d.colorado.edu/imod/windows/cygwinForIMOD1014.exe">
+            &nbsp;&nbsp;Cygwin Package&nbsp;&nbsp;</a></td>
+        <td> <a href="http://bio3d.colorado.edu/imod/openSource/cygwinSource1014.zip">
+            &nbsp;&nbsp;Matching Source&nbsp;&nbsp;</a></td>
+      </tr>
+      </table>
+    </center>
+		<p>
+			Installing Cygwin creates a Unix-like directory tree (including directories <code>bin</code>,
+			<code>etc</code>, <code>usr</code>, and <code>home</code>) under its top 
+			directory, which is <code>C:\cygwin</code> by default.&nbsp;Terminal windows 
+			and Cygwin programs such as the Unix tools will display and work with Unix-type 
+			paths that are relative to the top Cygwin directory.&nbsp; For example, if you 
+			install Cygwin in <code>C:\cygwin</code>, then the location where IMOD will be 
+			installed is referred to as <code>/usr/local/IMOD</code> from within Cygwin and 
+			will exist in the Windows file systems as <code>C:\cygwin\usr\local\IMOD</code>.</p>
+		<p>
+			<span class="style1">The Cygwin that you use must include Python, which is
+      required for building tomograms.</span>&nbsp; It is included in our packages.
+			If you use a current version of Cygwin from the Cygwin 
+			website, you may need to make sure that there is a Python executable, <code>/bin/python.exe</code>, 
+			recognizable to Windows (see below).</p>
+		<p>
+			Our Cygwin packages also include a superior terminal window called <code>mintty</code>,
+			a lightweight text editor, <code>nano</code>,
+			and the <code>vi</code> editor. 
+			The primary advantage of the <code>
+				mintty</code> window is that you can copy and paste just like under Unix 
+			(highlight with left mouse button, paste with middle mouse button).&nbsp; This 
+			capability uses the Windows clipboard, so you can copy text in a Windows 
+			program (Ctrl-C) and paste with the mouse in the <code>mintty </code>window, or 
+			highlight in the <code>mintty </code>window and paste in a Windows program with 
+			Ctrl-V.&nbsp; Another advantage is that you can resize the <code>mintty</code> window 
+			horizontally as well as vertically.</p>
+		<p>
+			Cygwin installation will work best if you are logged in as a user with 
+			Administrative privileges.</p>
+		<p>
+			Use our Cygwin installer
+			for a fresh installation of Cygwin. &nbsp;It performs all the steps described 
+			below. &nbsp;Simply click on it; it will unpack itself and launch the Cygwin 
+			setup program as well as show a page with some instructions. &nbsp;Note the 
+			following points:</p>
+		<ul>
+			<li>
+			If you get it, ignore the alarming warning about the change in mounting
+			conventions and the advice to read the Cygwin user's manual.
+			<li>
+			For the most part, you just accept the defaults in Cygwin setup. &nbsp;The 
+			instructions illustrate the one tricky step that is needed to get everything 
+			installed from the package.
+			<li>
+				You are free to change the drive letter under which it will be installed, but 
+				you should keep <code>cygwin</code>
+			as the directory name.
+			<li>
+				After components are installed, you can uncheck the box for an icon on the 
+				desktop, because our installer will create desktop shortcuts for starting a <code>mintty</code>
+				window running either a <code>bash</code> or a <code>tcsh</code>
+			shell.
+			<li>
+				Our installer also takes care of copying shell startup files to your Cygwin 
+				home directory. &nbsp;It places a file named <code>.minttyrc</code> there that 
+				will give good starting properties for a <code>mintty</code>
+			window.
+			<li>
+				Copies of the two shortcuts and of <code>.minttyrc</code> will also be left in 
+				/usr/local for other users to copy.</li>
+		</ul>
+    <p>
+      Sometimes there are permission problems that might prevent the installer
+      from copying some files at the end of the installation, or that result
+      in errors or prevent the creation of some files during tomogram setup in
+      Etomo. If this happens, try editing the file <code>/etc/fstab</code>
+      within Cygwin with one of the provided editors.  This line
+      determines how all drives should be mounted (including permissions):
+    <pre>
+      'none /cygdrive cygdrive binary,posix=0,user 0 0'
+    </pre><br>
+    The line should be edited to:
+    <pre>
+      'none /cygdrive cygdrive binary,noacl,posix=0,user 0 0
+    </pre><br>
+    This setting makes Cygwin ignore the windows Access Control List
+    and prevents these permission errors.
+    </p>
+		<p>
+			In order to run Etomo, you also need to have Java installed.&nbsp;
+			Again, see <a href="#InstallingJava">1.1 Installing Java for Etomo.</a>
+	  </p>
+		<p>
+			You can use our simpler 
+			Cygwin package instead to install Cygwin, but then you would have to do 
+			all the steps described below yourself. &nbsp;You can also use this package to 
+			upgrade a previous Cygwin installation. &nbsp;The rest of this section has 
+			steps for installing or upgrading Cygwin from this package:</p>
+		<ol>
+			<li>
+				Click on the package to extract it. Press "Browse" and select a folder to unzip 
+				to that is conveniently accessed (the Desktop will do). &nbsp;You will get the <code>
+					setup.exe</code> program and a <code>CygwinMaster</code>
+			folder with all the packages.
+			<li>
+				Click on <code>setup.exe</code>
+			<li>
+			Select Install from a Local Directory
+			<li>
+				Set the root drive to <code>C:\cygwin</code> unless you want it on a different 
+				disk.&nbsp; Do not install under a directory with spaces in its name.&nbsp; In 
+				the rest of this document, C:\ is used in the examples, and you need to 
+				substitute your location if it is different.<br>
+			Take the default for the other selection: install for all users.
+			<li>
+				Select the <code>CygwinMaster</code>
+			folder as the Local Package Directory
+			<li>
+			On the Select Packages page, on the line labeled "All", click the
+			drop-down arrow next to "Default" and select "Install".
+			<li>
+				Proceed with the installation, and take the defaults to create icons on the 
+				desktop and start menu.</li>
+		</ol>
+		<p>
+			After installation you will get an icon that will start up a shell under 
+			<code>bash</code>.&nbsp;The first time that you run this, a home
+			directory is created in&nbsp;<code>/home</code>
+			(<code>C:\cygwin\home</code>) and some <code>bash</code> startup 
+			files are copied there.</p>
+		<p>
+			The <code>CygwinMaster </code>folder contains two shortcuts and a configuration 
+			file that make it easy to use <code>mintty.</code> To use mintty:</p>
+		<ol>
+			<li>
+				Copy one of <code>Cygwin-bash.lnk</code> or <code>Cygwin-tcsh.lnk</code> from <code>
+					CygwinMaster</code>
+			to your desktop, depending on your preferred shell.
+			<li>
+				Copy <code>minttyrc</code> from <code>CygwinMaster</code>
+			to your Cygwin home directory.
+			<li>
+				In a Cygwin window, rename <code>minttyrc</code> to <code>.minttyrc</code> with 
+				the command <code>mv minttyrc .minttyrc</code>
+			(you cannot do this in Windows Explorer).&nbsp;
+			<li>
+				Click on the shortcut that you copied to get a <code>mintty</code> window.&nbsp; 
+				You can right-click in the title bar of the window and select <b>Options</b>
+			to get a dialog for adjusting font size and style, colors, default window size, 
+			etc..
+			<li>
+				Delete the existing Cygwin shortcut on your desktop and rename the <code>Cygwin-bash</code>
+				or <code>Cygwin-tcsh</code> shortcut to <code>Cygwin.</code>
+			<li>
+				If there are other users of Cygwin on your system, copy the shortcuts and <code>minttyrc</code>
+				from the <code>CygwinMaster</code> folder to some other place where the users 
+				can access them (such as <code>/usr/local</code>).
+			</li>
+		</ol>
+    <p>Occasionally you will get an annoying warning in a terminal window
+    starting with <i>cygwin warning: MS-DOS style path detected</i>.  To eliminate
+    this, you need to define an environment variable in Windows with the name
+    CYGWIN and the value "nodosfilewarning".  To do so, right click Computer
+    or My Computer on the Desktop, browser window or
+	  Start menu, select Properties, Advanced or Advanced System Properties,
+	  then press Environment Variables. Press "New" in the "User variables"
+    or "System variables" section.  Enter "CYGWIN" as the name and
+    "nodosfilewarning" as the value (without the quotes).
+    </p>
+		<p>If you want to customize your Cygwin installation instead of using our package, 
+			go to <a href="http://www.cygwin.com">www.cygwin.com</a>, click on "Setup", and 
+			follow the installation procedures. &nbsp;<span style="COLOR: rgb(255,0,0); FONT-WEIGHT: bold">In addition to the
+default installation, it is essential that you select
+</span><code style="COLOR: rgb(255,0,0); FONT-WEIGHT: bold">python</code><span style="COLOR: rgb(255,0,0); FONT-WEIGHT: bold"> from the 
+Python category.&nbsp; In addition, there must be a Python executable named
+        <code>/bin/python.exe</code>, not 
+        just a Cygwin link to an executable</span>.&nbsp; The IMOD installer will take care 
+			of creating such an executable, but if you upgrade Cygwin without re-installing 
+			IMOD, you should do the following:<ol>
+				<li>
+					In a terminal window, first try entering
+          <br>
+          &nbsp;&nbsp; <code>fixCygPython.sh</code>.
+          <br>
+				<li>
+					If that does not work (the script was not in the IMOD/bin before
+					IMOD 4.11.1), next enter
+          <br>
+          &nbsp;&nbsp; <code>/usr/local/IMOD/fixCygPython.sh</code>.
+          <br>
+        <li>
+          If this command does not work either (the script is only present there
+          after installing with the executable installer), next enter
+					<br>
+					&nbsp;&nbsp; <code>ls /bin/python*</code>
+					<br>
+					to see if there is a <code>python.exe</code>
+        <li>
+          If there is not, or if it is older than the numbered executable in
+					the listing, then copy <code>python2.7.exe</code> (or whatever numbered 
+					executable shows up in the listing) with<br>
+					&nbsp;&nbsp; <code>ln -f /bin/python2.7.exe /bin/python.exe</code></li>
+			</ol>
+			<a name="InstallingWindows">
+				<h3>1.6. Installing IMOD on a Windows PC with Cygwin</h3>
+			</a>
+		<p>For Windows, we provide an executable installer that works by clicking on it, 
+			installs IMOD in <code>/usr/local</code>, copies the startup scripts <code>IMOD-cygwin.sh</code>
+			and <code>IMOD-cygwin.csh</code> to <code>/etc/profile.d</code>, and takes care 
+			of putting Cygwin on the system path and setting the environment variables <code>IMOD_DIR</code>
+			and <code>HOME</code> as described below. Old versions of IMOD are 
+			automatically deleted.&nbsp; If you need something besides this behavior, you 
+			can still run a self-installing package (e.g., a <code>sh</code> file like <code>imod_4.11.1_win32.sh</code>) 
+			at the command line, as described below.
+		</p>
+		<p>
+			To use the installer, just click on it.&nbsp; If you get a message from
+			Defender SmartScreen that
+			"Windows protected your PC", press <b>More info</b> instead of <b>Don't
+			run</b>, then press <b>Run anyway</b>.&nbsp; If you then get a message
+			from User Account Control asking if you want this app to make changes to
+			your device, press <b>Yes</b>.&nbsp;
+			When the installer finally starts, press buttons to confirm each 
+			step.&nbsp; There are no choices to make.&nbsp; Open a new Cygwin window and 
+			you should be able to run IMOD programs.</p>
+		<p>Here are some optional steps, whichever way you install IMOD:</p>
+		<ol>
+			<li>
+				You can add the location of the IMOD <code>bin</code> directory (e.g., <code>C:\cygwin\usr\local\IMOD\bin</code>) 
+			to the Windows path, in which case you will be able to run everything, 
+			including shell scripts, from a DOS window.
+      <li>
+        If there will be multiple IMOD users of the system, they should add HOME
+        environment variables to point to their directories
+        in <code>C:\Users</code>, following the procedure described below in
+        the paragraph <i>To define an environment variable in Windows</i>.
+			<li>
+				If you want to be able to display and print Postscript graphs from the Fortran 
+				graphics programs (e.g., <code>nda, mtk, mtoverlap</code>), you can install <a href="http://bio3d.colorado.edu/imod/windows/gs811w32.exe">
+					ghostscript</a>&nbsp;and <a href="http://bio3d.colorado.edu/imod/windows/gsv45w32.exe">
+					gsview</a>&nbsp;for Windows.</li>
+		</ol>
+		<p>
+			The rest of this section describes other ways of installing IMOD. If you run a 
+			self-installing package at the command line instead (with filename ending in <code>.sh</code>), 
+			it will install IMOD in /usr/local and copy <code>IMOD-cygwin.sh</code> and <code>IMOD-cygwin.csh</code>
+			to <code>/etc/profile.d</code>, unless given options telling it to do something 
+			else.
+			<span style="COLOR: rgb(255,0,0); FONT-WEIGHT: bold">It will not work by
+clicking on it, only
+by executing it from the command line.</span>&nbsp; To install or upgrade IMOD this way, 
+			start a Cygwin terminal window, change to the directory where the package is 
+			located, and enter, e.g.:<br>
+			&nbsp;&nbsp;&nbsp;&nbsp;<code>sh imod_4.11.1_win.sh</code></p>
+		<p>
+			You will have to open a new Cygwin window for a new installation to take 
+			effect.
+		</p>
+		<p>
+			After installation at the command line, everything can be run from a
+			Cygwin window. &nbsp;In order to run from a Command Prompt window or
+			to run Etomo by clicking on a shortcut to <code>etomo.cmd</code>, you
+			also need to define some environment variables inside Windows:</p>
+		<ol>
+			<li>
+			<a name="defineWinVar">
+        <i>To define an environment variable in Windows:</i></a> Right click
+			Computer or My Computer or This PC on the Desktop, in a browser window
+			or in the Start menu.  Select Properties. In whatever window comes up,
+			select Advanced or Advanced System Properties, then Environment
+			Variables.  If your privileges do not give you access to the dialog in
+			this way, you can still access your user variables in two other ways: 1) Open
+			the Control Panel and select User Accounts, then User Accounts
+			again if you were viewing the control panel by category, then select
+			Change My Environment Variables.  2) In a terminal window or Command
+			Prompt window, enter<br>
+      <code>&nbsp;&nbsp;&nbsp;rundll32 sysdm.cpl,EditEnvironmentVariables</code>
+      <li>
+			Define all of these paths in Windows format as illustrated in the following 
+			steps. Press "New" to define a variable.
+			<li>
+				Under "System variables", define <code>IMOD_DIR</code> to be <code>C:\cygwin\usr\local\IMOD</code>
+			<li>
+				Under "User variables for username", define <code>HOME</code> to be <code>C:\cygwin\home\username</code>
+			<li>
+				You also need to add the Cygwin bin to the system path, e.g., under "System 
+				variables", select <code>PATH</code>, press "Edit", and add <code>C:\cygwin\bin; </code>
+				to the front of the path (the ";" is a separator).</li>
+		</ol>
+		<p>
+			Even if you are not running Etomo, if you installed to a drive other than C:, 
+			you should define&nbsp; <code>IMOD_DIR</code> as an environment variable in 
+			Windows as described above, but with the appropriate letter instead of C, so 
+			that <code>3dmod</code> will be able to find help files if it is started by 
+			clicking on an icon.</p>
+		<p>
+			The steps for manually installing from the tar file instead are:</p>
+		<ol>
+			<li>
+			Start a Cygwin terminal window.
+			<li>
+				Move your copy of the IMOD distribution to <code>/usr/local</code> either from 
+				the command line or from an Explorer window, where the location will appear as <code>
+					C:\cygwin\usr\local</code>.
+			<li>
+				Change directory to <code>/usr/local</code> and, if you have an existing IMOD 
+				installed, rename it.<br>
+				<code>&nbsp;&nbsp; cd /usr/local<br>
+					&nbsp;&nbsp; mv IMOD oldIMOD</code><li>
+				&nbsp;Unpack the tar file, rename it to IMOD, and copy startup files:
+				<br>
+				<code>&nbsp;&nbsp; tar -xzf imod_4.11.1.tar.gz </code>
+				<br>
+				<code>&nbsp;&nbsp; mv imod_4.11.1 IMOD </code>
+				<br>
+				<code>&nbsp;&nbsp; cp IMOD/IMOD-cygwin.* /etc/profile.d</code></li>
+		</ol>
+		<a name="SettingUpNoCygwin">
+			<h3>1.7. Setting Up a Windows PC and Installing IMOD without Cygwin</h3>
+		</a>
+    <p>To install IMOD without Cygwin using our installer package, you need to
+    have Administrator privileges on Windows versions past XP because, for
+    now, the installation can go only in C:\Program Files.
+    </p>
+    <p>You must have Python installed to use IMOD fully on Windows, as well as
+    a module called psutil built for the same version of Python.  The IMOD
+    installer relies on the registry entries made by Windows
+    Python packages from the 
+    <a href = "http://www.python.org/download/releases/">Python download
+    site</a> to find Python, so a package from there is probably needed to use
+    the installer.  There is no need to upgrade if you already have a Python
+    installed that works for IMOD; for the purposes of running IMOD, there is
+    no benefit to having a newer Python.  Some packages are provided here:
+    <ul>
+      <li> 32-bit <a href = "http://bio3d.colorado.edu/imod/windows/python-2.7.18.msi">Python 2.7</a> and matching
+        <a href="http://bio3d.colorado.edu/imod/windows/psutil-1.2.1.win32-py2.7.exe">psutil</a>
+      <li> 64-bit <a href = "http://bio3d.colorado.edu/imod/windows/python-2.7.11.amd64.msi">Python 2.7</a> and matching
+        <a href="http://bio3d.colorado.edu/imod/windows/psutil-1.2.1.win-amd64-py2.7.exe">psutil</a>
+      <li> 32-bit <a href = "http://bio3d.colorado.edu/imod/windows/python-3.3.5.msi">Python 3.3</a> and matching
+        <a href="http://bio3d.colorado.edu/imod/windows/psutil-1.2.1.win32-py3.3.exe">psutil</a>
+      <li> 64-bit <a href = "http://bio3d.colorado.edu/imod/windows/python-3.3.5.amd64.msi">Python 3.3</a> and matching
+        <a href="http://bio3d.colorado.edu/imod/windows/psutil-1.2.1.win-amd64-py3.3.exe">psutil</a>
+&nbsp;&nbsp;&nbsp; (runs on Windows XP and above)
+      <li> 64-bit <a href = "http://bio3d.colorado.edu/imod/windows/python-3.8.8-amd64.exe">Python 3.8</a> and matching
+        <a href="http://bio3d.colorado.edu/imod/windows/psutil-5.7.3-cp38-cp38-win_amd64.whl">psutil</a>
+&nbsp;&nbsp;&nbsp; (runs on Windows 7 and above)
+    </ul>
+    </p>  
+    <p>
+    Unless you know or anticipate that other software will need Python 2.7,
+    you might as well install Python 3.  If you need to use a Python package
+    other than the ones here, get a matching version of psutil from the
+    <a href="https://pypi.org/project/psutil">psutil site</a>; use the
+    Download link to get to the various versions.
+    </p>
+    <p>For older Python, click on the downloaded Python file to install it; it installs without
+    using "Run as Administrator". For Python 3.8, right click on the file and
+    select "Run as Administrator".&nbsp; Python does not need to install in the
+    default location that it offers;
+    you can put it in <code>C:\Program Files</code> under the name of the version (e.g.,
+    set the install location to <code>C:\Program Files\Python3.3</code>).
+      Check the option to add Python to the PATH if one is present, and you
+    might as well let it disable the path length limit if that is
+    offered.  If you
+    customize the installation to leave out unneeded components (e.g.,
+    Documentation, tcl/tk, and the test suite), be sure to keep PIP if that
+    is listed.
+      </P>
+    <p>Next install psutil.  For older version such as those for Python 2.7
+    and 3.3 in the links above, right click on the file and select 
+    "Run as Administrator".   Newer versions, like the one for Python 3.8
+    above, come in a ".whl" file that installs with the Python package
+    installer <code>pip</code>.  Open a 
+    Command Prompt window as Administrator by right clicking on its icon and
+    selecting "Run as Administrator".&nbsp; (One way to run it is to open the Start
+    menu and type "cmd"; Windows should offer Command Prompt as the best match
+    and you can right-click on that.)&nbsp; Then <code>cd</code> to the
+    location of the psutil file (e.g., <code>cd
+    C:\Users\username\Downloads</code> where "username" is your account name). 
+      Finally enter, for example,<br>
+      &nbsp;&nbsp;&nbsp; <code>pip install psutil-5.7.3-cp38-cp38-win_amd64.whl</code><br>
+      (You can type the Tab key after "psutil" and it will complete the
+    name.)&nbsp; You can ignore the warning that a newer version of pip is
+    available unless you plan to install more packages.
+    </p>
+    <p>After Python and psutil are installed, click on the IMOD
+			installer.&nbsp; If you get a message from Defender SmartScreen that
+			"Windows protected your PC", press <b>More info</b> instead of <b>Don't
+			run</b>, then press <b>Run anyway</b>.&nbsp; If you then get a message
+			from User Account Control asking if you want this app to make changes to
+			your device, press <b>Yes</b>.&nbsp;
+			When the installer finally starts, press buttons to confirm each step;
+			there are no options.  It will
+    install IMOD in <code>C:\Program Files\IMOD</code>, define the environment
+    variables <code>IMOD_DIR</code>, <code>IMOD_PLUGIN_DIR</code>, and 
+      <code>HOME</code>, and place both IMOD and the version of
+      Python that it finds on the path.  For Windows Vista and higher, it will
+      also define <code>IMOD_CALIB_DIR</code> to
+      be <code>C:\ProgramData\IMOD</code>.  
+    </p>
+    <p>In order to run Etomo, you also need to have Java installed.&nbsp;
+    Again, see <a href="#InstallingJava">1.1 Installing Java for Etomo.</a>
+    </p>
+    <p>
+      If you want to use a better terminal window than the Command Prompt
+      window, try getting the Console program from 
+      <a href="http://sourceforge.net/projects/console">sourceforge</a>.  This
+      program allows window resizing, font and color control, easy cutting and
+      pasting with mouse buttons, and multiple tabs.
+      Unzip the package wherever you want to; it will create a directory
+      "Console2" with Console.exe inside, to which you can create a shortcut on your
+      desktop. This <a href="http://bio3d.colorado.edu/imod/windows/console.xml">
+        configuration file</a> has some good initial settings.  Make a folder
+      named <code>Console</code> inside 
+      <code>C:\Users\yourUserName\AppData\Roaming</code> (on Window 10) or
+      <code>C:\Users\yourUserName\Application Data</code> (on Windows 7)
+      and place the file in that folder.
+    </p>
+    <p>
+      There is no <code>man</code> command for viewing program manual pages,
+      but <code>imodhelp programName</code> will open Qt Assistant to the
+      manual page for the given program.  The program name can even be
+      abbreviated. 
+    </p>
+    <p> 
+      If there will be multiple IMOD users of the system, they should add HOME
+      environment variables to point to their directories in <code>C:\Users</code>. 
+      Without Cygwin, environment variables can be set only through a
+      Windows dialog that can be opened by various means, all described in the
+      section above, <a href="#defineWinVar">To define an environment variable
+      in Windows</a>.  There is no IMOD startup script, so ignore any
+      references to IMOD startup scripts below.
+    </p>
+    <p>
+      If you want to upgrade to a beta version after you have installed IMOD
+      from one of the executable installer packages, you should find and use an
+      executable installer on the beta download site.  If not, or to install a
+      nightly build, you need to download the appropriate self-installing
+      package file, for example, <code>imod_4.12.12_win64_NoCUDA.sh</code>.  Copy the
+      file <code>installIMOD</code> from <code>C:\Program Files\IMOD</code> to
+      the same place that you put the package, which should NOT
+      be <code>C:\Program Files\IMOD</code>. Open a Command Prompt window by
+      right-clicking on a shortcut and
+      selecting "Run as Administrator".  In the terminal, <code>cd</code> to
+      the folder with the files and enter (for this example file)
+      <pre>    python installIMOD -skip imod_4.12.12_win64_NoCUDA.sh</pre>
+    </p>
+		<a name="UsingBashOnWin">
+		<h3>1.8 Using IMOD under "Bash on Ubuntu on Windows"</h3></a>
+    <p>
+    IMOD can be run under the "Bash on Ubuntu on Windows" environment in
+    Windows 10, but
+    this has several disadvantages.  The many programs that use OpenMP to
+    access multiple cores will only be able to use one core, and there is no
+    access to hardware acceleration of model displays or to the GPU for
+    computing.  This environment is a way to run Ubuntu on a Windows PC, not a
+    way to have Linux tools in the Windows environment.  The Ubuntu installation is
+    larger than Cygwin (~1100 MB), and to some extent, it would have to be
+    maintained as a separate operating system.  Although the Windows
+    filesystem can be accessed, Windows programs, including the IMOD
+    distributions for Windows, cannot be run.  Nevertheless, if you wish to
+    use IMOD under this environment, here are the things to know:</p>
+    <ul>
+      <li> Follow whatever steps are needed for running IMOD on Ubuntu
+      namely: <br>
+        &nbsp;&nbsp;&nbsp; <code>sudo apt-get install default-jre</code>
+      <li> Install an X-server on the Windows PC, such as <code>xming</code>.
+      <li> Install some packages needed for OpenGL to work; the simplest way is:<br>
+        &nbsp;&nbsp;&nbsp; <code>sudo apt-get install Xorg</code><br>
+        although some subset with Mesa OpenGL libraries may be sufficient.
+      <li> Install an appropriate version of IMOD for Linux.
+      <li> Set two environment variables <br>
+        &nbsp;&nbsp;&nbsp; <code>export KMP_AFFINITY=disabled</code><br>
+        &nbsp;&nbsp;&nbsp; <code>export DISPLAY=:0</code>
+    </ul>
+		<a name="ParallelProc">
+    <h3>1.9 Setting up Parallel Processing in IMOD</h3></a>
+    <p>
+      Parallel processing is done in IMOD by dividing a job into multiple
+      parts and using <a href="man/processchunks.html#TOP">Processchunks</a>
+      to execute the chunks on multiple processors.  Almost all parallel
+      processing is done through Etomo, which uses Processchunks.
+      The processors can be either all on one machine,
+      on multiple machines, or on a cluster queue.  (See the 
+      <a href="man/queuechunk.html#TOP">Queuechunk man page</a> for the
+      definitive list of supported cluster types.)  Multiple
+      machines or a cluster need to be defined in a
+      file <code>cpu.adoc</code> that is located in the directory
+      pointed to by the environment variable IMOD_CALIB_DIR (default
+      <code>/usr/local/ImodCalib</code>, or <code>C:\ProgramData\IMOD</code>
+      on Windows without Cygwin).  See the example <code>cpu.adoc</code> file
+      in <code>$IMOD_DIR/autodoc</code> and
+      the <a href="man/cpuadoc.html#TOP">manual page for cpu.adoc</a> for full
+      details on configuring this file. </p>
+    <p>
+      For a single machine with multiple CPUs,
+      there are three simple options for enabling the parallel processing
+      through Etomo: </p>
+    <ol>
+      <li> In Etomo, open the Settings dialog from the Options menu, check 
+        "Enable Parallel processing" and enter the number of processors.
+      <li> Make a file /usr/local/ImodCalib/cpu.adoc with these two lines:
+        <br>&nbsp;&nbsp;&nbsp; <code>[Computer = localhost]</code>
+        <br>&nbsp;&nbsp;&nbsp; <code>number = 4</code><br>
+        where the number should be set to the number of processors.
+      <li> set the environment variable IMOD_PROCESSORS to the number of
+        processors, e.g.,
+        <br>&nbsp;&nbsp;&nbsp; <code>export IMOD_PROCESSORS=4</code>   (for bash users)
+        <br>&nbsp;&nbsp;&nbsp; <code>setenv IMOD_PROCESSORS 4</code>   (for tcsh users)
+    </ol>
+    <p> We recommend using only the number of physical cores on the system
+    when there is hyperthreading available.  For the computational tasks in
+    IMOD, using more than the number of physical cores is usually of little
+    benefit at best, and using all of the hypercores will make 
+    jobs take longer overall.  To determine the number of physical cores, you
+    can enter
+      <br>&nbsp;&nbsp;&nbsp; <code>imodqtassist -t</code><br>
+    <p>
+      Parallel processing on multiple machines requires two things in addition
+      to a <code>cpu.adoc</code> file: it must be possible to log 
+      in to all machines via ssh without a password, and the data must be in a
+      shared file system accessible to all machines.
+      To set up ssh keys for access without passwords, simply run
+      <br>&nbsp;&nbsp;&nbsp; <code>ssh-keygen -t rsa</code><br>
+      and type Enter for all of the queries.  Then enter:
+      <br>&nbsp;&nbsp;&nbsp; <code>cp $HOME/.ssh/id_rsa.pub 
+        $HOME/.ssh/authorized_keys</code>
+      <br>
+      If necessary, distribute this authorized_keys file to the .ssh directories
+      on other machines that do not have the same home directory.  The three 
+      different kinds of platforms (Linux/Unix, Mac OSX, Windows with Cygwin) may require
+      separately generated keys.  If this seems to be the case, run ssh-keygen once
+      on each type of machine then
+      combine the .ssh/id_rsa.pub files from each into one authorized_keys file.
+      Distribute this combined authorized_keys file to the .ssh directories.
+    </p>
+    <p>
+      Processchunks runs jobs via ssh by starting a non-interactive bash login shell
+      on the remote computer.  Any programs to be run must be on your path when
+      logging in as a bash user.  If you use only IMOD programs in the command file
+      and IMOD has been installed by the default method, there should be no
+      problem and nothing else to do.  The exception is on Ubuntu with an
+      older version of IMOD installed.  Before IMOD 4.9, the installer did not
+      copy the IMOD startup scripts to <code>/etc/profile.d</code>, and the
+      the environment thus does not get set right for running commands
+      through ssh.  The easiest remedy is to upgrade IMOD.
+    </p>
+    <p>
+      However, if you set up the IMOD environment in your own startup files instead
+      of in the default way, you need to make sure that the environment is defined
+      when running this bash shell.  Specifically, you need to set the IMOD_DIR
+      environment variable then source <code>$IMOD_DIR/IMOD-linux.sh</code> or 
+      <code>$IMOD_DIR/IMOD-mac.sh</code> in your <code>~/.bash_profile</code>
+      and not just in your <code>~/.bashrc</code>, since the latter is not run by the
+      non-interactive shell.  Similarly, if you are running programs outside IMOD
+      whose environment is set up in your own startup files, you need to do
+      that in <code>~/.bash_profile</code>. However, we have found that in
+      other contexts it does not work to set environment only
+      in <code>~/.bash_profile</code>.  Thus, the recommended approach is to
+      set the environment in <code>~/.bashrc</code> and source that file
+      from <code>~/.bash_profile</code>.
+    </p>
+    <p>To diagnose problems, there are a few tests that you can run by issuing the
+      same kind of command that Processchunks uses to run jobs, of the form:
+      <br>&nbsp;&nbsp;&nbsp; <code>ssh -x machine bash --login -c \'"command"\'</code>
+      <br>
+      where the command can be relatively complex because of the quoting; but the
+      quoting can be omitted for simple commands.  Specifically, use
+      <br>&nbsp;&nbsp;&nbsp; <code>ssh -x machine bash --login -c \'"cd directory"\'</code>
+      <br>
+      to test if you can change to the given directory.  Use
+      <br>&nbsp;&nbsp;&nbsp; <code>ssh -x machine bash --login -c imodinfo</code>
+      <br>
+      to test if the remote machine can run IMOD this way, and use
+      <br>&nbsp;&nbsp;&nbsp; <code>ssh -x machine bash --login -c env > env.out</code>
+      <br>
+      to collect the environment if there is trouble running IMOD.
+    <p>
+      It is possible to have a user name as part of the machine name
+      (user@machine) in these ssh commands, in the <code>cpu.adoc</code>
+      file, or in the machine names provided when running Processchunks
+      directly.  However, although the user name may be different between
+      machines, it should be the same user in some sense (probably in terms of
+      the user ID on the systems).
+    </p>
+    
+		<a name="UsingGPU">
+		<h3>1.10. Using a GPU for Tomography</h3></a>
+		<p>With most versions of the IMOD 4.11 packages, you can use the graphics
+			processing unit (GPU) of an NVIDIA graphics card to compute tomograms,
+			correct for microscope CTF,
+			and align camera movie frames.&nbsp; This works with any recent NVIDIA
+			card, but you also need to have 
+			NVIDIA drivers new enough to support the version of CUDA that IMOD was
+			built with.&nbsp; To see if your card can be 
+			used, check it in <a href="https://developer.nvidia.com/cuda-gpus">NVIDIA's 
+				lists </a>.&nbsp; Some of the packages for IMOD 4.11 are built with CUDA 
+			version 8.&nbsp; A few packages are built for older CUDA versions.&nbsp; 
+			A package 
+			built with a particular version of CUDA will work with CUDA drivers of the same 
+			or a higher version.&nbsp; Always use a package built with the highest
+			version number supported by your drivers, because there may be a significantly longer
+			startup time using a package built with a lower version (this is the
+			case for CUDA 6).
+			Here are details for the three operating systems:</p>
+		<ul>
+			<li>
+				<b>Linux:</b> the RHEL6 and RHEL7 packages of IMOD built with CUDA 8.0 require a driver
+			from February 2017 or later supporting CUDA 8.  The RHEL6 package built
+			with CUDA 6.0 requires a driver version of 331 or
+			higher.  
+			<li>
+				<b>Windows:</b>
+			the capability is available in some 64 bit packages.  The package
+			built with 8.0 will work with driver versions since February
+			2017 supporting CUDA 8.  The package
+			built with 6.5 will work with driver versions since January
+			2015 supporting CUDA 6.5.  The package built with CUDA 4.1 requires a
+			driver version of
+			286.19 or higher, such as the WHQL driver, 295.73, with a date of
+			February 21, 2012, or any later driver.
+		 <li>
+				<b>Mac:</b> CUDA is not supported in the latest Mac OS versions, so
+				the capabilty is available only in a package built under OS X 10.12
+				with CUDA 8.
+				The drivers 
+				that support CUDA are not part of the basic graphics drivers and must be 
+				installed separately.  Once they are installed, the system may offer
+				to upgrade them, or you may be able to upgrade them through a button in the Other
+				section of System Preferences.&nbsp;  All driver versions are
+				available at the NVIDIA <a href =
+				"http://www.nvidia.com/object/mac-driver-archive.html">CUDA Driver
+				Archive</a>.
+			</li>
+		</ul>
+    <p>
+			The easiest way to test whether the GPU is functioning and computing reliably 
+			is to run the command:<br>
+			<code>&nbsp;&nbsp; gputilttest</code></p>
+		<p>
+		This will unpack test data and do a one-minute test for reproducibility.&nbsp; 
+		And optional argument can be added to set the length of the test in minutes; an 
+		optional second argument can be used to specify the GPU number when there is 
+		more than one.&nbsp; Some years ago, a few cards gave variable results, so
+		it may be important 
+		to test for reproducible results initially, periodically thereafter, and
+		especially after upgrading the NVIDIA drivers or the operating system.
+		There is also a button on the Front Page of Etomo for running this test.
+		If the test fails, the file <code>gputtest.log</code> will have some
+		diagnostic information, in particular a line like<br>
+    <code>&nbsp;&nbsp; CUDA version - driver: 6.050  runtime: 6.000</code><br>
+    which would indicate a version problem if the driver is lower than the runtime.
+ 		<p>
+			The GPU can be enabled for use when making reconstructions in Etomo in one of two ways.&nbsp; If you 
+			have a <a href="man/cpuadoc.html#TOP">cpu.adoc</a> file to specify machines 
+			available for parallel processing, then you need to add a line</p>
+		<p><code>&nbsp;&nbsp; gpu = 1 </code>
+		</p>
+<p>to the section for each computer with a usable GPU.&nbsp; If you do not have a <code>
+				cpu.adoc</code> file, then select <B>Settings</B> from the <B>Options</B> menu 
+			of Etomo.&nbsp; In the box <B>User Level Enhanced Processing</B>, check <B>Enable 
+				graphics processing</B>.  However, if there is more than one gpu in
+				your computer, the only way to access this is by providing
+			a <code>cpu.adoc</code> with a line like</p>
+<p><code>&nbsp;&nbsp; gpu.device = 1,2,3 </code>
+</p>
+<p>See the <a href="man/cpuadoc.html#TOP">cpu.adoc help file</a> for details
+			and the example <code>cpu.adoc</code> file in <code>IMOD/autodoc</code>.
+<p>
+			If you want to know how much speed improvement your system has, get <code>tilttimers.tar.gz</code>
+			from our <a href="http://bio3d.colorado.edu/ftp/benchmarks">benchmark
+		directory</a> and follow 
+			the instructions in the <code>README</code> file there.  More extensive
+		benchmarks are available in the file <code>gputests.tar.gz</code>.
+		</p>
+		</p>
+		<a name="ImodCalib">
+		<h3>1.11. Using the ImodCalib Directory</h3></a>
+		<p>Several parts of IMOD look for data and configuration files in a separate 
+		location, pointed to by the environment variable IMOD_CALIB_DIR. These files 
+		include the <code>cpu.adoc</code> file for enabling parallel processing, 
+		distortion correction files, noise files for microscope CTF correction, and 
+		local startup files. The default value for IMOD_CALIB_DIR is <code>/usr/local/ImodCalib</code>
+		on all platforms except Windows without Cygwin, where it is set to 
+    <code>C:\ProgramData\IMOD</code> on Windows Vista and higher.  It is set
+		in the IMOD startup scripts if it is not already defined. We have designed
+		this directory as a place for local files 
+		that should not be replaced when IMOD is upgraded. Minimally, then, you may 
+		want to create this directory and place a <code>cpu.adoc</code> there defining 
+		the number of processors on one or more machines. In addition, the IMOD startup 
+		scripts will try to source local startup scripts in this directory: <code>IMOD-...csh</code>
+		will source <code>$IMOD_CALIB_DIR/IMOD.csh</code> and <code>IMOD-...sh</code> will 
+		source <code>$IMOD_CALIB_DIR/IMOD.sh</code>. You can use these startup scripts 
+		for customizations, such as redefining <code>IMOD_JAVADIR</code>, instead of 
+		modifying the startup scripts that come with IMOD and get replaced with each 
+		new version. However, if you are going to take advantage of this mechanism and 
+		want to redefine <code>IMOD_CALIB_DIR</code> to point to a different location, 
+		your startup must set this environment variable before sourcing the IMOD 
+		startup scripts.</p>
+		<a name="TestVersion">
+		<h3>1.12. Running a Test or Private Copy of IMOD</h3></a>
+    <p>To unpack a copy of IMOD for test purposes and run it in parallel with
+    an installed copy, follow these steps except on Windows without Cygwin:
+    <ol>
+      <li>Download a self-installing package file (one ending
+        in <code>.sh</code>), for example <code>imod_4.12.10_win64_CUDA8.0.sh</code>.
+      <li><code>cd</code> to the directory where you want this copy of IMOD
+        to be located and move the package file there.
+      <li>To place this copy in a directory named <code>testIMOD</code>, run
+        <br><code>&nbsp;&nbsp; sh imod_4.12.10_win64_CUDA8.0.sh -skip -dir . -name testIMOD</code>
+      <li>If running the <code>bash</code> shell, run these commands in a
+        terminal any time you want to run this copy instead of the installed
+        one:
+        <br><code>&nbsp;&nbsp; unset IMOD_DIR</code>
+        <br><code>&nbsp;&nbsp; unset IMOD_PLUGIN_DIR</code>
+        <br><code>&nbsp;&nbsp; source testIMOD/IMOD-*.sh</code>
+    </ol>
+    <p>If running the <code>tcsh</code> shell, use <code>unsetenv</code> and
+      source the <code>.csh</code> file instead.
+      </p>
+      <p>On Windows without Cygwin, follow these steps (which only work with
+        an <code>installIMOD</code> from an installed version of
+        4.9.11 or 4.10.21, or higher): 
+      <ol>
+        <li>Download a self-installing package file, not the executable
+          installer, i.e., one ending in <code>.sh</code> instead
+          of <code>.exe</code>, for example <code>imod_4.12.10_win64_CUDA8.0.sh</code>.
+        <li>In a command prompt or other terminal window, <code>cd</code> to
+          the directory where you want this copy of IMOD to be located and move
+          the package file there, for example, <code>C:\Users\myname\Documents</code>.
+        <li>To place this copy in a directory named <code>testIMOD</code>, run
+          <br><code>&nbsp;&nbsp; python %IMOD_DIR%\installIMOD -skip -dir
+            . -name testIMOD imod_4.12.10_win64_CUDA8.0.sh</code>
+        <li>Run these commands in a terminal any time you want to run this
+          copy instead of the installed one (substituting the actual directory in the
+          first commmand):
+          <br><code>&nbsp;&nbsp; set IMOD_DIR=C:\Users\myname\Documents\testIMOD</code>
+          <br><code>&nbsp;&nbsp; PATH=%IMOD_DIR%\bin;%PATH</code>
+          <br><code>&nbsp;&nbsp; set IMOD_PLUGIN_DIR=%IMOD_DIR%\lib\imodplug</code>
+      </ol>
+      </p>
+    <a name="HighDPI">
+      <h3>1.13 Support for High-DPI Monitors in IMOD</h3></a>
+      <p>
+        High-DPI (high-resolution) monitors are supported to varying extents in the
+        three graphical programs in IMOD based on the Qt toolkit: 3dmod, midas, and
+        ctfplotter.  This support relies on the solutions provided by Qt, which are
+        imperfect and vary between operating systems.  They are only available
+        in IMOD packages built with Qt 5: currently RHEL7 in Linux, packages
+        for CUDA6.5 and CUDA 8.0 on Windows, and the osx10.11 package on Mac.
+        On Windows and Mac, the support is dynamic: programs can detect when a
+        window is moved between monitors with different DPI and adjust the
+        font size and spacing in dialogs.  On Linux, the scaling for DPI only
+        works properly when set before program startup, so problems will be
+        encountered when using monitors with different DPIs. These points may
+        be helpful when using a high-DPI monitor:
+      </p>
+      <ul>
+<li><i>Default font size on Windows:</i>
+On Windows, the default size of fonts depends on the DPI of the main monitor,
+regardless of which monitor they are launched from.  Since the font scaling by
+Qt was found to be inadequate when the main monitor was high-DPI, programs
+scale the default font size up by a factor (less than the DPI ratio).  This
+determines the font size used by midas and ctfplotter, and by 3dmod when the
+default font has not been changed in the 3dmod Options dialog.  Once you
+change the font size in 3dmod, you may find the font too large or small after
+changing which monitor is the main one, and you will have to adjust the font
+size for the new arrangement. </li>
+
+<li><i>Scaling on Linux:</i>
+On Linux, the scaling is governed by the physical DPI of the monitor, which is
+determined in the startup script for each program.  The environment variable
+QT_SCALE_FACTOR is then set to the DPI divided by 96, provided that this
+variable is not already defined, and that the ratio is 1.25 or higher.  You
+can change the scaling by setting QT_SCALE_FACTOR yourself. </li>
+
+<li><i>Multiple monitors with different DPI:</i> 
+In a multiple-monitor situation on Mac or Windows, programs will appear on the
+same monitor from which they are launched.  When moving a windows between
+monitors, move it across the boundary in one motion and release the mouse
+button right away when you stop moving it.  </li>
+
+<li><i>Windows with multiple monitors:</i> In Windows, windows sizes come out
+wrong after the monitor changes, and programs attempt to adjust for this.
+3dmod will adjust the size of the Information window, image display and model
+view windows, and any of the dialogs that are docked to the Info window or to
+the model view window.  Other dialogs (including the slicer angles dialog)
+will need to be resized manually if desired.  Midas will restore the original
+height of the program window but not manage the width.  These size adjustments
+are done a certain time interval after the monitor change and the end of
+window movement, but the last size change by Qt or the system occurs when the
+mouse is released; hence the need to release the mouse when you stop moving a
+window.</li>
+
+<li><i>Docked dialogs detached:</i> 
+When the 3dmod Information window or Model View window is moved between
+monitors with different DPIs, any docked dialogs are detached and must be
+moved separately.</li>
+
+<li><i>Pixels in image/model display windows:</i>
+Drawing in the image and model display windows in 3dmod and Midas is done with
+native (physical) pixels, and window sizes (such as the one in the Zap
+toolbar) are reported in such pixels. These programs will set the initial
+zoom, if necessary, to 1.5 or 2 to avoid coming out with a small display on a
+high-DPI monitor.  The zoom will be adjusted when moving between monitors with
+different DPIs. On a Mac, this adjustment may fail, or image or model drawing
+may be off by a large factor.  If this happens, just resize the window by a
+small amount; this will give the program the information it needs to draw
+correctly in the window.</li>
+      </ul>
+      </p>
+		  <br>
+		  <a name="GettingStarted">
+			  <h2>2. Getting Started</h2>
+		  </a>
+      <p>You will want to go through the <a href="3dmodguide.html#TOP">Introduction to 3dmod</a>
+			  because <code>3dmod</code> is the central graphical tool of the IMOD 
+			package.&nbsp; If you are doing tomography, you should start with the <a href="etomoTutorial.html#TOP">
+				Etomo tutorial</a>.&nbsp;This Etomo tutorial is also available in video 
+			form on our&nbsp; <A href="http://www.youtube.com/bl3demc">YouTube channel</A>.&nbsp; 
+			If you are doing reconstructions from serial images such as serial thin
+			sections or serial block face images, you should work through the 
+      <a href="serialalign.html">Serial Section Alignment guide</a>, which
+      will take you through the steps needed to align the images in Etomo.
+      For access to the complete IMOD documentation, just enter <code>imodhelp</code> 
+			at the command line to open it in the Qt Assistant, where it can be browsed and 
+			searched.&nbsp; 
+    </p>
+    <p>
+      Aside from learning to use the major tools, your initial problem may be
+			getting data into a format usable by the IMOD programs.&nbsp; If you are
+			having problems getting 
+			your data into a format usable by IMOD contact, us for help.</p>
+		<h3>2.1. The Image Data Format and File Conversion</h3>
+		<p>All of the IMOD programs read and produce files in
+			the <a href="mrc_format.txt">MRC image file format</a>.&nbsp; All but one
+			can read and produce files in an <a href="hdf_format.html">HDF image file
+			format</a> compatible with EMAN2; HDF files
+			from UCSF Chimera can also be read.
+			Programs can also read and write TIFF image stacks and single-image JPEG
+			files, and can read files in several specialized
+			image formats compatible with MRC: DigitalMicrograph, PIF files from
+			Bsoft, EM, and Hanspeter Winkler's NFF.  
+      In addition to those formats, <code>3dmod</code> can read some other common 
+			formats like PNG and BMP,
+			and it has a dialog box and options for specifying how to read raw
+			data.</p>
+    <p>As of IMOD 4.9, programs write MRC files in byte mode as signed by
+    default (values of -128 to 127), which
+    was a change from previous behavior to conform with a clarification of the
+    MRC standards.  Such files will not be read correctly by IMOD versions
+    before 4.3, and you may still encounter other software that has difficulty with
+    signed byte files.  Two programs have command-line options to produce
+    unsigned output files (values 0-255):
+    <a href="man/newstack.html#TOP">newstack</a> (option "-byte 0")
+    and  <a href="man/clip.html#TOP">clip</a> (option "-m ubyte").  In
+    addition, you can make all programs write unsigned bytes by setting the
+    environment variable WRITE_MODE0_SIGNED to 0.  At least as of version 2.1.0/1.53g,
+    ImageJ does not read signed byte files correctly unless you import them
+    through the Bioformats tool.  Please inform the IMOD
+    developers if you run into other up-to-date software that does not read
+    signed bytes correctly.
+    </p>
+    <p>
+			Even though IMOD programs can read multiple file types, you will
+			generally want to convert your data to a stack of images in MRC or HDF format, 
+      because most programs are designed to operate on a stack of images
+			in a single file rather than on a set of single-image files.  Thus,
+			we have utility programs available for converting TIFF files and raw data into 
+			the MRC file format and combining single-image files into a stack.&nbsp; 
+    </p>
+		<p>
+			Use the program <a href="man/tif2mrc.html#TOP">tif2mrc</a> to convert a series 
+			of TIFF image files into a single MRC image file. The <code>tif2mrc</code> program 
+			has an option for converting 24-bit color to 8-bit grayscale images. The 
+			following example entry will create a MRC file from a list of TIFF files
+		  (cell01.tif, cell02.tif ...).
+			<br>
+			<code>&nbsp;&nbsp; tif2mrc cell*.tif cell.mrc</code></p>
+		<p>The files must be in the current directory of the terminal where you
+			enter the command.  See the <a href="man/tif2mrc.html#TOP">tif2mrc
+			manual page</a> for more information on how to
+			use <code>tif2mrc</code>.</p>
+		<P>Use the program <a href="man/dm2mrc.html#TOP">dm2mrc</a> to convert a series of 
+			DigitalMicrograph image files into a single MRC image file. The following 
+			example will create a MRC file from a list of DigitalMicrograph files 
+			(cell01.dm3, cell02.dm3....;&nbsp;note that dm2 and dm4 files are also 
+			supported.)<BR>
+			&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<FONT size="2" face="Courier New">dm2mrc 
+				cell*.dm3 cell.mrc</FONT></P>
+		<P>
+			If you have a series of MRC files, with one image per file, you can 
+			combine them into a single stack easily with the program &nbsp;<a href="man/newstack.html#TOP">newstack</a>.&nbsp; 
+			For example, enter
+			<br>
+			<code>&nbsp;&nbsp; newstack cell*.mrc cell.st&nbsp;</code><br>
+      You can also use <code>newstack</code> to stack TIFF and
+      DigitalMicrograph files, provided that no special conversion options are
+      needed.&nbsp; <code>newstack</code> and another
+      program <code>clip</code>, have options for specifying that the output
+      should be in HDF format; other programs can be made to do so by setting
+      an environment variable, IMOD_OUTPUT_FORMAT (see
+      <a href="man/imodenv.html#TOP">the page on environment variables).
+    </P>
+		<p>
+			The program <a href="man/raw2mrc.html#TOP">raw2mrc</a> is used to convert raw 
+			image data into the mrc format. This program can take a file of 8, 16,or 32 bit 
+			integers, IEEE float values, or 24-bit RGB triplets and convert them into an 
+			MRC image file. In MRC files, the data start in the lower left hand corner of 
+			the image, with the data stored in rows. To use <code>raw2mrc</code>, you need 
+			to know the size of the images, the type of data, and the size of any header 
+			information preceding the image. &nbsp;For example, if you have a set of files 
+			(cell01.em, cell02.em, ...) with 1024 x 1024 images of signed 16-bit integers, 
+			and a header of 512 bytes, use:
+			<br>
+			<code>&nbsp;&nbsp; raw2mrc -t short -x 1024 -y 1024 -o 512 cell*.em cell.mrc</code></p>
+		<p>If the data need to have their bytes swapped because they come from a
+			very old machine with the opposite byte ordering, use the -s option. 
+			&nbsp;If you do not know something about the image, such as the header size or 
+			whether the data are unsigned or need swapping, you may be able to figure it 
+			out just by trying different options for data types and swapping. &nbsp;If you 
+			do not know the header size, convert one file without the -o option, load it 
+			into 3dmod, and try to see where the image data start. If the final MRC image 
+			is upside down use the -f option in the initial conversion or use the program <a href="man/clip.html#TOP">
+				clip</a> to flip the image back.</p>
+		<p>When a <a href="man/3dmod.html#TOP">3dmod</a> is started with an image file that 
+			it does not recognize, it brings up a dialog that allows you to specify the 
+			image and header size and the data type.&nbsp; Alternatively, you can specify 
+			these features with options at the command line, which could be the most 
+			convenient way to experiment and find the right values.&nbsp; For example, the 
+			files in the previous command could be displayed with:<br>
+			<code>&nbsp;&nbsp; 3dmod -r 1024,1024,1 -H 512 -t 1 cell*.em</code>
+		</p>
+		<h3>2.2. The Model Format</h3>
+		<p>
+			If you already have a 3-D model and wish to view it within the IMOD model 
+			viewing program, <code>3dmodv</code>, you will need to convert the file into 
+			the IMOD format. See the IMOD model file format <a href="asciispec.html#TOP">ASCII</a>
+			and <a href="binspec.html#TOP">binary specifications</a> if you wish to write 
+			your own conversion program. 
+		</p>
+		<p>
+			The IMOD model format can be either binary or ASCII.
+			The main 
+			use of the ASCII format would be to access the data for analysis or conversion 
+			by other programs. To convert a binary IMOD file (binary.imod) to an ASCII IMOD 
+			file (ascii.imod) use the <a href="man/imodinfo.html#TOP">imodinfo</a> command:
+			<br>
+			<code>&nbsp; imodinfo -a binary.imod &gt; ascii.imod</code>
+			<br>
+			or
+			<br>
+			&nbsp;&nbsp;&nbsp; <code>imodinfo -a -f ascii.imod binary.imod</code>
+		<p>
+			will both create an ASCII model file from the binary.imod model.&nbsp; The 
+			ASCII format preserves many but not all possible features in the model.&nbsp; 
+			It is moderately complex and may not be the most convenient format to use for 
+			exporting or importing data.&nbsp; There are also two programs,&nbsp;<a href="man/model2point.html#TOP">model2point</a>
+			and&nbsp;<a href="man/point2model.html#TOP">point2model</a>, that can be used 
+			to convert an IMOD model to or from a simple list of point coordinates.
+		</p>
+			<h2>3. Getting Quantitative Information</h2>
+		</a>
+		<p>In order to get accurate information the fields in the model header have to be 
+			set properly. See the <a href="3dmodguide.html#SettingZ-scale">Introduction to 
+				3dmod</a>&nbsp;for an explanation of how to do this. Selecting the 
+			Edit-&gt;Contour-&gt;Info menu item from the 3dmod Information Window will 
+			cause some quantitative information to be printed out in the bottom panel of 
+			the window.</p>
+		<p>
+			Use the <a href="man/imodinfo.html#TOP">imodinfo</a> command to get basic 
+			information from a model and print it out to a terminal or file. For example:<br>
+			<code>&nbsp;&nbsp; imodinfo cell.imod </code>
+		</p>
+		<PRE># MODEL cell.imod<br># NAME  A little cell<br># PIX SCALE:  x = 1<br>#             y = 1<br>#             z = 9.17<br># PIX SIZE      = 0.00654<br># UNITS: um<br><br>OBJECT 1<br>NAME:  spindle pole<br>       5 contours<br>       object uses closed contours.<br>       color (red, green, blue) = (0, 1, 1)<br><br>       	CONTOUR #1,2,0  16 points, length = 0.464513,  area = 0.0134249<br>        CONTOUR #2,2,0  14 points, length = 0.458311,  area = 0.0125642<br>        CONTOUR #3,2,0  8 points,  length = 0.200755,  area = 0.00277481<br>        CONTOUR #4,2,0  13 points, length = 0.313501,  area = 0.00664029<br>        CONTOUR #5,2,0  9 points,  length = 0.232374,  area = 0.00272134<br><br>        Total volume = 0.00228646<br>        Total contour cylinder surface area = 0.10012.<br>                Total mesh surface area = 0.0349499.<br></PRE>
+		<P>There are several useful command line options for imodinfo to extract lengths of 
+			contours into a single column output, print surface and point size information, 
+			and&nbsp;compute&nbsp;volumes and mesh areas.&nbsp;A text file can be created 
+			using the -f option.</P>
+		<a name="OtherOutput">
+			<h2>4. Output to Other Model Formats</h2>
+		</a>
+		<p>IMOD models can be converted to a few other 3rd party formats.  Perhaps
+			the only one currently useful is Virtual Reality 
+				Modeling Language:
+				<a href="man/imod2vrml.html#TOP">imod2vrml</a> converts to VRML 1.0; and <a href="man/imod2vrml2.html#TOP">imod2vrml2</a> converts 
+				to VRML 2.  VRML has been superceded by <a href="http://www.web3d.org">X3D</a>.
+		<p><i>See also</i>: Manual pages for <a href="man/3dmodv.html#TOP">3dmodv</a>, <a href="man/imodmesh.html#TOP">imodmesh</a>, 
+			and <a href="man/imodinfo.html#TOP">imodinfo</a>.
+		</p>
+		<p>&nbsp;</p>
+		<a name="Special">
+			<h2>5. Help on Specific Topics</h2>
+		</a>
+    <p> This list shows only the most important of the many documents in
+    IMOD.  A complete set of links to all of the documention can be found in
+    two places:<br>
+			&nbsp;&nbsp;&nbsp;&nbsp; <a href="index.html">Index file</a> with links
+    to all files in the current set of documentation being viewed.<br>
+			&nbsp;&nbsp;&nbsp;&nbsp;
+      <a href="http://bio3d.colorado.edu/imod/index.html#Guides">Web page
+      section</a> with links to all documentation in either the current stable release
+      or beta version of IMOD, as well as links for downloading tutorial data sets.
+    </p>
+		<ul>
+			<li>
+				<a href="program_listing.html#TOP">Program Listing</a>
+			with brief description and link to man page for each program<li>
+				<a href="3dmodguide.html#TOP">Introduction to 3dmod.</a>
+			<li>
+				<a href="tomoguide.html#TOP">Tomography guide.</a>
+			<li>
+				A <a href="etomoTutorial.html#TOP">tutorial</a>
+			on building tomograms with Etomo, including a sample data set.
+			<li>
+				<a href="tomojoin.html#TOP">Guide for joining tomograms from serial sections.</a>
+			<li>
+				A <a href="JoinTutorial.html#TOP">tutorial</a>
+			for joining serial section tomograms with Etomo, including a sample data set.
+			<li>
+				<a href="serialalign.html#TOP">Guide to serial section alignment and
+				montage blending.</a>
+			<li>
+				<a href="PEETmanual.html#TOP">Manual for PEET subvolume alignment and
+				averaging software.</a>
+		</ul>
+		<hr>
+		<i>Last updated: December 1, 2020</i> [<a href="http://bio3d.colorado.edu/imod/index.html">IMOD 
+			Home Page</a>] 
+		<br>
+		<br>
+		<br>
+	</body>
+</html>

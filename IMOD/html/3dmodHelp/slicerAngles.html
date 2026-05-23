@@ -1,0 +1,107 @@
+<head>
+<title>Slicer Angle Storage</title>
+</head>
+<A NAME = "TOP"><H2>Slicer Angle Storage</H2></A>
+This window allows you to store slicer angles and positions in a model and
+return to those positions in a slicer window.  It has a table that shows all
+of the stored angles and positions.  You can edit the values in the
+table as well as enter a label for each one.  When you open this window,
+a toolbar will appear in each slicer window with buttons that allow you to
+save angles from that slicer into the table or set the angles from the table.
+The angles can be
+saved only when you press a button, or an automatic (continuous)
+update mode can be selected so that angles are recorded as they
+change.  All stored angles are assigned a time value corresponding to
+the image file being displayed.  When more than one image file is
+loaded into 3dmod, the table shows angles only for the current time.
+Each time has an independent value for the current row, so the
+current row may switch when you change times.
+<P>
+There is also a button in this window to set the angles in a slicer window.
+If there is more than one slicer window, the angles are set in
+the last active slicer.  A slicer window becomes the active
+window when you use a hot key, slider, or other control in that
+window, not when the slicer acquires the focus for keyboard input.  
+<P>
+Angles are usually saved to or set from the current row of the table.
+A row can be made the current row by clicking in one of
+its cells, or by clicking the numbered button on the left.
+<P>
+All of the information in the table is saved as part of the model file and
+becomes available when a model is read in to a new instance of 3dmod.
+Undo and redo are available for all changes in
+stored values.
+<P>
+<B>Slicer toolbar buttons</B>. The labels on these buttons are brief, but they
+have descriptive tooltips.
+<UL>
+<LI><B>Save</B> saves the angles and position in the current row of the table,
+or into a new row if there are no rows in a table.  
+<LI><B>New</B> saves the angles and position into a new row in the table.
+<LI><B>Set</B> sets the angles and position from the current row of the table.
+<LI><B>Auto</B> selects an automatic (continuous) update of the current row of
+the table from changes in this slicer.  When this option is off, angles are
+saved only when <B>Save</B> is pressed.  The slicer is set to an angle only
+when either the <B>Set</B> toolbar button or the <B>Set Angles</B> button in
+this window is pressed.  When the option is on, angle or position changes in a
+slicer automatically modify the stored values that are shown in the current
+row.  Changing the current row of the table will set the angles in the active
+slicer.  When the time is changed, the slicer is automatically set to the 
+current
+values for the new time (which can be in a different row of the table).  In
+addition, if you edit one of the cells, the values in that row are sent to the
+slicer.
+When this option is turned on, neither the slicer position nor the
+angles in the table are changed because it is not known which action you
+desire - it is up to you to sychronize the angles in the table with the slicer
+window one way or the other.
+</UL>
+<P>
+
+<B>Buttons above the table</B>. These buttons operate on one row of values in
+the table.
+<UL>
+<LI><B>Set Angles</B> will set the active slicer to the angles and position
+in the current table row.
+<LI><B>Delete</B> will delete the current row of values.
+</UL>
+<P>
+<B>Working with the table</B>.  
+<UL>
+<LI> To edit a cell, just click once and start typing to replace the
+current contents completely, or double click to edit the contents.
+Press "Esc" to abandon editing after clicking a cell.
+Press "Enter" when you are done editing a cell.
+<LI> Once you have clicked in a cell, you can use up and down arrow keys to
+move between rows.  If automatic update is on in the active slicer, then
+this provides an easy way to toggle between two angles.
+<LI> After clicking in a cell, the table has the focus for keyboard input and
+hot keys will not be passed on to other windows.  Press "Tab" to take the
+focus away from the table.
+<LI> Labels can be up to 32 characters long.  Cell columns can be
+resized with the mouse, which you might need to do to show a long label.  The
+whole dialog box can also be resized to make the table bigger.
+</UL>
+<P>
+<B>Operations on volume angle sets</B>.  These controls appear when
+you have loaded more than one image file into 3dmod, or when the model
+file already has angles stored for more than one time value from a
+previous run with multiple image files.  They operate on the entire
+set of angles shown in the table at once and they allow you to change the set
+of angles associated with each volume.
+<UL>
+<LI><B>Remove</B> deletes the angles shown in the table for the
+current time, and shifts the times of all angles at higher times down
+by one.
+<LI><B>Insert</B> effectively inserts an empty angle list for the
+current time by shifting the times of all angles at the current time and
+higher times up by one.
+<LI><B>Renumber To</B> moves the set of all angles at the current time
+to a different time, as selected in the spin box.  Angles at times
+between the current time and the target time are shifted up or down by
+one, so the angle sets are just rearranged without losing any.
+<LI><B>Copy From</B> replaces all the entries at the current time with
+a copy of the angles from a different time, as selected in the spin box.
+</UL>
+<P>
+<A HREF="index.html#TOP">Help Index<A>

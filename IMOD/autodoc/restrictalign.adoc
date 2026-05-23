@@ -1,0 +1,93 @@
+Version = 1.0
+Pip = 1
+
+[Field = AlignCommandFile]
+short = align
+type = FN
+usage = Command file for running Tiltalign
+tooltip =
+manpage = Command file for running Tiltalign(1). If this option is not
+entered, the first non-option argument will be used for the name of the
+command file.
+
+[Field = NumberOfFiducials]
+short = fiducials
+type = I
+usage = Numbers of fiducial markers (beads) in the alignment model
+tooltip =
+manpage = Numbers of fiducial markers (beads) in the alignment model.  With
+this entry, he program will assume that each bead is marked on every view.  If this
+option is not entered, the program will use the number of contours in the
+fiducial model with more than one point, and count up the number of points in
+those contours.  The latter will give more accurate estimates of the ratio of
+measurements to unknowns when there beads marked on only a subset of views.
+
+[Field = NumberOfViews]
+short = views
+type = I
+usage = Number of views in the tilt series
+tooltip =
+manpage = Number of views in the tilt series.  If this option is not entered,
+the program will use the number of views in the image file listed in the
+command file.
+
+[Field = TargetMeasurementRatio]
+short = target
+type = F
+default = 3.6
+usage = Target ratio of measurements to unknown values (default 3.6)
+tooltip = Target ratio of measurements to unknown values.  Of those
+restrictions that give a ratio above the required minimum,
+the one that gives a ratio closest to this target will be chosen.
+manpage = Target ratio of measurements to unknown values.  If two successive
+restrictions give a ratio above the minimum required by the \fB-minimum\fR
+option, the restriction that gives a ratio closest to this value will be chosen.
+The default is 3.6.
+
+[Field = MinMeasurementRatio]
+short = minimum
+default = 3.2
+type = F
+usage = Minimum ratio of measurements to unknown values (default 3.2)
+tooltip = Minimum ratio of measurements to unknown values.  Restrictions will
+be applied until at least one ratio rises above this value.
+manpage = Minimum ratio of measurements to unknown values.  Restrictions will
+be applied until at least one ratio rises above this value.  The default is
+3.2.
+
+[Field = OrderOfRestrictions]
+short = order
+type = IA
+default = 1,4,3,2,5
+usage = Order in which possible restrictions should be applied to achieve target
+tooltip =
+manpage = Order in which possible restrictions should be applied to achieve
+the target.  The restrictions are numbered as follows:
+^  1: Group rotations
+^  2: Solve for one rotation
+^  3: Fix tilt angles
+^  4: Group magnifications
+^  5: Fix magnifications
+^The default order is  1,4,3,2,5, which means rotations will be grouped, then
+then magnifications grouped, tilt angles fixed, then one rotation solved for,
+then magnifications fixed.
+
+[Field = SkipBeamTiltWithOneRot]
+short = skipbeam
+type = B
+usage = Do not add beam tilt when solving for one rotation angle
+tooltip =
+manpage = By default, the program will add a solution for beam tilt if and when it
+switches to solving for only one rotation angle.  (If parameters are already
+set to solve for only one rotation angle, this switch does not occur and it
+will not add beam tilt.)  With this option, it will not add the beam tilt
+solution along with this restriction.
+
+
+
+[Field = usage]
+short = help
+type = B
+usage = Print help output
+tooltip = 
+manpage = 

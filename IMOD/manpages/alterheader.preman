@@ -1,0 +1,84 @@
+.na
+.nh
+.TH alterheader 1 4.6.34 IMOD
+.SH NAME
+alterheader - to alter header information in an MRC file
+.SH SYNOPSIS
+alterheader  [filename]
+.SH DESCRIPTION
+Alterheader allows one to alter header information in an MRC file
+without rewriting the file.  The program can be run interactively or
+with command-line arguments.
+When run interactively, for each standard header entry selected by
+the user, the program prints the current values and asks for new values,
+checking for legality in some cases.  Other operations can be performed
+as described below.  Multiple changes can be made.  When run
+interactively, the header is not
+written to the file until you enter DONE to exit the program, so you can
+interrupt with Ctrl-C to discard changes.  The interactive mode is thus
+much safer to use, although inconvenient from scripts.  The interactive
+entries for the different options are not case
+sensitive but are shown below in their upper-case form.
+.P
+Even when running interactively, the file name can be entered on the
+command line; if not, the program will ask for it.  However, the
+addition of any option argument on the command line makes the program
+require a filename as well and run without any interaction.
+.P
+The MRC header stores three pieces of information about size: the number
+of pixels in X, Y, and Z, which is output as "columns, rows, sections",
+the sample grid size, output as "grid x,y,z", and the cell size, which is
+not directly output in the standard printing of the header.  The pixel
+spacing in Angstroms is defined to be the ratio of the cell size to the
+sample size in each dimension.  Programs in IMOD generally try to keep
+the sample size the same as the image size, and to set the cell size to
+achieve an appropriate pixel spacing.
+.P
+.SH OPTIONS
+When run with command-line arguments, Alterheader uses the PIP package
+for input (see the manual page
+for pip(1)).  The order in which options are entered is not preserved
+with PIP input.  Options are
+processed in the same order as they are listed in the brief summary of
+options when running interactively, namely: -org, -cel, -dat, -del,
+-map, -sam, -tlt, -firsttlt, -rottlt, -mmm, -rms, -fixpixel,
+-feipixel, -extrafix, -modefix, -invertorg, -setmmm, -real, -fft,
+-ispg, -4bit, -toggleorg, -gridfix, -title.
+.P
+The following options can be specified either as command line
+arguments (with the -) or one per line in a command file or parameter file
+(without the -).  Options can be abbreviated to unique letters; the
+currently valid abbreviations for short names are shown in parentheses.
+.P
+INSERT OPTION TEXT HERE
+.TP
+.B -StandardInput
+Read parameter entries from standard input.
+.SH ADDITIONAL INTERACTIVE OPTIONS
+.P
+LAB - Delete a list of labels, or add a label.  You will see a numbered list
+of existing labels.  To delete some labels, enter a range (comma-separated
+list) of the numbers to delete.  To add a label, enter the negative of the
+label number after which you want the new label to appear.  Enter 0 to have
+the new label become the first one, or -9 to have it added after the last
+one.  Then enter the complete label (the date/time stamp will not be
+added).  If you need to program this operation in a script, first delete the
+tenth label, if any, with entries "lab - 10 - 1 - lab -9 your_new_label".
+.P
+DAT - Change data type, which is defined as 0 for normal data, 1 for tilt
+series, 2 for stereo pairs, 3 for averaged data, 4 for averaged stereo
+pairs.  The only non-zero value that could be useful in IMOD is 1; with
+this value you can set a starting angle and increment that will be
+accepted by the Tilt(1) program instead of entering angles from a file.
+.P
+HELP - print a summary of these options.
+.P
+DONE - Write the modified header to the file and exit.
+.SH HISTORY
+.nf
+Written by David Mastronarde 10/24/88; ported to SGI 12/7/94.
+Converted to PIP input, 10/15/14.
+.P
+.fi
+.SH BUGS
+Email bug reports to mast@colorado.edu.

@@ -1,0 +1,147 @@
+.na
+.nh
+.TH ctf3dsetup 1 4.10.20 IMOD
+.SH NAME
+ctf3dsetup
+.SH SYNOPSIS
+ctf3dsetup   options   tilt_com_file
+.SH DESCRIPTION
+Ctf3dsetup creates command files for a tomographic reconstruction
+with CTF correction in 3-D.  These command files will generate a series
+of aligned stacks corrected for different Z depths in the tomogram,
+and subsets of the tomogram in Z at the corresponding Z depths.  These
+subsets are referred to as slabs.  The number of slabs can be entered
+directly, or a maximum slab thickness in nanometers can be entered
+instead.  When processing with the standard command files managed by
+Etomo(1) or Batchruntomo(1), only the name of the Tilt(1) command needs
+to be entered, but an alternative command file for CTF correction can
+also be entered.
+.P
+An uncorrected aligned stack must be available, as specified in the
+command file used for CTF correction, and the defocus file must exist.
+If you wish to apply 2-D filtering (i.e., dose weighting), you can
+apply this to the uncorrected stack without affecting the validity of
+the correction.
+If you wish to erase gold beads in the aligned stack, you can also
+apply this in advance, which is not the standard processing order, or
+you can use the \fB-erase\fR option to have this step done on each
+corrected stack.  In the latter case, the model for erasing the beads
+must already exist.
+.P
+CTF correction and reconstruction can be run on either CPUs or GPUs,
+depending on whether use of a GPU is specified in the command file for
+reconstruction.  A different choice in the command file for correction will
+be ignored.  The jobs will run either on multiple CPUs or multiple
+GPUs, not a mixture of the two, so the number of "processing units"
+referred to next means the number of GPUs when running on GPU.
+.P
+This program provides two different computational strategies; the
+choice between them 
+depends on what CPU or GPU resources are available.  It can produce one
+command file per slab, each one doing all operations for that slab (CTF
+correction of the full image, optional gold erasing, and reconstruction
+of the full slab.)  These command files are suitable for running the
+slabs in parallel with each other.  The other strategy is to do the
+slabs sequentially, but use parallel processing (if there are multiple
+processing units) in both the CTF correction and reconstruction steps.
+See the options \fB-parallel\fR and \fB-procs\fR for more details.
+Running the slabs in parallel is probably more efficient if there are
+multiple processing units but will require more temporary storage.  If
+you are running on the GPU and computing the slabs sequentially with
+parallel processing, enter the number of GPUs you expect to run it on
+with the \fB-procs\fR option.  If you have just one GPU, you can omit
+the \fB-procs\fR option unless you want to try loading it with more
+than one job, which may or may not be useful.
+.P
+If an X-axis tilt is included in either the reconstruction or
+correction command files, then the program evaluates whether it is
+similar enough in the two operations.  If an X-axis tilt is being applied at all during
+correction, it should closely match the value used for reconstruction,
+otherwise the program gives a warning.  If
+there is an X-axis tilt in reconstruction but not correction, the
+program will determine the maximum difference in defocus produced by
+the two different X-axis tilt values, which occurs at the
+extremes of the reconstruction in Y.  If this defocus is larger than a
+certain fraction of the slab thickness, the program issues a warning.
+.SH OPTIONS
+Ctf3dsetup uses the PIP package for input (see the manual page
+for pip(1)).  Options can be specified either as command line
+arguments (with the -) or one per line in a command file
+(without the -).  Options can be abbreviated to unique letters; the currently
+valid abbreviations for short names are shown in parentheses.
+INSERT OPTION TEXT HERE
+.TP
+.B -StandardInput
+Read parameter entries from standard input
+
+.SH EXAMPLES
+These examples illustrate how to run with various sets of
+processing units.  They assume that 25-nm slabs are wanted and that all command
+files have standard names.
+
+To run on one GPU, make command files with:
+
+  ctf3dsetup -thick 25 tilt
+
+These command files will create the slabs sequentially with separate
+files for CTF correction and reconstruction.  They can be run with just:
+
+   subm ctf3d*.com
+
+To run on several GPUs, you almost certainly have space for as many
+temporary stacks as GPUs, so you can make command files to run slabs in
+parallel with:
+
+   ctf3dsetup -thick 25 -parallel tilt
+
+All of the operations for a slab are within one command file.  If the
+GPUs are on separate machines, you can use the parallel processing
+interface in Etomo or run them with Processchunks(1) with a command
+like:
+
+   processchunks machine1,machine2,machine3,machine4 ctf3d
+
+If the GPUs are on the local machine, run them with a command like:
+
+   processchunks -G localhost:1:2:3:4 ctf3d
+
+so that jobs are directed to different GPUs by Processchunks(1); 
+whereas for multiple GPUs per remote machine you can use a command
+like:
+
+   processchunks -G machine1:1:2,machine2:1:2 ctf3d
+
+You can also run slabs in parallel on multiple CPUs if there is no
+risk of running out of space for temporary files, using the ctf3dsetup
+command above.  You can run them in the Etomo parallel processing
+interface, or run them with processchunks using a command like
+
+   processchunks 12 ctf3d
+
+for the local machine, or
+   
+   processchunks machine1:4,machine2:4,machine3:4 ctf3d
+
+for 4 cores per specified machine.
+
+If space for temporary files might be limited, generate the slabs
+sequentially, doing parallel processing within each slab, with a
+command like:
+
+   ctf3dsetup -proc 16 -thick 25 tilt
+
+and run this with the Etomo parallel processing interface or the kinds
+of commands just given for running on CPUs.
+
+.SH FILES
+The command files have the prefix "ctf3d-".  The final reconstruction
+is named with "_3dctf" added to the root of the output file name in the
+reconstruction command file.
+.SH AUTHOR
+.nf
+David Mastronarde
+.fi
+.SH SEE ALSO
+ctfphaseflip(1), tilt(1), ccderaser(1)
+.SH BUGS
+Email bug reports to mast@colorado.edu.

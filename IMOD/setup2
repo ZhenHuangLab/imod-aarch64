@@ -1,0 +1,1233 @@
+#!/bin/csh
+#############################################################################
+# $Id$
+# Set up configuration file for building BL3DEMC Software - the real one
+#
+
+#
+# Global setup
+#
+set imod_copyright    = '1994-2021'
+set source_dir    = `pwd`
+set endian_dir    = include
+
+set configure     = configure
+set hconfigure    = include/imodconfig.tmp
+set hconffinal    = include/imodconfig.h
+
+set debug           = false
+set bin_dir         = $source_dir/bin
+set inc_dir         = $source_dir/include
+set lib_dir         = $source_dir/buildlib
+set libhelp_dir     = $source_dir/html/libhelp
+set htmlman_dir     = $source_dir/html/man
+set plughelp_dir    = $source_dir/html/3dmodHelp/plughelp
+set include_flags   = "-I. -I$inc_dir"
+set optimization    = "-O2"
+set gfx             = default
+set compiler        = default
+set machine         =
+set defines         = 
+set shared_libs     = default
+set intelstat       = false
+set cuda_static     = 0
+set tiff_static     = 0
+set hdf_static      = 0
+set fftw_static     = 0
+set flags           = 
+set fallback        = 
+set swap_ieee       = true
+set no_xlibs        = false
+set distname        = ""
+set qtlibPackName   = ""
+set qtlibsURL       = "http://bio3d.colorado.edu/imod/qtlibs"
+set packqt          = true
+set packjpeg        = false
+set useqt           = true
+set qtthread        = true
+set m64bit          = false
+set m64notIA        = false
+set intel           = false
+set use_etomo       =
+set packg2c         = false
+set no_qt3          = true
+set useMKL          = false
+set nvcc_flags      = ""
+set nvcc_frame_flags = ""
+
+set inst_dir        = default
+set tifflibs        = default
+set ldummytiff      = -ltiff
+set usfftdir        = default
+set jpeglib         = true
+set wrapintel       = true
+set openmp          = true
+set blockio         =
+set imsubsobj       = '*.o'
+set tiltalilib      =
+set tilt_dir        = flib/tilt
+set fbpswitch       = fbpswitch-def.inc
+set midas_dir       = midas
+set sendevent_dir   = qttools/sendevent
+set imod_dir        = 3dmod
+set qtassist_dir    = qttools/qtassist
+set sourcedoc_dir   = qttools/sourcedoc
+set ctfplot_dir     = ctfplotter
+set ctfplot_flibs   = ""
+set prochunk_dir    = qttools/processchunks
+set mrc2tif_dir     = qttools/mrc2tif
+set plugsrc_dir     = plugs
+set libdiaqt_dir    = libdiaqt
+set etomo_dir       = Etomo
+set pysrc_dir       = pysrc
+set scripts_dir     = scripts
+set midas_qconf     = midas/qconfigure
+set imod_qconf      = 3dmod/qconfigure
+set sendevent_qconf = $sendevent_dir/qconfigure
+set qtassist_qconf  = $qtassist_dir/qconfigure
+set sourcedoc_qconf = $sourcedoc_dir/qconfigure
+set ctfplot_qconf   = ctfplotter/qconfigure
+set prochunk_qconf  = $prochunk_dir/qconfigure
+set mrc2tif_qconf   = $mrc2tif_dir/qconfigure
+set sourcedoc_exe   = sourcedoc
+set qtdel1          = ""
+set qtdel3          = "giBBerish"
+set fort_cpplibs    =
+set ctrl_string     = Ctrl
+set ld_lib_var      = LD_LIBRARY_PATH
+set qtapp_path      =
+set xplax           = (qtplax.o moc_qtplax.o)
+set objext          = o
+set binext          =
+set limod           = -limod
+set lcfshr          = -lcfshr
+set limxml          = -limxml
+set liimod          = -liimod
+set ltiff           = "-ltiff -ljpeg"
+set lhdf            = ''
+set ldnmncar        = -ldnmncar
+set lifft           = -lifft
+set limesh          = -limesh
+set liwarp          = -liwarp
+set lctffind        = -lctffind
+set ldiaqt          = -ldiaqt
+set nnvulnflags     = -ffloat-store
+set lapacklibs      = '-lb3dlapk -lb3dblas'
+set lapack_flibs    = ''
+set lapacklink      = '$(CC)'
+set fort_cpplibs     = ''
+set ldfflags        = '$(LDFLAGS)'
+set farflags        = '$(ARFLAGS)'
+set libtrackFlags   = '$(LIBFFLAGS)'
+set dllext          = '$(LIBEXT)'
+set moc             = '$(QTDIR)/bin/moc'
+set openmpfFlags    = '$(OPENMP)'
+set macsdkFlags     = ''
+set dynamicOpt      = ''
+set rgbprogs        = 
+set makestaticlib   = "ar ruv "
+set staticranlib    = ranlib
+set staticext       = a
+set makenmcar       = '$(AR) $(ARFLAGS)'
+set nmcarext        = '$(LIBEXT)'
+set far             = '$(AR)'
+set lwmod           = '-lwmod'
+set wmodext         = '$(LIBEXT)'
+set makewmod        = '$(AR) $(ARFLAGS)'
+set cleanlibext     = 'so'
+set cleantiffext    = 'a'
+set junit_home      = /usr/local/junit
+set jfcunit_home      = /usr/local/jfcunit
+set class_sep       = ':'
+set strip           = strip
+set rmcmd           = '/bin/rm -f'
+set qtincdir        = '$(QTDIR)/include'
+set qt_flags        = '-I$(QTINCDIR) -I$(QTINCDIR)/QtCore -I$(QTINCDIR)/QtOpenGL -I$(QTINCDIR)/QtGui -I$(QTINCDIR)/QtSql'
+set qt3_flags       = '-DQT3_SUPPORT -I$(QTINCDIR)/Qt3Support'
+# rhlinux uses ldd on assistant to get this list and adds OpenGL
+set qt4libstocopy   = 'QtOpenGL QtNetwork QtCore QtGui QtXml QtHelp QtSql QtCLucene'
+set qt3supportcopy = ""
+set assistantcopy  = ''
+set midasGL         =  "-lQtOpenGL"
+set nogpu           = ""
+set suffix          = ""
+set frameGPU        = -1
+set smfTest         = 0
+set b3dbyte         = "char"
+set ubyte           = "unsigned char"
+set int16           = "short int"
+set uint16          = "unsigned short int"
+set int32           = "int"
+set uint32          = "unsigned int"
+set float32         = "float"
+# Defaults for Linux
+set int64           = "int64_t"
+set uint64          = "u_int64_t"
+
+if ($?IMOD_SETUP_USE_MKL) set useMKL = true
+
+set inargv = ($argv)
+
+# This gives legacy behavior of passing on exit status of command in set var=`command`
+# Needed by macosx
+set anyerror
+
+#
+# Input options
+#
+
+
+while($#argv > 0)
+    switch($argv[1])
+            case -d:
+    	case -debug:
+    		set debug = true
+    		breaksw
+
+    	case -shared:
+    		set shared_libs = true
+    		breaksw
+    	case -no_shared:
+    		set shared_libs = false
+    		breaksw
+
+    	case -tiff:
+    		set tifflibs = true
+    		breaksw
+    	case -no_tiff:
+    		set tifflibs = false
+                set jpeglib = false
+                set ltiff = "-ltiff"
+    		breaksw
+
+    	case -m:
+    	case -mach:
+    	case -machine:
+    		shift
+    		set machine = $argv[1]
+    		breaksw
+
+    	case -flags:
+    		shift
+    		set flags  = "$argv[1]"
+                    breaksw
+    	case -i:
+    	case -inst:
+    		shift
+    		set inst_dir = $argv[1]
+    		breaksw
+
+    	case -compiler:
+    	case -c:
+    		shift
+    		set compiler = $argv[1]
+    		breaksw
+
+    	case -swapieee:
+    		set swap_ieee = true
+    		breaksw
+
+    	case -swapvms:
+    		set swap_ieee = false
+    		breaksw
+
+        case -no_xlibs:
+                set no_xlibs = true
+                breaksw
+         
+        case -qt3:
+                set no_qt3 = false
+                set qt3supportcopy  = 'Qt3Support'
+                breaksw
+         
+        case -name:
+                shift
+                set distname = _$argv[1]
+                breaksw
+
+        case -static:
+                shift
+                set intelstat = $argv[1]
+                if ($intelstat == 0) then
+                    set intelstat = false
+                else if ($intelstat != 1 && $intelstat != 2) then
+                    echo "-static entry should be 1 or 2; static libs will not be used"
+                    set intelstat = false
+                endif
+                breaksw
+
+        case -other*:
+                shift
+                @ statSum = $argv[1]
+                @ cuda_static = $statSum % 2
+                @ statSum = $statSum / 2
+                @ tiff_static = $statSum % 2
+                @ statSum = $statSum / 2
+                @ hdf_static = $statSum % 2
+                @ statSum = $statSum / 2
+                @ fftw_static = $statSum % 2
+                breaksw
+
+    	case -use_etomo:
+    		shift
+    		set use_etomo = $argv[1]
+    		breaksw
+
+        case -packg2c:
+                set packg2c = true
+                breaksw
+
+        case -packjpeg:
+                set packjpeg = true
+                breaksw
+
+        case -no_openmp:
+                set openmp = false
+                breaksw
+
+        case -nowrap:
+                set wrapintel = false
+                breaksw
+
+        case -no_gpu:
+                shift
+                set nogpu = $argv[1]
+                if ($?CUDA_DIR) unsetenv CUDA_DIR
+                breaksw
+
+        case -suffix:
+                shift
+                set suffix = $argv[1]
+                breaksw
+                    
+        case -frame*:
+                shift
+                set frameGPU = "$argv[1]"
+                breaksw
+
+        case -smf*:
+                set smfTest = 1
+                breaksw
+
+        case -mkl:
+                set useMKL = true
+                breaksw
+
+        case -no_mkl:
+                set useMKL = false
+                breaksw
+
+        case -qtl*:
+                shift
+                set qtlibPackName = "$argv[1]"
+                breaksw
+
+        case -url:
+                shift
+                set qtlibsURL = "$argv[1]"
+                breaksw
+
+    	case -h:
+    	case -he*:
+    		goto usage
+
+    	default:
+    		echo Bad option
+    		goto usage
+    		breaksw
+    endsw
+    shift
+end
+
+# Set common flags if doing CUDA
+set cudalink = '$(CXX)'
+set cuda_ldflags = '$(LDFLAGS)'
+if ($?CUDA_DIR) then
+    set nvcc_flags = '-I"'"$CUDA_DIR"'/include" -I../../include'
+    set cuda_arch_opts = '-arch sm_10 -maxrregcount 32'
+    set cudalibs = "-L$CUDA_DIR/lib -lcudart -lcufft"
+endif
+set cframeflags = '$(CXXFLAGS)'
+set ldframeflags = '$(LDFLAGS) $(CUDALIBS)'
+
+
+#
+# get more machine specifics - USYSTEM was done in setup
+#
+set UMACHINE = `uname -m | sed '/ /s//_/g'`
+set URELEASE = `uname -r`
+#set UVERSION = `uname -v`
+#set target_computer = {$UMACHINE}__{$USYSTEM}__{$URELEASE}__{$UVERSION}
+set target_computer = {$UMACHINE}__{$USYSTEM}__{$URELEASE}__all
+
+# Detect Qt version with qmake and fix some things
+set qtVersion = `qmake -version | sed -n '/Using Qt version \([0-9]\).*/s//\1/p'`
+if ("$qtVersion" == "") set qtVersion = 4
+@ qtVersion = $qtVersion
+set subVersion = `qmake -version | sed -n '/Using Qt version [0-9]\.\([0-9]*\).*/s//\1/p'`
+if ("$subVersion" == "") set subVersion = 0
+@ subVersion = $subVersion
+if ($qtVersion > 4) then
+    set qt_flags = "$qt_flags "'-I$(QTINCDIR)/QtWidgets -I$(QTINCDIR)/QtPrintSupport'
+    #
+    # Mac and Linux will need Qt5DBus below
+    set qt4libstocopy = 'Qt5OpenGL Qt5Network Qt5Core Qt5Gui Qt5Help Qt5Sql Qt5Widgets Qt5PrintSupport'
+    #
+    # Assistant needs Lucene in Win 5.5, not in Mac 5.7/8; neither needs Xml - this needs
+    # to be done better
+    if ($subVersion < 7) set qt4libstocopy = "$qt4libstocopy Qt5Xml Qt5CLucene"
+    set midasGL         =  "-lQt5OpenGL"
+    #
+    # Qt 5 copies in a stdarg.h at least on Mac without preserving its date, so set up
+    # for a save and restore to prevent gratuitous rebuilds
+    if (-e include/stdarg.h) \mv include/stdarg.h include/stdarg-save.h
+endif
+#
+# Create imodconfig.h file
+#
+set imod_version = `sed '/\./s///g' .version`
+# This nightmare was needed under cygwin
+set imod_version_name = `sed '/.\(*\[0-9.]*\).*/s//\1/' .version`
+cat << EOF >! $hconfigure
+/* THIS FILE IS GENERATED BY SETUP: DO NOT EDIT */
+#ifndef IMOD_CONFIG_INCLUDED
+#define IMOD_CONFIG_INCLUDED
+#include <sys/types.h>
+#define VERSION              $imod_version
+#define VERSION_NAME "$imod_version_name"
+#define COPYRIGHT_YEARS "$imod_copyright"
+EOF
+
+#
+# Copy default include file for Fortran byte-ordering
+# Set up default include file for number of bytes per item when defining
+# record length for direct unformatted I/O
+\cp $endian_dir/big_endian.inc $endian_dir/endian.inc
+echo "      parameter (nbytes_recl_item=1)" >! $endian_dir/recl_bytes.inc
+
+
+# Was this needed?  Need to research.  Don't want to confuse VisualC
+#if ($debug == false) then
+#        echo "#define NDEBUG"                 >> $hconfigure
+#endif
+
+#
+# Create make config file
+#
+echo "# Configure file for making BL3DFS software." >! $configure 
+echo "# Do not edit this file it is created by setup." >> $configure
+echo "# setup for $target_computer" >> $configure
+echo " " >> $configure
+echo "IMOD_VERSION $imod_version_name"
+
+#
+# Set up defaults for makefile copying
+#
+set makefile_ext = unix
+set makefile_dirs = ($libdiaqt_dir $plugsrc_dir)
+
+#
+# Set up directory names
+#
+if ($inst_dir == default) set inst_dir = $source_dir
+set inst_bin_dir = $inst_dir/bin
+set inst_lib_dir = $inst_dir/lib
+set inst_plug_dir = $inst_dir/lib/imodplug
+set inst_plug_parent = $inst_dir/lib
+
+# Make this for some machine scripts to copy to
+#
+mkdir -p $lib_dir
+
+# Manage files that have to be in place before qmakes are run
+# update imod_assistant files in subsidiary directories
+#
+foreach dir ($qtassist_dir $ctfplot_dir $midas_dir)
+    \find $dir -name imod_assistant.cpp ! -newer $imod_dir/imod_assistant.cpp -exec \rm -f '{}' \;
+    \find $dir -name imod_assistant.h ! -newer $imod_dir/imod_assistant.h -exec \rm -f '{}' \;
+    if (! -e $dir/imod_assistant.cpp) \cp $imod_dir/imod_assistant.cpp $dir
+    if (! -e $dir/imod_assistant.h) \cp $imod_dir/imod_assistant.h $dir
+end
+foreach dir ($qtassist_dir $sendevent_dir)
+    \find $dir -name setqtlibpath.cpp ! -newer $libdiaqt_dir/setqtlibpath.cpp -exec \rm -f '{}' \;
+    if (! -e $dir/setqtlibpath.cpp) \cp $libdiaqt_dir/setqtlibpath.cpp $dir
+end
+
+\find $mrc2tif_dir -name tiff.c ! -newer mrc/tiff.c -exec \rm -f '{}' \;
+if (! -e $mrc2tif_dir/tiff.c) \cp mrc/tiff.c $mrc2tif_dir
+\find $mrc2tif_dir -name iiqimage.cpp ! -newer $imod_dir/iiqimage.cpp -exec \rm -f '{}' \;
+if (! -e $mrc2tif_dir/iiqimage.cpp) \cp $imod_dir/iiqimage.cpp $mrc2tif_dir
+
+# Make lists of qt directories and project names.  List them in order of
+# the ones that can be treated the same for runscripts, etc, then midas, then
+# oddballs
+#
+set qdir = ($sendevent_dir $qtassist_dir $ctfplot_dir $prochunk_dir $mrc2tif_dir \
+  $midas_dir $imod_dir $sourcedoc_dir)
+set qprog = (imodsendevent imodqtassist ctfplotter processchunks mrc2tif midas 3dmod \
+  sourcedoc)
+set qconf = ($sendevent_qconf $qtassist_qconf $ctfplot_qconf $prochunk_qconf \
+  $mrc2tif_qconf $midas_qconf $imod_qconf $sourcedoc_qconf)
+
+# Manage imodhelp for the qmake without having to delete a good one
+if (! -e $imod_dir/imodhelp.h) touch $imod_dir/imodhelp.h
+
+#
+# Go To Machine dependent parts.
+#
+if ($machine != "") then
+	echo target is $machine
+	goto $machine
+endif
+
+switch($target_computer)
+
+        # Red Hat Linux on Intel i686
+        case i686__Linux__*__*:
+                echo $target_computer is 32-bit Red Hat Linux
+                set machine = rhlinux
+                goto rhlinux
+                breaksw
+
+        # Red Hat Linux on Intel x86_64
+        case x86_64__Linux__*__*:
+                echo $target_computer is 64-bit Red Hat Linux
+                set machine = rhlinux
+                goto amd64linux
+                breaksw
+
+        case ia64__Linux__*__*:
+                echo $target_computer is Itanium running Linux
+                set machine = rhlinux
+                goto itanium
+                breaksw
+
+        # Cygwin on Intel 
+        case *__CYGWIN_NT-*.*WOW*__*:
+        case x86_64__CYGWIN_NT-*.*__*__*:
+                echo $target_computer is Intel running Cygwin under Windows-64
+                set machine = cygwin64
+                goto cygwin64
+                breaksw
+
+        case i686__CYGWIN_NT-*.*__*__*:
+                echo $target_computer is Intel running Cygwin under Windows
+                set machine = cygwin
+                goto cygwin
+                breaksw
+
+	case Power_Macintosh__Darwin__*__*:
+                echo $target_computer is Power Macintosh running OSX
+                set machine = macosx
+                goto macosx
+                breaksw
+
+	case i386__Darwin__*__*:
+	case x86_64__Darwin__*__*:
+                echo $target_computer is Intel running OSX
+                set machine = macosx
+                goto intelosx
+                breaksw
+
+	default:
+		echo WARNING: no definition for $target_computer
+		echo $target_computer error
+        	breaksw
+
+endsw
+
+#############################################################################
+#
+# The default system, to document the meaning of the variables that need
+# to be defined.
+# 
+echo "You need to specify a machine; the generic settings are not usable"
+exit 1
+
+# define the compilers to use
+echo "CC      = cc"               >> $configure
+echo "CXX     = CC"               >> $configure
+echo "CPPC    = CC"               >> $configure
+set fcomp = "f77"
+
+# May need to define as \cp and \find if you have aliases
+echo "CP      = cp"          	  >> $configure
+echo "FIND    = find"          	  >> $configure
+
+# define how to make libraries - see specific machines for shared libs
+echo "AR      = ar"               >> $configure
+echo "ARCPP   = ar"               >> $configure
+echo "ARFLAGS = r "               >> $configure
+echo 'LDFLAGS = -L$(LIBDIR)'      >> $configure
+echo "RANLIB  = ranlib"           >> $configure
+echo 'MAKELIB = $(AR) $(ARFLAGS)' >> $configure
+
+# MAKELIBCPP needs to be defined to make a library from cpp files.
+
+# MAKELIBSO needs to be defined to describe how to make a .so plugin
+# from .o files; all systems are OK with MAKELIB for shared libraries
+
+
+# Basic C libraries, used to build almost all programs, C and Fortran; but
+# the Fortran Makefiles use FORTCLIBS
+echo "CLIBS       = -lm -lc"                >> $configure
+echo 'LIBS        = $(CLIBS)'               >> $configure
+echo 'FORTCLIBS   = $(LIBS)'               >> $configure
+
+# Libraries for programs using X 
+echo "XLIBS       = -lXm -lXt -lX11 -lXext" >> $configure
+
+# Libraries for non-graphical and graphics Fortran programs
+echo "IMLIBS     = -lhvem -lim -lifft -lcfshr -limxml" >> $configure
+echo 'GRAPHLIBS    = '"$ldnmncar"' $(IMLIBS) '"$ldiaqt"' $(XLIBS)' >> $configure
+
+# extra library and option entries for making imod run plugins
+echo 'PLUGLIBS = ' >> $configure
+
+# Command for building a Fortran plugin
+echo  'MAKEF77PLUGIN  = ld $(LDFLAGS) -shared -all -lftn -o'  >> $configure
+
+# set compilation flags for debugging
+if ($debug == true) then
+        set optimization = "-g"
+endif
+		
+# A slew of compilation flags - on the SGI, some Fortran programs needed not
+# to be optimized, hence NOOPFLAGS.  Some Fortran and C programs don't
+# work with -n32, so they have to be done with "fallback" flags that compile
+# them -32.  For all other machines, the fallback flags can match the regular
+# ones, as they do here
+
+# you can set "defines" with extra defines for C programs, but it's better to
+# use imodconfig instead
+
+# also note that the flags variable is a way for flags to be added on
+# the command-line, and to be defined globally for all compilations
+
+echo "CFLAGS   = $flags $defines $optimization $include_flags" >> $configure
+echo "CXXFLAGS = $flags $defines $optimization $include_flags" >> $configure
+echo "FFLAGS   = $flags $optimization  $include_flags"         >> $configure
+echo "NOOPFFLAGS   = $flags $optimization -O0  $include_flags"     >> $configure
+echo "LIBCFLAGS   = $flags $defines $optimization $include_flags" >> $configure
+echo "LIBFFLAGS   = $flags $optimization  $include_flags"         >> $configure
+echo "FFALLBACK   = $flags $optimization  $include_flags"         >> $configure
+echo "CFALLBACK   = $flags $defines $optimization $include_flags" >> $configure
+echo 'LDFALLBACK = $(LDFLAGS)'       >> $configure
+echo 'NOOPFFALLBACK = $(NOOPFFLAGS)' >> $configure
+
+# To indicate that librandm and libdtrigs need to be built
+echo 'LINUXFLIBS = ' >> $configure
+
+goto standard_defines
+
+
+#############################################################################
+# Intel running Linux 
+#
+itanium:
+set m64bit = true
+goto rhlinux
+
+amd64linux:
+set m64bit = true
+set m64notIA = true
+
+rhlinux:
+source machines/rhlinux
+if ($?) exit 1
+
+goto standard_defines
+
+#############################################################################
+# Cygwin on Intel 
+#
+cygwin64:
+set m64bit = true
+set machine = cygwin
+
+cygwin:
+od -N 40 -b machines/cygwin | grep 015 >& /dev/null
+if (! $status) dos2unix machines/cygwin >& /dev/null
+source machines/cygwin
+if ($?) exit 1
+
+goto standard_defines
+
+#############################################################################
+# Macintosh
+#
+intelosx:
+set machine = macosx
+set intel = true
+
+macosx:
+source machines/macosx
+if ($?) exit 1
+
+goto standard_defines
+
+##############################################################################
+# Defines used for every system:
+#
+standard_defines:
+
+if (($tifflibs == default) || ($tifflibs == false)) then
+    echo 'DUMMYTIFF = libtiff.$(DLLEXT)' >> $configure
+    echo "TIFFLIBS = $ldummytiff" >> $configure
+    echo '#define NOTIFFLIBS'  >> $hconfigure
+else
+    if ($tifflibs == true) set tifflibs = "$ltiff"
+    echo "DUMMYTIFF = " >> $configure
+    echo "TIFFLIBS = $tifflibs" >> $configure
+    \find buildlib -name "libtiff.$cleantiffext" -exec \rm -f '{}' \;
+endif
+
+if ($shared_libs == false) then
+    set inst_lib_dir = $lib_dir
+    \find buildlib -name "*.$cleanlibext" -exec \rm -f '{}' \;
+endif
+
+cat <<EOF >> $configure
+OBJEXT =    $objext
+BINEXT =    $binext
+LIMOD  =    $limod
+LCFSHR =    $lcfshr
+LIMXML =    $limxml
+LIIMOD =    $liimod $lhdf
+LIFFT =     $lifft
+LIMESH =    $limesh
+LIWARP =    $liwarp
+LCTFFIND =  $lctffind
+NNVULNFLAGS = $nnvulnflags
+LAPACKLIBS =    $lapacklibs
+LAPACKLINK =    $lapacklink
+LAPACK_FLIBS =    $lapack_flibs
+FORT_CPPLIBS = $fort_cpplibs
+BLOCKIO =   $blockio
+IMSUBSOBJ = $imsubsobj
+TILTALILIB = $tiltalilib
+BINDIR  = $bin_dir
+INSTBINDIR = $inst_bin_dir
+LIBDIR  = $lib_dir
+INSTLIBDIR = $inst_lib_dir
+INSTDIR = $inst_dir
+HTML_ARCDIR = $source_dir/imod_${imod_version_name}_docs
+INCDIR  = $inc_dir
+IMOD_PLUGIN_DIR = $inst_plug_dir
+PLUG_HELP_DIR = $plughelp_dir
+MOC = $moc
+%.$objext : %.f90
+	\$(FC) -c \$(FFLAGS) \$< -o \$@
+
+EOF
+
+# Output the entries for Tilt using GPU or not
+#
+set smfObj = ""
+if ("$smfTest" != "0") then
+    set smfObj = 'ShrMemClient.$(OBJEXT)'
+    set cframeflags = "$cframeflags -DTEST_SHRMEM"
+endif
+\echo "CUDALINK =    $cudalink" >> $configure
+\echo "CUDA_LDFLAGS =    $cuda_ldflags" >> $configure
+if ($?CUDA_DIR) then
+    \echo "NVCC_FLAGS =  $nvcc_flags" >> $configure
+    \echo "CUDALIBS =    $cudalibs" >> $configure
+    echo 'TILTGPUOBJ =  gpubp.$(OBJEXT)' >> $configure
+    echo 'CTFGPUOBJ =  gpuctf.$(OBJEXT)' >> $configure
+
+    # Output appropriate modifications for framegpu depending on whether making a DLL
+    if ("$frameGPU" == "0" || "$frameGPU" == "-1") then
+        echo 'FRAMEGPUOBJ = gpuframe.$(OBJEXT)' "$smfObj" >> $configure
+        \echo "NVCC_FRAME_FLAGS =  $nvcc_flags" >> $configure
+    else
+        echo 'FRAMEGPUOBJ = '"$smfObj" >> $configure
+        echo 'FRAMEGPU = FrameGPU.dll' >> $configure    
+        \echo "NVCC_FRAME_FLAGS =  $nvcc_frame_flags" >> $configure
+    endif
+
+else
+    echo 'TILTGPUOBJ =  nogpu.$(OBJEXT)' >> $configure
+    echo 'CTFGPUOBJ =  nogpuctf.$(OBJEXT)' >> $configure
+    echo 'FRAMEGPUOBJ = nogpuframe.$(OBJEXT)' "$smfObj" >> $configure
+endif
+\echo "CFRAMEFLAGS = $cframeflags" >> $configure
+\echo "LDFRAMEFLAGS = $ldframeflags" >> $configure
+
+if ($?HDF5_DIR) then
+    echo 'HDFOBJS =  iihdf.$(OBJEXT) hdf_imageio.$(OBJEXT)' >> $configure
+else
+    echo '#define NO_HDF_LIB' >> $hconfigure
+endif
+
+if ($jpeglib == true) then
+    echo 'JPEGOBJ = iijpeg.$(OBJEXT)'  >> $configure
+else
+    echo '#define NO_JPEG_LIB' >> $hconfigure
+endif
+
+if ($m64bit == true) echo '#define USE_SYSTEM_FSEEK' >> $hconfigure
+
+cat << EOF >> $hconfigure
+#define CTRL_STRING "$ctrl_string"
+typedef $b3dbyte b3dByte;
+typedef $ubyte b3dUByte;
+typedef $int16 b3dInt16;
+typedef $uint16 b3dUInt16;
+typedef $int32 b3dInt32;
+typedef $uint32 b3dUInt32;
+typedef $float32 b3dFloat;
+typedef $int64 b3dInt64;
+typedef $uint64 b3dUInt64;
+
+#endif
+ 
+EOF
+
+#
+# Make the directories if needed.
+#
+mkdir -p $bin_dir
+mkdir -p $lib_dir
+mkdir -p $libhelp_dir
+mkdir -p $plughelp_dir
+mkdir -p $htmlman_dir
+mkdir -p $inst_bin_dir
+mkdir -p $inst_lib_dir
+mkdir -p $inst_plug_parent
+mkdir -p $inst_plug_dir
+mkdir -p $inst_dir/com
+mkdir -p $inst_dir/autodoc
+mkdir -p $inst_dir/SystemTemplate
+mkdir -p $inst_dir/Plugins
+mkdir -p $inst_dir/html
+mkdir -p $inst_dir/man/cat1
+mkdir -p $inst_dir/man/cat5
+
+if ($?FFTW3_DIR || $useMKL == true) echo 'CFFTOBJS = fftw_wrap.$(OBJEXT)' >> $configure
+
+if ($machine != cygwin) then
+
+    #
+    # manage qconfigure files
+    #
+    echo LIBS += -L$lib_dir -liimod -limod -liwarp $lifft -lcfshr -limxml -ldiaqt $ltiff $lhdf $midasGL >> $midas_qconf
+    echo LIBS += -L$lib_dir -lm -lb3dlapk -lb3dblas -lctffind -liimod $lifft -lcfshr -limxml -ldiaqt $ltiff $lhdf $lapack_flibs >> $ctfplot_qconf
+    echo LIBS += -L$lib_dir -lcfshr -limxml >! $qtassist_qconf
+    echo LIBS += -L$lib_dir -lcfshr -limxml >> $prochunk_qconf
+    echo LIBS += -L$lib_dir -liimod -lcfshr -limxml $ltiff $lhdf >> $mrc2tif_qconf
+    
+    foreach i ($midas_qconf $ctfplot_qconf)
+        echo INCLUDEPATH += $inc_dir >> $i
+        echo MOC_DIR = tmp >> $i
+        echo OBJECTS_DIR = tmp >> $i
+        echo target.path = $inst_bin_dir >> $i
+        if ($no_qt3 == false) echo 'QT +=  qt3support' >> $i
+    end
+    echo target.path = $inst_bin_dir >! $sendevent_qconf
+    echo target.path = $inst_bin_dir >> $qtassist_qconf
+    echo target.path = $inst_bin_dir >> $prochunk_qconf
+    echo target.path = $inst_bin_dir >> $mrc2tif_qconf
+    echo -n >! $sourcedoc_qconf
+
+
+    # echo gives two \\ in tcsh 6.12 under RH 8.0 so use cat
+    #
+    cat <<EOF >> $imod_qconf
+INSTALLS += 3dmodv
+MOC_DIR = tmp
+OBJECTS_DIR = tmp
+INCLUDEPATH += $inc_dir
+target.path = $inst_bin_dir
+3dmodv.path = $inst_bin_dir
+EOF
+   if ($no_qt3 == false) echo 'QT +=  qt3support' >> $imod_qconf
+
+    foreach i ($qconf)
+        if ($debug == true) then
+            echo CONFIG += debug warn_on >> $i
+	    set qmflag =  DEBUG
+        else
+            echo CONFIG += release warn_off >> $i
+	    set qmflag =  RELEASE
+	endif
+        if ($m64notIA == true) echo QMAKE_CXXFLAGS_$qmflag += -m64 >> $i
+        if ($m64notIA == true) echo QMAKE_CFLAGS_$qmflag += -m64 >> $i
+        if ($openmp == true) then
+            echo QMAKE_CXXFLAGS_$qmflag += $openmpFlags >> $i
+            echo QMAKE_CFLAGS_$qmflag += $openmpFlags >> $i
+            echo QMAKE_LFLAGS_$qmflag += $openmpFlags $dynamicOpt >> $i
+        endif
+        if ("$macsdkFlags" != '') echo QMAKE_CFLAGS_$qmflag += $macsdkFlags >> $i
+        if ("$macsdkFlags" != '') echo QMAKE_CXXFLAGS_$qmflag += $macsdkFlags >> $i
+        if ($qtthread == true) then
+            echo CONFIG +=  thread >> $i
+            echo DEFINES += QT_THREAD_SUPPORT >> $i
+        endif
+        #
+        # Define custom Info.plist file to indicate no high DPI awareness
+        #if ($qtVersion > 4 && $machine == "macosx") then
+        #    echo QMAKE_INFO_PLIST = "$source_dir/sysdep/mac/Info.plist.app" >> $i
+        #endif
+    end
+    if ($qtVersion > 4) then
+        foreach i ($ctfplot_qconf $sendevent_qconf $mrc2tif_qconf $qtassist_qconf)
+            echo QT += widgets >> $i
+        end
+        echo QT += printsupport >> $ctfplot_qconf
+    endif
+
+    # Finish qconfigure install instructions now that inst_bin_dir is defined
+    #
+    if ($machine != "macosx") then
+        cat <<EOF >> $imod_qconf
+3dmodv.extra = strip 3dmod ; cd $inst_bin_dir ; \
+if [ -e 3dmod ] ; then strip 3dmod ; fi ; rm -f 3dmodv imod imodv ; \
+ln -s 3dmod 3dmodv ; ln -s 3dmod imod ; ln -s 3dmodv imodv
+EOF
+
+        @ i = 0    # Loop on imodsendevent imodqtassist ctfplotter pchunk mrc2tif midas
+        while ($i < 6)
+            @ i++
+            cat <<EOF  >> $qconf[$i]
+INSTALLS += strip
+strip.path = $inst_bin_dir
+strip.extra = $strip $qprog[$i] ; if [ -e $inst_bin_dir/$qprog[$i] ] ; then $strip $inst_bin_dir/$qprog[$i] ; fi
+EOF
+        end
+
+    else
+
+        # For Mac, copy the run files, also strip (-x needed for 3dmod)
+        #
+        @ i = 0
+        while ($i < 6)  # Loop on imodsendevent imodqtass ctfplot pchunk mrc2tif midas
+            @ i++
+            cat <<EOF  >> $qconf[$i]
+INSTALLS += $qrun[$i]
+$qrun[$i].path = $inst_bin_dir
+$qrun[$i].extra = cp -f $qrun[$i] $inst_bin_dir/$qprog[$i] ; \
+$strip $qprog[$i].app/Contents/MacOS/$qprog[$i] ; \
+if [ -e $inst_bin_dir/$qprog[$i].app ] ; then $strip $inst_bin_dir/$qprog[$i].app/Contents/MacOS/$qprog[$i] ; fi
+EOF
+        end
+
+        cat << EOF >> $imod_qconf
+3dmodv.extra = cp -f runimodv $inst_bin_dir/3dmodv ; \
+strip -x 3dmod.app/Contents/MacOS/3dmod ; \
+cp -f runimod $inst_bin_dir/3dmod ; cd $inst_bin_dir ; \
+rm -f imod imodv ; ln -s 3dmod imod ; ln -s 3dmodv imodv ; \
+if [ -e 3dmod.app ] ; then strip -x 3dmod.app/Contents/MacOS/3dmod ; fi
+EOF
+
+    endif
+
+    # Finally run qmake and doctor the Makefiles if necessary
+    #
+    @ i = 0
+    while ($i < $#qdir)
+        @ i++
+        (cd $qdir[$i] ; qmake $qprog[$i].pro)
+        if ($status) then
+            echo "ERROR: setup - executing qmake"
+            exit 1
+        endif
+        if ("$qtdel1" != "") then
+            sed -e "/$qtdel1/s///g"  -e "/$qtdel2/s///g" -e "/$qtdel3/s///g" \
+                -e "/$qtsub1f/s//$qtsub1t/g" \
+                < $qdir[$i]/Makefile >! $qdir[$i]/makefile.tmp
+            \mv $qdir[$i]/makefile.tmp $qdir[$i]/Makefile
+        endif
+    end
+
+    # Set ctfplotter to link with fortran compiler in Linux
+    #
+    if ($machine != "macosx") then
+        sed -e "/^LINK.*=/s/=.*/= $lapacklink/" \
+            < $ctfplot_dir/Makefile >! $ctfplot_dir/Makefile.tmp
+        \mv $ctfplot_dir/Makefile.tmp $ctfplot_dir/Makefile
+
+        # Make the runimodqtapp script for linux only now (used to be Mac too)
+        # See version 1.34 for general form, which was csh script
+        # Argh.  sh script with if - then screws up csh inside this if/endif
+        cat << EOF >! $scripts_dir/runimodqtapp
+#!/bin/sh
+# THIS FILE WAS GENERATED BY setup
+EOF
+        echo 'if [ ! -z "$IMOD_QTLIBDIR" ] ; then' >> $scripts_dir/runimodqtapp
+        cat << EOF >> $scripts_dir/runimodqtapp
+    export LD_LIBRARY_PATH="\${IMOD_QTLIBDIR}:\${IMOD_DIR}/lib:\$LD_LIBRARY_PATH"
+fi
+prog="\$1"
+shift
+"\$IMOD_DIR/bin/\$prog" "\$@"
+EOF
+
+        chmod a+x $scripts_dir/runimodqtapp
+        set gen_scripts = \runimodqtapp
+
+        # Set up Qt image plugins to copy
+        #
+        echo "QTPLUGS_TOCOPY1 = libqjpeg.so libqico.so" >> $configure
+        echo "QTPLUGS_TOCOPY2 = libqsqlmysql.so libqsqlite.so" >> $configure
+        echo "QTSQL_TOCOPY = libqsqlite.so" >> $configure
+        echo "QTPLUGS_TOCOPY3 = libqxcb.so" >> $configure
+        echo "QTPLUG_SRCDIR4 = xcbglintegrations" >> $configure
+        echo "QTPLUGS_TOCOPY4 = libqxcb-glx-integration.so" >> $configure
+
+        # Transfer a -std= entry from sendevent Makefile to qt_flags
+        #
+        set stdOpt = `sed -n '/CXXFLAGS.*-std=/s/.* \(-std=[^ ]*\).*/\1/p' $sendevent_dir/Makefile`
+        if ("$stdOpt" != "") set qt_flags = "$stdOpt $qt_flags"
+
+    else
+
+        # MACOSX: deferred tasks
+        # Set up build line for plugins including 3dmod location and all libs
+        # but strip out libtrack to avoid warnings
+        #
+        set plug_loader = ${source_dir}/${imod_dir}/${imod_target}
+        set allqt_libs = `sed -n -e '/-ltrack/s///' -e '/^LIBS /s/^LIBS.*) *//p' $imod_dir/Makefile`
+        echo 'MAKELIBSO = $(ARCPP) -bundle -dynamic -bundle_loader '"$plug_loader"' $(LDFLAGS) '"$allqt_libs -o " >> $configure
+
+        echo "QTPLUGS_TOCOPY1 = libqjpeg.dylib libqico.dylib" >> $configure
+        echo "QTPLUGS_TOCOPY2 = libqsqlmysql.dylib libqsqlite.dylib" >> $configure
+        echo "QTSQL_TOCOPY = libqsqlite.dylib" >> $configure
+        echo "QTPLUGS_TOCOPY3 = libqcocoa.dylib" >> $configure
+
+        if ($qtVersion > 4) then
+            sed '/STRIP.*=.*strip$/s/strip/strip -x/' \
+                < $imod_dir/Makefile >! $imod_dir/makefile.tmp
+            \mv $imod_dir/makefile.tmp $imod_dir/Makefile
+         endif
+    endif
+
+    (cd $imod_dir ; \rm -f 3dmodv ; ln -s 3dmod 3dmodv)
+
+    set qt_libs = `sed -n -e '/^LIBS /s/^LIBS.*) *//p' $sendevent_dir/Makefile`
+    if ($qtVersion > 4) then
+        if ($subVersion < 7 || ($subVersion > 10 && $machine == "macosx")) set qt4libstocopy = "$qt4libstocopy Qt5DBus"
+        if ($machine != "macosx") then
+        
+            # Qt 5.12.4 switched from -L... to full paths
+            set printLib = `echo $qt_libs | sed -e '/.* \([^ ]*Qt5Core\) .*/s//\1/' -e '/Qt5Core/s//Qt5PrintSupport/'`
+            set qt_libs = "$qt_libs $printLib"
+        else
+            set qt_libs = "$qt_libs -framework QtPrintSupport"
+            set qt4libstocopy = `echo $qt4libstocopy | sed '/5/s///g'`
+            # These were needed with a Mac package from Qt for Assistant
+            #set qt4libstocopy = "$qt4libstocopy QtMultimedia QtMultimediaWidgets QtPositioning QtQml QtQuick QtSensors QtWebChannel QtWebKit QtWebKitWidgets"
+        endif
+    endif
+
+    # Make the script for etomo to source to set library path
+    #
+    echo '# THIS FILE WAS GENERATED BY setup AND IS MEANT TO BE SOURCED FROM SH/BASH' >! $scripts_dir/setlibpath
+    echo 'if [ ! -z "$IMOD_QTLIBDIR" ] ; then' >> $scripts_dir/setlibpath
+    echo "    export $ld_lib_var="'${IMOD_QTLIBDIR}:${IMOD_DIR}/lib:$'"$ld_lib_var" >> $scripts_dir/setlibpath
+    echo "    export DYLD_FRAMEWORK_PATH="'${IMOD_QTLIBDIR}:$'"DYLD_FRAMEWORK_PATH" >> $scripts_dir/setlibpath
+    echo fi >> $scripts_dir/setlibpath
+
+    echo "GENERATED_SCRIPTS = setlibpath $gen_scripts" >> $configure
+
+    # Make sure python scripts are copied in install
+    echo "COPYPYSCRIPTS = copyscripts" >> $configure
+
+    # Set up for queue scripts to be installed
+    echo "QUEUE_SCRIPTS = slurmInit.sh slurmCleanup.sh" >> $configure
+endif
+
+# After qmake: remove empty imodhelp, restore saved stdarg.h, and take care of 
+# dependencies on version
+#
+\find $imod_dir -name imodhelp.h -size 0 -exec \rm -f '{}' \;
+if ($qtVersion > 4 && -e include/stdarg-save.h && -e include/stdarg.h) then
+    diff -q include/stdarg-save.h include/stdarg.h
+    if ($status) then
+        \rm include/stdarg-save.h
+    else
+        \mv include/stdarg-save.h include/stdarg.h
+    endif
+endif
+
+\find $imod_dir -name 'imod.o*' ! -newer .version -exec \rm -f '{}' \;
+\find $imod_dir -name 'imod*_menu.o*' ! -newer .version -exec \rm -f '{}' \;
+
+echo "QTPLUG_SRCDIR1 = imageformats" >> $configure
+echo "QTPLUG_SRCDIR2 = sqldrivers" >> $configure
+echo "QTPLUG_SRCDIR3 = platforms" >> $configure
+echo "QTSQL_SRCDIR = sqldrivers" >> $configure
+echo "RGBPROGS = $rgbprogs" >> $configure
+echo "LDFFLAGS = $ldfflags" >> $configure
+echo "FARFLAGS = $farflags" >> $configure
+cat <<EOF  >> $configure
+LIBTRACKFLAGS = $libtrackFlags
+EOF
+echo "MAKESTATICLIB = $makestaticlib" >> $configure
+echo "STATICRANLIB = $staticranlib" >> $configure
+echo "STATICEXT = $staticext" >> $configure
+echo "DLLEXT = $dllext" >> $configure
+echo "MAKENMCAR = $makenmcar" >> $configure
+echo "NMCAREXT = $nmcarext" >> $configure
+echo "FAR = $far" >> $configure
+echo "FC = $fcomp"              >> $configure
+echo "OPENMP = $openmpFlags"  >> $configure
+echo "OPENMPF = $openmpfFlags"  >> $configure
+echo "WMODEXT = $wmodext" >> $configure
+echo "MAKEWMOD = $makewmod" >> $configure
+echo "LWMOD = $lwmod" >> $configure
+echo "JUNIT_HOME = $junit_home" >> $configure
+echo "JFCUNIT_HOME = $jfcunit_home" >> $configure
+echo "CLASS_SEPARATOR = $class_sep" >> $configure
+echo "SOURCEDOC_EXE = $sourcedoc_exe" >> $configure
+echo "STRIP = $strip" >> $configure
+echo "RM = $rmcmd" >> $configure
+if ($no_qt3 == false) set qt_flags = "$qt3_flags"' '"$qt_flags"
+echo "QTINCDIR = $qtincdir" >> $configure
+echo "QTFLAGS = $qt_flags" >> $configure
+if ("$qt4libstocopy" != "") \
+    echo "QTLIBSTOCOPY = $qt4libstocopy $assistantcopy $qt3supportcopy" >> $configure
+
+# Take care of Fortran graphics variations
+#
+if ("$xplax[1]:r" == "qtplax") then
+    echo "GRAPHLIBS    = $ldnmncar"' $(IMLIBS)'" $ldiaqt $qt_libs $fort_cpplibs" >> $configure
+else if ("$xplax[1]" == "xplax.o") then
+    echo "GRAPHLIBS    = $ldnmncar"' $(IMLIBS) $(XLIBS)' >> $configure
+else
+    echo "GRAPHLIBS    = $ldnmncar"' $(IMLIBS)' >> $configure
+endif
+echo "XPLAX = $xplax" >> $configure
+
+if ("$qtlibPackName" != "") then
+    echo "QTLIB_PACK_NAME = $qtlibPackName" >> $configure
+    echo "QTLIB_URL = $qtlibsURL" >> $configure
+endif
+
+echo "# end of configure"          >> $configure
+
+# Copy makefiles for actual use or for dummy use under Cygwin-gcc
+
+foreach i ($makefile_dirs)
+    cat <<EOF  >! $i/Makefile
+# *****************************************************************
+# THIS FILE WAS COPIED BY SETUP FROM Makefile.$makefile_ext - DO NOT EDIT
+# *****************************************************************
+EOF
+    cat $i/Makefile.$makefile_ext >> $i/Makefile
+end
+
+# Take care of .distname file
+#
+if ($distname != "" && $nogpu != "") then
+    set distname = ${distname}_${nogpu}
+endif
+if ($distname != "" && $suffix != "") then
+    set distname = ${distname}_${suffix}
+endif
+echo $distname >! .distname
+
+# Take care of .options file - stripping out install entry
+# It had to be done with index, and down here, to work with DOS line endings
+# This will not work with a quoted multiple -flags entry
+#
+set optlist = ()
+@ ind = 1
+while ($ind <= $#inargv)
+    if ("$inargv[$ind]" == "-inst" || "$inargv[$ind]" == "-i") then
+        @ ind++
+    else
+        set optlist = ($optlist $inargv[$ind])
+    endif
+    @ ind++
+end
+echo $optlist >! .options
+
+# Test for javac and set up makefile for etomo
+#
+set javacexe = `which javac`
+if ($status) then
+    echo "The Java SDK is not installed or not on the path, so Etomo will not be built"
+    \cp $etomo_dir/Makefile.dummy $etomo_dir/Makefile
+else
+    echo "# THIS FILE WAS COPIED BY SETUP FROM Makefile.real - DO NOT EDIT" >! $etomo_dir/Makefile
+    if ($use_etomo != "" && -e $use_etomo/etomo.jar) then
+        echo "Copying etomo.jar from $use_etomo and omitting etomo tests"
+        mkdir -p $etomo_dir/jar_dir
+        \cp -f $use_etomo/etomo.jar $etomo_dir/jar_dir
+        touch $etomo_dir/jar_dir/etomo.jar
+        sed -e '/^tests:/s//realtests:/' \
+            -e '/^uitestinstall:/s//realuitestinstall:/' \
+          $etomo_dir/Makefile.real >> $etomo_dir/Makefile
+        echo "tests:" >> $etomo_dir/Makefile
+        echo "uitestinstall:" >> $etomo_dir/Makefile
+    else
+        cat $etomo_dir/Makefile.real >> $etomo_dir/Makefile
+    endif
+endif
+
+# 4/11/22: removed test for python and dummy Makefile provision
+
+# copy imodconfig.h unless it has not changed
+#
+if (-e $hconffinal) then
+    set diffout = `diff $hconfigure $hconffinal`
+    if ($status) then
+	\mv $hconfigure $hconffinal
+    else
+	\rm $hconfigure
+    endif
+else
+    \mv $hconfigure $hconffinal
+endif
+
+exit
+
+
+#
+# Usage, help.
+#
+
+usage:
+echo "setup [options]"
+echo "Options are:"
+echo "   -help,-h     Print this message."
+echo "   -debug,-d    Set up with debug flags."
+echo "   -machine,-m  Set target machine to one of: (irix6-n32 | macosx |"
+echo "                rhlinux | amd64linux | itanium | cygwin | cygwin64)"
+echo "   -inst,-i     Set installation directory for bin and lib."
+echo "                e.g., /usr/local/IMOD"
+echo "   -name        Set architecture name of dist file"
+echo "   -swapieee    Make Fortran code on SGI swap IEEE floats"
+echo "   -swapvms     Make Fortran code on SGI swap VMS floats"
+echo "   -shared      Make libraries shared"
+echo "   -no_shared   Make libraries non-shared"
+echo "   -tiff        Link with TIFF libraries"
+echo "   -no_tiff     Do not try to link with TIFF libraries"
+echo "   -no_xlibs    Do not try to make X version of plax routines"
+echo "   -compiler,-c Use specified compilers (intel or gnu/gfortran"
+echo "                for rhlinux or mac, gnu for cygwin)"
+echo "   -static      1 to link to static Intel libraries except "
+echo "                   libiomp5, 2 to link to static openmp lib too"
+echo "   -no_openmp   Do not use OpenMP where available"
+echo "   -no_wrap     Do not put executables in bin/realbin and make"
+echo "                   script wrappers for Intel on Linux"
+echo "   -no_gpu name Build without CUDA even if CUDA_DIR set and"
+echo "                   add _name to package name"
+echo "   -other_static Link to static libraries for other dependencies, sum of:"
+echo "                   1 for CUDA, 2 for TIFF, 4 for HDF5, 8 for FFTW3 libraries"
+echo "   -suffix name Add _name to the dist file name (requires -name)"
+echo "   -packg2c     Pack libg2c into distribution (Linux only)"
+echo "   -packjpeg    Pack libjpeg from /usr/lib[64] into package (Linux)"
+echo "   -qt3         Include Qt3 support in makefiles"
+echo "   -flags       Set flags for compilation"
+echo "   -mkl         Use Intel MKL for FFTs - overrides FFTW3_DIR"
+echo "   -no_mkl      Do not use MKL - Overrides IMOD_SETUP_USE_MKL"
+echo "   -use_etomo   Set directory to get etomo.jar from"
+echo "   -framegpu    Full path including libcfshr.lib for FrameGPU"
+echo "                   usable with SEMCCD; 0 for dll; -1 default no dll"
+echo "   -smf_test    Include module to call shrmemfrm in alignframes"
+echo "   -qtlib name  Set qtlib package name to make separate packages"
+echo "   -url   name  Set different URL for qtlib package"
+echo "                  default: $qtlibsURL"
+exit

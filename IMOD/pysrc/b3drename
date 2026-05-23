@@ -1,0 +1,55 @@
+#!/usr/bin/env python
+# b3drename - Utility to rename file, deleting an existing file first
+# If the output file is a directory, it renames the file into that directory
+#
+# Author: David Mastronarde
+#
+# $Id$
+
+retryWait = 0.2
+maxTrials = 10
+
+import sys, os, os.path, time, shutil, stat
+
+doError = 0
+if len(sys.argv) > 1 and sys.argv[1] == '-e':
+   doError = 1
+
+if len(sys.argv) < 3 + doError:
+   sys.stdout.write('ERROR: b3drename - not enough arguments\n')
+   sys.exit(1)
+
+fromfile = sys.argv[1 + doError]
+tofile = sys.argv[2 + doError]
+if not os.path.exists(fromfile):
+   sys.stdout.write('ERROR: b3drename - file to copy does not exist: ' + fromfile + '\n')
+   sys.exit(1)
+
+if os.path.isdir(tofile):
+
+   # Moving to directory, need the base name but cygwin python does not work with
+   # Windows names so they need conversion
+   conv = fromfile.replace('\\', '/')
+   tofile = os.path.join(tofile, os.path.basename(conv))
+
+# Remove existing file first with multiple trials
+if os.path.exists(tofile):
+   for trial in range(maxTrials):
+      try:
+         os.remove(tofile)
+         break
+      except Exception:
+         pass
+
+try:
+   os.rename(fromfile, tofile)
+except OSError:
+   outString = 'WARNING'
+   if doError:
+      outString = 'ERROR'
+   outString += ': b3drename - Could not rename ' + fromfile + ' to ' + tofile + '\n'
+   sys.stdout.write(outString)
+   if doError:
+      sys.exit(1)
+
+sys.exit(0)

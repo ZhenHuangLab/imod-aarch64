@@ -1,0 +1,93 @@
+.na
+.nh
+.TH dm2mrc 1 2.6.3 IMOD
+.SH NAME
+dm2mrc \- Create an MRC image stack from Digital Micrograph files.
+.SH SYNOPSIS
+dm2mrc  [options]  DM_files...  MRC_image_file
+.SH DESCRIPTION
+dm2mrc will convert Digital Micrograph (DM) image files to an MRC stack,
+using raw2mrc(1).  The program should be able to convert version DM 2.5 files
+produced by DM 2.5 running on a Macintosh, DM 2.5 files exported by DM 3
+running on a Windows PC, DM 3 files, and DM 4 files produced by GMS 2.x.
+.P
+The program will convert signed 16-bit integers, unsigned 16-bit integers
+(by subtracting 32767), signed bytes (by adding 127), unsigned bytes,
+and 32-bit floating point numbers by saving values of the data size,
+and 64-bit floating point numbers (double) or 32-bit integers by
+producing 32-bit floating point output.
+This default behavior can be modified by the options listed below, which is
+highly desirable with data from 16-bit cameras that have been stored as
+32-bit or 64-bit numbers.
+.P
+The program will first scan through all of the files to 
+determine the version of DM file, the data type, the image dimensions, and
+the header offset to the beginning of the data in the file.  If all of these
+attributes are the same, it will convert them in one call to raw2mrc(1).
+Otherwise, it will convert each one independently into a temporary file, then
+make a stack from the temporary files with newstack(1).  DM files that contain
+stacks of identically sized images will be handled; all of the images from each 
+file will be included in the output file.
+.P
+The program will use the pixel size in the input files to set the pixel
+spacing in the header of the output file, if one can be determined.  If there
+is a separate Z pixel size, this will be used to set the Z pixel spacing
+also.  It uses the value from the first input file having a pixel size.
+.SH OPTIONS
+.TP
+.B -s
+Treat unsigned data as signed.  Use this option for unsigned 16-bit data if
+the values are all less than 32768, or for unsigned 32-bit data being
+converted to 16-bit values with the \fB-c\fR option.
+.B -c.
+.TP
+.B -r
+Reduce (divide) unsigned data by 2 instead of subtracting 32767.  Use this
+option for data that are to be written as 16-bit values if the values range
+above 32767 and you prefer to lose one bit of precision to having negative 
+numbers.  The option can also be used when converting doubles to 16-bit
+integers with the \fB-c\fR option, in which case an input range of
+-65535 to 65535 can be stored as integers.
+.TP
+.B -u
+Store unsigned data in a 16-bit unsigned MRC file (mode 6)
+instead of subtracting 32768.  If given with \fB-c\fR, this option will
+also store doubles as mode 6 instead of mode 1, allowing an input range
+of 0 to 65535 to be stored as integers, or a range of 0 to 131070 to
+be stored with the \fB-r\fR option as well.
+.TP
+.B -c
+Convert 32-bit integers to 16-bit (short) integers instead of to floating
+point numbers.
+If the data are signed integers, you can use this option alone if values are 
+between -32768 and 32767; or you can use the option with
+.B -r
+to divide by 2 if values are between -65536 and 65535.  If the data are
+unsigned, then by default 32767 will be subtracted from the input values,
+so that values from 0 to 65534 can be stored as -32767 to 32767.  Again,
+.B -r
+can be used to divide by 2 instead, so that values from 0 to 65534 can be
+stored as 0 to 32767.  If values in the input files are all less than 32768, 
+then use the
+.B -s
+option to avoid subtracting 32767.
+.TP
+.B -i
+Invert the order of images in the output stack.  Input files will be processed
+in inverted order, and slices inside of stack files will also be read in
+inverted order.  This option will preserve handedness if the images being
+stacked are serial images as a block face was cut
+and are in the same orientation as views looking down on the block.
+.TP
+.B -t \fIdir\fR
+Use the given directory for temporary files.  By default, temporary
+files are written to the directory where the output file is being placed. 
+.SH AUTHOR
+David Mastronarde
+.SH SEE ALSO
+raw2mrc(2), newstack(2)
+.SH BUGS
+The program has been written by inpecting examples of a variety of 
+Digital Micrograph files, so it might fail with
+files outside the range of this experience.
+Email reports of problems to mast@colorado.edu.

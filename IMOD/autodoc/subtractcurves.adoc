@@ -1,0 +1,73 @@
+Version = 1.0
+Pip = 1
+
+[Field = PositiveInputFile]
+short = pos
+type = FN
+usage = Input file that is subtracted from (required)
+tooltip = 
+manpage = 
+
+[Field = NegativeInputFile]
+short = neg
+type = FN
+usage = Input file to subtract from first file (required)
+tooltip = 
+manpage = 
+
+[Field = OutputFile]
+short = output
+type = FN
+usage = File in which to write subtracted curves (required)
+tooltip = 
+manpage = 
+
+[Field = ColumnToSubtract]
+short = column
+type = I
+usage = Column with values to take difference of, numbered from 1
+tooltip = 
+manpage = Column with values to take differences of, numbered from 1.  If the
+files have two columns, the default is the first column.  If the files have
+more than two columns, the default is the third column.
+
+[Field = AverageLines]
+short = average
+type = I
+usage = Number of input lines to combine into one output line
+tooltip = 
+manpage = Number of input lines to combine into one output line by averaging.
+All of the data columns in each successive, non-overlapping group of lines are
+averaged to produce a single output line with the average.
+
+[Field = RadialWeightColumn]
+short = radial
+type = I
+usage = Column for radial weighting when averaging
+tooltip = 
+manpage = Column for radial weighting when averaging lines.  By default, a
+simple average is used.  However, when the data represent averages over values
+in successive rings, such as Fourier ring correlations or rotationally averaged
+power spectra, it is necessary to weight each value by the ring radius
+to make the average the same as what would have been obtained
+originally with the larger ring size.  This entry would thus specify the
+column containing the ring radius.  Simple averaging will be applied to this
+column.
+
+[Field = NoTypeColumn]
+short = notype
+type = B
+usage = First column does not have type value
+tooltip = 
+manpage = Whenever there are more than two columns, the program assumes that
+there is a type number in the first column, and it restarts any averaging when
+the type number changes.  Thus, this entry is needed when averaging files that
+have no types and more than two columns.
+
+
+[Field = usage]
+short = help
+type = B
+usage = Print help output
+tooltip = 
+manpage = 

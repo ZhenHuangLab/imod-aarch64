@@ -1,0 +1,65 @@
+.na
+.nh
+.TH splitcorrection 1
+.SH NAME
+splitcorrection \- Produce multiple command files for running ctfphaseflip in parallel
+.SH SYNOPSIS
+splitcorrection  [options]  ctfphaseflip_command_file
+.SH DESCRIPTION
+splitcorrection is a Python script that will take a command file for running
+the ctfphaseflip(1) program and produce multiple command files that can be run
+in parallel by Processchunks(1). 
+.P
+The only argument that the typical user needs to give is
+.B -m
+to specify the number of views to be processed by each chunk.
+The default value is printed out by the program's usage
+statement.  Thus, a typical command might be
+.br
+   splitcorrection -m 6 correction.com
+.br
+After giving this command, there will be a series of command files
+correction-nnn.com to compute the chunks, a file correction-start.com,
+and a file correction-finish.com to finish the
+task and clean up intermediate files. One can then enter
+.br
+   processchunks machine_list correction
+.br
+where "machine_list" is the comma-separated list of machines to use, or
+the number of processors to use on a single machine.
+
+.SH OPTIONS
+When the program is invoked with no arguments, it gives a usage statement that
+shows the default values for these options.
+.TP
+.B -m \fIvalue\fR
+Set the number of views to be processed per chunk to the given value (the default is 5 ).
+.TP
+.B -b \fIvalue\fR
+Number of pixels at each boundary between chunks to save in separate boundary
+files (named setname-nnn.cbound) and rewrite to the output file in the
+-finish.com file.  The default is 2048.  
+.TP
+.B -i  OR  -InitialComNumber \fIvalue\fR
+Initial command file number to use, instead of starting with a "-start.com"
+file then files nunbered from 1.
+.TP
+.B -o  OR  -OpenForMoreComs
+Leave the command file collection open for more files by finishing with
+a "-sync.com" file instead of a "-finish.com" file.
+.TP
+.B -r  OR  -RootNameOfOutput  \fIname\fR
+Root name for command files, instead of using the name of the input
+command file.
+.TP
+.B -unique  OR  -UniqueInfoFile
+Give unique numbers to boundary info files by attaching the first
+command file number to the boundary info file.
+.SH FILES
+The finishing command file deletes all the
+command and log files for the chunks after collecting minimum, maximum, and
+mean density information from the log files.
+.SH AUTHOR
+David Mastronarde  <mast@colorado.edu>
+.SH SEE ALSO
+processchunks(1), ctfphaseflip(1) 

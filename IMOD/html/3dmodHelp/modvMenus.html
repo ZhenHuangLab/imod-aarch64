@@ -1,0 +1,78 @@
+<head>
+<title>Model View Menus</title>
+</head>
+<A NAME = "TOP"><H2>Model View Menus</H2></A>
+<P>
+<UL>
+<LI><B>File</B> Menu
+<UL>
+<LI><B>Open Model</B>:&emsp;Load a new model to view (3dmodv only).
+<LI><B>Save Mode</B>:&emsp;Save the current model (3dmodv only).
+<LI><B>Save Model As...</B>:&emsp;Save model under a different name (3dmodv only).
+<LI><B>Snap TIFF As...</B>:&emsp;Save a snapshot to a specified TIFF file.
+<LI><B>Snap NonT As...</B>:&emsp;Save a snapshot to a specified non-TIFF file.
+<LI><B>Zero Snap File #</B>:&emsp;Reset the counter for snapshot files to 0.
+<LI><B>Set Snap Dir...</B>:&emsp;Set a directory to put snapshots into.  The
+same directory will be used for snapshots from image windows.
+<LI><B>Movie/Montage...</B>:&emsp;Program a series of displays and take
+  snapshots of them, or take a high-resolution snapshot of the window.
+<LI><B>Movie Sequence...</B>:&emsp;Store and run a sequence of movies with
+  different display settings.
+<LI><B>Close</B>:&emsp;Quit 3dmodv or close model view window in 3dmod.
+</UL>
+<LI><B>Edit</B> Menu
+<UL>
+<LI><B>Objects...</B>:&emsp;Open the object edit dialog.
+<LI><B>Controls...</B>:&emsp;Open the display control dialog.
+<LI><B>Rotation...</B>:&emsp;Open the rotation tool.  The arrows rotate the
+  model or clipping planes, <B>+</B> and <B>-</B> increase or decrease the
+  angular step size together with the model rotation speed, and the circular
+  arrow in the middle toggles continuous rotation on and off.  If this tool is
+  open when Model View closes, it will be reopened automatically along with
+  Model View.
+<LI><B>Object List...</B>:&emsp;Show objects by name and color with On/Off
+buttons and define object groups.
+<LI><B>Background...</B>:&emsp;Change the background color.
+<LI><B>Models...</B>:&emsp;Control the display of multiple models.
+<LI><B>Views...</B>:&emsp;Open a dialog to save and restore views.
+<LI><B>Image...</B>:&emsp;Display image slices on the model (3dmod only).
+<LI><B>Isosurface...</B>:&emsp;Display surface rendering of image data (3dmod
+only).
+<LI><B>Save Dock</B>:&emsp;Save the current list of dialogs docked to the
+  Model View Window and their open/closed state in settings.
+<LI><B>Reopen Dock</B>:&emsp;Reopen and restack dialogs to recreate the previously
+saved state.  Ones that were already open will be inserted at the saved
+position in the stack; open dialogs that were not in the saved list will go to
+the end of the stack. 
+</UL>
+<LI><B>View </B> Menu:&emsp;Rendering options and added display features;
+  several of these are stored in the model as flags.
+<UL>
+<LI><B>Low Res</B>:&emsp;Display low resolution mesh (a model flag).
+<LI><B>Bounding Box</B>:&emsp;Display box around loaded volume.  The box
+is in an extra object that can be modified in the object edit dialog.
+<LI><B>Current Point</B>:&emsp;Display a sphere at the location of the current
+point (3dmod only).  The sphere is in an extra object that can be modified in
+the object edit dialog; the sphere size sets the displayed radius.
+<LI><B>Point Labels</B>:&emsp;Display the labels that can be defined in
+  the 3dmod Surf/Cont/Point dialog for individual points.  The label will be
+  drawn to the right of the point, or to the right of a sphere drawn at the
+  point. 
+<LI><B>Stereo...</B>:&emsp;Open stereo control dialog.
+<LI><B>Depth Cue...</B>:&emsp;Control dimming of display with distance.
+<LI><B>Scale bar...</B>:&emsp;Open window to draw scale bar.
+<LI><B>Window Size...</B>:&emsp;Open dialog to adjust size of Model View
+  window without changing the zoom of the display.
+<LI><B>Invert Z</B>:&emsp;Invert the Z dimension when displaying the model (a
+  model flag).
+<LI><B>Lighting</B>:&emsp;Turn rendering with a light on or off (a model flag).
+<LI><B>Wireframe</B>:&emsp;Render data in wireframe only (a model flag).
+<LI><B>Transparent Bkgd</B>:&emsp;Display with a transparent background; use
+  this to take a PNG snapshot or montage with a transparent background.
+  Drawing of the isosurface may take noticeably longer because it needs to be
+  drawn without the vertex buffers that allow rapid redrawing.
+<LI><B>Double Buffer</B>:&emsp;Change between double and single buffer visual.
+</UL>
+</UL>
+<P>
+<A HREF="index.html#TOP">Help Index<A>

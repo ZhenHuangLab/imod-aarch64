@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>LayoutForm</class>
+ <widget class="QWidget" name="LayoutForm">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>390</width>
+    <height>357</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Windows</string>
+  </property>
+  <layout class="QHBoxLayout" name="horizontalLayout_2">
+   <item>
+    <layout class="QVBoxLayout" name="verticalLayout_2">
+     <item>
+      <widget class="QGroupBox" name="GroupBox3">
+       <property name="title">
+        <string>Behavior when main window is parked</string>
+       </property>
+       <layout class="QVBoxLayout">
+        <property name="spacing">
+         <number>4</number>
+        </property>
+        <property name="leftMargin">
+         <number>5</number>
+        </property>
+        <property name="topMargin">
+         <number>2</number>
+        </property>
+        <property name="rightMargin">
+         <number>5</number>
+        </property>
+        <property name="bottomMargin">
+         <number>5</number>
+        </property>
+        <item>
+         <widget class="QCheckBox" name="imageIconifyBox">
+          <property name="toolTip">
+           <string>Park all image windows (Zap, Slicer, etc) when parking Info Window</string>
+          </property>
+          <property name="text">
+           <string>Image windows iconify with Info Window</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="imodDlgIconifyBox">
+          <property name="toolTip">
+           <string>Park all 3dmod dialogs (Edit-Object-Type, etc) when parking Info Window</string>
+          </property>
+          <property name="text">
+           <string>3dmod dialogs iconify with Info Window</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="imodvDlgIconifyBox">
+          <property name="toolTip">
+           <string>Park all 3dmodv dialogs (Edit-Objects, etc)  when parking 3dmodv Window</string>
+          </property>
+          <property name="text">
+           <string>3dmodv dialogs iconify with Model View Window</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </item>
+     <item>
+      <widget class="QGroupBox" name="groupBox">
+       <property name="title">
+        <string>Dialog Docking</string>
+       </property>
+       <layout class="QVBoxLayout" name="verticalLayout">
+        <item>
+         <widget class="QCheckBox" name="dockImodDlgsBox">
+          <property name="toolTip">
+           <string>Place 3dmod dialogs in a stack attached to the Info Window when opening them</string>
+          </property>
+          <property name="text">
+           <string>Dock 3dmod dialogs to Info Window in a stack</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="raiseImodStackBox">
+          <property name="toolTip">
+           <string>Raise all docked 3dmod dialogs when one of them gets the input focus
+(probably not wanted if window under mouse gets focus without clicking)</string>
+          </property>
+          <property name="text">
+           <string>Raise docked 3dmod dialogs together</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="keepStackOnTopBox">
+          <property name="toolTip">
+           <string>Keep docked dialogs on top also when Info Window is pinned to stay on top</string>
+          </property>
+          <property name="text">
+           <string>Keep docked dialogs on top with Info Window</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="dockImodvDlgsBox">
+          <property name="toolTip">
+           <string>Place 3dmodv dialogs in a stack attached to the Model View Window when opening them</string>
+          </property>
+          <property name="text">
+           <string>Dock 3dmodv dialogs to Model View in a stack</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="raiseImodvStackBox">
+          <property name="toolTip">
+           <string>Raise all docked Model View dialogs when one of them gets the input focus
+(probably not wanted if window under mouse gets focus without clicking)</string>
+          </property>
+          <property name="text">
+           <string>Raise docked 3dmodv dialogs together</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </item>
+     <item>
+      <widget class="QCheckBox" name="geomCheckBox">
+       <property name="text">
+        <string>Save &amp;&amp; restore position of Zap &amp;&amp; Info windows</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <layout class="QHBoxLayout" name="horizontalLayout">
+       <item>
+        <widget class="QLabel" name="label">
+         <property name="text">
+          <string>Docked dialog border adjustment</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QSpinBox" name="frameAdjSpinBox">
+         <property name="focusPolicy">
+          <enum>Qt::ClickFocus</enum>
+         </property>
+         <property name="toolTip">
+          <string>Set border size so that there is no gap or overlap between docked dialogs</string>
+         </property>
+         <property name="minimum">
+          <number>-20</number>
+         </property>
+         <property name="maximum">
+          <number>20</number>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+     <item>
+      <spacer name="verticalSpacer">
+       <property name="orientation">
+        <enum>Qt::Vertical</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>263</width>
+         <height>18</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <spacer name="horizontalSpacer">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>4</width>
+       <height>20</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+  </layout>
+ </widget>
+ <layoutdefault spacing="6" margin="11"/>
+ <resources/>
+ <connections/>
+</ui>

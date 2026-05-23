@@ -1,0 +1,127 @@
+.na
+.nh
+.TH imodsendevent 1 2.7.2 IMOD
+.SH NAME
+imodsendevent \- Sends a clipboard message with a command to 3dmod
+.SH SYNOPSIS
+imodsendevent  [options]  Window_ID  action  [argument]  [action...]
+.SH DESCRIPTION
+This program will send a command to 3dmod(1) to perform one or more actions.
+The first command-line
+argument is a window ID, which can be obtained by starting
+3dmod with the 
+.B -W
+option.  After this ID, each action is entered in sequence, where an action is
+specified by a numeric code followed by whatever arguments are associated
+with that action, such as the name of a model file when opening a 
+model.
+.SH OPTIONS
+.TP
+.B -t \fItime\fR
+Timeout, or length of time that the program will wait for a reply from 3dmod,
+in seconds.  The default is 5.
+.TP
+.B -D
+Debug mode.  The program will log what it sends by placing on the clipboard
+and all changes that it detects on the clipboard.  Reports are to
+standard error.
+.SH COMMANDS TO 3DMOD
+Currently, 3dmod will accept the following commands, either through
+this mechanism or through standard input when started with -L.
+Embedded spaces, such as in a filename or file path, need to be escaped
+with two backslashes.
+   1  Open model file (follow with file name); this raises all windows
+   2  Save model file
+   3  Open model view window if not open; this raises all windows
+   4  Quit 3dmod
+   5  Raise windows (bring all windows to the front)
+   6  Switch to model or movie mode.  Follow with 0 for movie mode, a 
+         positive number for model mode, or a negative number to start
+         a movie (the sum of -1, -2, -4, and -8 for movieing along X, 
+         Y, Z, and time axes)
+   7  Open model file but keep current black/white levels (follow with
+         file); this raises all windows
+   8  Open Bead Fixer window or raise it if already open
+   9  Open a Zap window if none are open, this raises all windows
+  10  Report the image coordinates of the rubberband in the most 
+         recently active Zap window with a rubberband
+         (lower left X and Y and upper right X and Y)
+  11  Set object properties unconditionally  OR
+  12  Set object properties only if specified object has no contours
+        For 11 or 12, follow the action with 5 numbers;
+             use -1 to leave a property unchanged:
+          Object number (numbered from 1), or <= 0 for current object
+          0 for closed contours, 1 for open contours, 2 for scattered 
+              points
+          0 for no symbols, 1 for circles, 2 for squares, 3 for 
+              triangles; add 8 for filled symbols
+          Symbol size (>= 1)
+          3D point radius
+  13  Report the three angles of the most recently active slicer window
+  14  Send a message to a plugin or compiled-in special module.  
+        Follow with the name of the plugin as it appears in the 
+        Special menu, including spaces if any, then with the message 
+        for the plugin.
+  15  Set more object properties unconditionally  OR
+  16  Set object properties only if specified object has no contours
+        For 15 or 16, follow the action with 4 numbers;
+             use -1 to leave a property unchanged:
+          Object number (numbered from 1), or <= 0 for current object
+          Limit on number of points per contour, or 0 for no limit
+          1 to start new contours automatically at new Z, 0 not to
+          1 to draw spheres on central section only, 0 not to
+  17  Set ghost mode flags and distance.  Follow with 3 numbers:
+        New mode bits: the sum of 1 for display on next section, 2 for
+          display on previous section, 4 for surface ghost, 8 for all
+          objects, 16 for lighter colors
+        Mask bits: the sum of the same values for the bits to change;
+          bits that are off here will not be changed in the mode
+        Number of sections to display ghosts for, or 0 for near mode
+  18  Set the HQ (high-res) state of the top Zap window, or of the next
+        Zap window opened if there is none.  Follow with 0 to turn HQ
+        off or 1 to turn it on
+  19  Open a set of dialog windows.  Follow with one or more key
+        letters just as for the -E options to 3dmod and 3dmodv.
+  20  Report whether the model has unsaved changes.
+  21  Set more object properties unconditionally  OR
+  22  Set object properties only if specified object has no contours
+        For 21 or 22, follow the action with 6 entries;
+             use -1 to leave a property unchanged:
+          Object number (numbered from 1), or <= 0 for current object
+          Line width
+          1 for end markers plus 2 for arrowheads
+          Color as red,green,blue each between 0 and 255
+          -1 (reserved for future use)
+          -1 (reserved for future use)
+
+Bead Fixer accepts the following commands:
+   1  Open a Tiltalign log file if one is not open yet, or reread 
+        current log if one is open.  Follow with log file name.
+   2  Reread the current log file if one has been opened.
+   3  Set mode for automatic new contour when seeding.  Follow with 1
+        to turn on, 0 to turn off
+   4  Set Autocentering.  Follow with 1 to turn on, 0 to turn off.
+   5  Set diameter.  Follow with integer diameter in pixels.  If images
+        were loaded into 3dmod binned, Bead Fixer will divide by the
+        binning.
+   6  Set operation mode.  Follow with 0 for seed, 1 for gap, 2 for 
+        residuals, or 3 for contours.
+   7  Set skip list.  Follow with the skip list with no embedded
+        spaces.
+   8  Set Delete on All Sections.  Follow with 1 to turn on, 0 to turn 
+        off.
+   9  Clear the skip list.
+.P
+If 3dmod is run in standalone model-view mode (run as 3dmodv or 3dmod -view)
+it will accept the following commands:
+   3  Raise windows
+   4  Quit 3dmodv
+           
+.SH AUTHOR
+David Mastronarde,  mast@colorado.edu
+.SH SEE ALSO
+3dmod(1)
+.SH BUGS
+Sending events between applications with the clipboard is finicky and brittle.
+Instead of using imodsendevent, send messages through standard input if 
+possible, by starting 3dmod with the -L option.

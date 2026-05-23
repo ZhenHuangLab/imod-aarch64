@@ -1,0 +1,184 @@
+<head>
+<title>Information Window Menus</title>
+</head>
+<A NAME = "TOP"><H2>Information Window Menus</H2></A>
+<P>
+<UL>
+<LI><B>File</B> Menu
+<UL>
+<LI><B>New Model</B>:&emsp;Clear current model and creates a new one.
+<LI><B>Open Model</B>:&emsp;Load a new model file.
+<LI><B>Reload Model</B>:&emsp;Reload the current model from file.
+<LI><B>Save Model</B>:&emsp;Save model file to current file name.
+<LI><B>Save Model as...</B>:&emsp;Save model file, and prompts for a name.
+<LI><B>Write Model as --></B>:&emsp;Write model to one of the following 
+formats.
+<UL>
+<LI>Imod &ndash; native model format.
+<LI>Wimp &ndash; Used on BL3DEMC VAX machine.
+<LI>NFF
+<LI>Synu &ndash; San Diego format.
+</UL>
+<LI><B>Movie/Montage...</B>:&emsp;Open window to control range and interval of
+movies and to select movie and montage (higher-resolution) snapshots.
+<LI><B>Set Snap Dir...</B>:&emsp;Set a directory to put snapshots into.  The
+same directory will be used for model snapshots.
+<LI><B>Gray TIF Snaps</B>:&emsp;This entry is a checkable option; when it is
+checked, TIFF snapshots of all image windows will be saved as 8-bit gray scale.
+<LI><B>Memory to TIF</B>:&emsp;Save entire color image from memory to TIFF
+file.
+<LI><B>Extract File...</B>:&emsp;Extract portion of current image file
+selected by the rubber band in the top Zap window, using the Trimvol command
+that would be produced with the <B>I</B> button in that window.  If there is
+no rubber band in a Zap Window, it extracts the whole area shown in the top
+Zap window.  Rotation around X is included if the image is loaded flipped.  A single 
+slice is extracted if the <B>Lo</B> and <B>Hi</B> fields are empty; otherwise
+those fields specify the range in Z.  If there is a rubber band in the top
+  Slicer window, the program will instead use Rotatevol to extract the portion
+  of the file selected by the rubber band.  The depth limits of the range
+  must be set with the <B>Lo</B> and <B>Hi</B> buttons.
+<LI><B>Process File...</B>:&emsp;Apply current operation(s) in the Image
+  Processing dialog to the current image file if possible.
+  If there is no Zap window with a rubber band, the whole file will be
+  processed.  Otherwise, the subarea in the rubber band will be processed, but
+  the <B>Lo</B> and <B>Hi</B> limits must be set to process more than one
+  slice. 
+<LI><B>Save Info Text...</B>:&emsp;Save the contents of the text box at the
+bottom of the Info window to a file.
+
+<LI><B>Quit</B>:&emsp;Exit program.
+</UL>
+<LI><B>Edit</B> Menu
+<UL>
+<LI><B>Model --></B>
+<UL>
+<LI><B>Header...</B>:&emsp;  Settings.
+<UL>
+<LI>Whether model will be drawn or not&emsp;[t]
+<LI>The Z scale for viewing the model
+<LI>The resolution (spacing between points)
+<LI>The pixel size in real units (nm, um, mm)
+</UL>
+<LI><B>Offsets...</B>:&emsp;Shift model data in X, Y, and Z.
+<LI><B>Clean</B>:&emsp;Delete all objects that have no points.
+</UL>
+<LI><B>Object</B> -->
+<UL>
+<LI><B>New</B>:&emsp;Create a new object.
+<LI><B>Delete</B>:&emsp;Delete current object or all selected objects.
+<LI><B>Type...</B>:&emsp;Edit Object type.
+<LI><B>Color...</B>:&emsp;Opens requester for changing object color.
+<LI><B>Move...</B>:&emsp;Move all contours in object to a different object;
+  or, for an objects with a saved isosurface and no contours, move the mesh
+  data into another object of the same kind.
+<LI><B>Combine</B>:&emsp;Combine all selected objects into one object.  This
+  can be used to combine objects with saved isosurfaces, but all objects being
+  combined must be of the same kind (regular versus saved isosurface).
+<LI><B>Info</B>:&emsp;Print information on object by running 
+  <A><href="../man/imodinfo.html#TOP">imodinfo</A> with -o option.
+<LI><B>Clean</B>:&emsp;Delete empty contours from object.  The operation cannot
+  be undone if it removes more than 100 contours.
+<LI><B>Break by Z</B>:&emsp;Break all contours in object into separate ones by 
+Z.
+<LI><B>Fill in Z</B>:&emsp;For every contour in an open object, add point
+  at each Z level skipped by existing points.
+<LI><B>Flatten</B>:&emsp;Flatten all contours in object to lie in single Z 
+plane.
+<LI><B>Sort by Dist</B>:&emsp;For all contours in the object, sorts points by
+  interpoint distance so that sucessive points are as near to each other as possible.
+<LI><B>Renumber...</B>:&emsp;Move the current object to a new object number.
+</UL>
+<LI><B>Surface --></B>
+<UL>
+<LI><B>New</B>:&emsp;Create a new contour on a new surface.&emsp;[N]
+<LI><B>Go To...</B>:&emsp;Go to a different surface.
+<LI><B>Move...</B>:&emsp;Move contours to new surfaces within object.
+<LI><B>Delete</B>:&emsp;Delete all contours in the current surface.&emsp;
+[Ctrl+Shift+D]
+<LI><B>Sort</B>:&emsp;Sort all contours in an open or closed contour object by
+their surface numbers and by their Z values within each surface.  If there are
+  multiple times, contours will be sorted first by time, then by surface and Z value
+  within each time.  Note that this operation cannot be undone.
+</UL>
+<LI><B>Contour --></B>
+<UL>
+<LI><B>New</B>:&emsp;Create a new contour.&emsp;[n]
+<LI><B>Delete</B>:&emsp;Delete current contour or all selected contours.&emsp;[D]
+<LI><B>Move...</B>:&emsp;Move current contour to a new object #.
+<LI><B>Copy...</B>:&emsp;Copy contours to new object or new Z level.
+<LI><B>Sort</B>:&emsp;Sort all contours in an open or closed contour object by
+their Z values.  If there are multiple times, contours will be sorted first by
+  time, then by Z value within each time.  Note that this operation cannot be undone.
+<BR>&ndash;&ndash;&ndash;&ndash;&ndash;&ndash;&ndash;
+<LI><B>Break...</B>:&emsp;Break a contour into two contours.
+<LI><B>Join...</B>:&emsp;Join two contours together.
+<LI><B>Break by Z</B>:&emsp;Break a closed contour into separate ones by Z.
+<LI><B>Fill in Z</B>:&emsp;If current contour is in an open object, add point
+  at each Z level skipped by existing points.
+<LI><B>Loopback</B>:&emsp;Add duplicate points in reverse to make a complex cap.
+<LI><B>Invert</B>:&emsp;Invert the order of points in the current contour.
+<BR>&ndash;&ndash;&ndash;&ndash;&ndash;&ndash;&ndash;
+<LI><B>Info</B>:&emsp;Print area and length of current contour.
+<LI><B>Auto...</B>:&emsp;Open window for making new contours using threshold.
+<LI><B>Type...</B>:&emsp;Select a surface, time index or label for a contour.
+</UL>
+<LI><B>Point --></B>
+<UL>
+<LI><B>Delete</B>:&emsp;Delete Current point.&emsp;[Delete]
+<LI><B>Size...</B>:&emsp;Set size of individual points.
+<LI><B>Distance</B>:&emsp;Show distance between model points.
+<LI><B>Value</B>:&emsp;Show current voxel value.
+<LI><B>Sort by Z</B>:&emsp;Sort points in contour by their Z values.
+<LI><B>Sort by dist</B>:&emsp;Sort points in contour by interpoint distance so
+that sucessive points are as near to each other as possible.
+</UL>
+<LI><B>Image --></B>
+<UL>
+<LI><B>Flip/Rotate</B>:&emsp;Exchange Y and Z dimensions of the image data by
+  rotating around X
+<LI><B>Process...</B>:&emsp;Process images by filtering.
+<LI><B>Reload...</B>:&emsp;Reload image data with current contrast.
+<LI><B>Fill Cache</B>:&emsp;Fill the image cache if there is one.
+<LI><B>Cache Filler...</B>:&emsp;Open window to control cache filling.
+</UL>
+<LI><B>Fine grain...</B>:&emsp;Open window to set fine grained display properties.
+<LI><B>Angles...</B>:&emsp;Open window to save and restore slicer angles.
+<LI><B>Scale bar...</B>:&emsp;Open window to draw scale bars in windows.
+<LI><B>Save Dock</B>:&emsp;Save the current list of dialogs docked to the
+  Information Window and their open/closed state in settings.
+<LI><B>Reopen Dock</B>:&emsp;Reopen and restack dialogs to recreate the previously
+saved state.  Ones that were already open will be inserted at the saved
+position in the stack; open dialogs that were not in the saved list will go to
+the end of the stack. 
+<LI><B>Options...</B>:&emsp;Open window to set program preferences.
+</UL>
+<LI><B>Image</B> Menu
+<UL>
+<LI><B>ZaP</B>:&emsp;Open a Zoom and Pan modeling window.&emsp;[z]
+<LI><B>Multi-Z</B>:&emsp;Open a Multi-Z window for displaying successive
+slices in an array of small panels.
+<LI><B>XYZ</B>:&emsp;Open an XYZ slice viewing window.
+<LI><B>Slicer</B>:&emsp;Open window showing a sliced view of the image data.&emsp;[\]
+<LI><B>Linked Slicers</B>:&emsp;Open one slicer per image file, each locked to
+  one file, with a single slice control toolbar to control them all.
+<LI><B>Model View</B>:&emsp;Open a 3dmod model view (3dmodv) window.&emsp;[v]
+<LI><B>Pixel View</B>:&emsp;View pixel values in a grid.
+<LI><B>Graph</B>:&emsp;Open the Image Graph window.&emsp;[G]
+<LI><B>Locator</B>:&emsp;Open window showing subarea of active zap window.
+<LI><B>Isosurface</B>:&emsp;Open model view window with isosurface display of
+image data.&emsp;[U]
+<LI><B>Tumbler</B>:&emsp;Open 3-D projection window.
+</UL>
+<LI><B>Special</B> Menu
+<UL>
+<LI><B>Bead Fixer</B>:&emsp;Open a window for doing basic operations on a
+fiducial model.
+<LI><B>Line Track</B>:&emsp;Open window to allow automated tracking along a
+line (e.g., membrane) between marked points, and from one slice to the next.
+<LI><B>Bead Helper</B>:&emsp;Open Andrew Noske's plugin with tools to help fix
+large fiducial models.
+<LI><B>Drawing Tools</B>:&emsp;Open Andrew Noske's plugin with some modeling 
+tools, including a tool to draw or modify a contour with a circular cursor.
+</UL>
+<P>
+<A HREF="index.html#TOP">Help Index<A>

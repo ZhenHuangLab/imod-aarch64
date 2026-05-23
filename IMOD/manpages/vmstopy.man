@@ -1,0 +1,260 @@
+.na
+.nh
+.TH vmstopy 1 3.8.26 IMOD
+.SH NAME
+vmstopy - converts IMOD command file to Python script
+.SH SYNOPSIS
+vmstopy  [option]  com_filename  log_filename  [output_file]
+.SH DESCRIPTION
+Vmstopy is a Python program for converting an IMOD command file into a Python
+script that will run commands in the file and direct output to a log file.
+Commands can consist of a single line running a program with command line
+arguments, or a line running a program followed by entries that the program
+will read from standard input.  Python statements can also be included in
+the file, and variables can be defined in Python then used in the command or
+standard input lines.  A small number of C-shell commands will also be
+recognized and translated to the appropriate Python statements.
+.P
+The easiest way to use this program is through the submfg script
+together with an alias to run submfg in the background, which is provided in
+the IMOD startup scripts as the alias subm.  If you command file is named
+"stuff.pcm", you can give the command "subm stuff".  If it is named with a
+different extension, such as the traditional ".com", you need to indicate
+that the command file is to be run into vmstopy by using "subm -p stuff".
+In either case, the file will be executed in background, a
+log file stuff.log will be created, and you will be notified when the
+job is completed.  Type "submfg" to see the usage statement for more
+details.
+
+.SS Special Characters
+Four special characters are used:
+
+$ at the start of a command line.  Commands may be continued on multiple lines
+by ending each line except the last one with a backslash (\\).  The
+continuation lines should not start with a $
+
+> at the start of a Python statement
+
+% for a variable to be substituted; this may occur anywhere in a command line
+or a standard input line.  Variable substitution will always convert the
+variable to a string, so the value can be an unquoted string or a simple
+numeric value.  Lists of numbers should be quoted (e.g., '1-5').
+
+# at the start of a line with a comment.  A # later in a line will not be
+recognized as starting a comment.  $! at the start of a line is also
+recognized as a comment
+
+Standard input lines do not start with a special character.  The program will
+consider any lines between a command line and the next command line or Python
+statement as lines to be fed to the command's standard input.
+
+.SS Indentation and Quoting
+If there are any Python statements starting with >, then indentation is
+significant, not only in the Python statements but also in the command lines.
+Any commands that occur in a Python block must have the
+appropriate indentation; i.e., with extra indentation if they follow a
+statement that starts a block; with the same indentation as the last statement
+if it is part of the same block, or with less indentation if it ends a
+block.  A line with a command to run must have the $ in the first
+column, and then the appropriate number of spaces of indentation before
+the command.
+If you use no Python at all, spaces between the $ and the command will be
+removed from command lines to avoid indentation errors.  Lines for
+standard input to programs need not be indented.
+.P
+The program will enclose the text that used to run a command, in single
+quotes (' ') and text that is input to programs in triple quotes (""" """).  
+If you need to pass a command line argument containing spaces
+to a program, enclose it in double quotes (" ").  Do not escape spaces with
+backslashes.  Backslashes should appear only in Windows file paths.  These
+will be converted to forward slashes.
+.SS Translations
+The following translations will occur.  Some of these are generally useful,
+some are needed to support constructs in existing command files for tomogram
+processing.
+
+$goto label 
+.br
+will skip forward to the next command line starting with 
+.br
+$label:
+.br
+Unlike in C-shell, the goto can be used only to skip forward, and it cannot be
+part of a conditional statement.  The goto's and labels are recognized and
+removed in a first pass through the command file.  Any more complicated
+conditional execution must be coded with Python statements.
+
+$if (-e file) command
+.br
+will be converted to 
+.br
+> if os.path.exists(file):
+.br
+$   command
+
+$if (! -e file) command
+.br
+will be converted to 
+.br
+> if not os.path.exists(file):
+.br
+$   command
+
+$set tmpdir = 
+.br
+and the 1-3 following lines will replaced by 
+.br
+> tmpdir = imodTempDir() 
+.br
+provided that either the following line contains "settmpdir", or the next
+three lines contain "if", "settmpdir", and "endif"
+
+$set variable = value   becomes   >variable = value
+.br
+and "value" is quoted unless it can be assigned to a numeric variable
+
+If "$set" has been used at all, $variable will be substituted just like
+%variable. 
+
+$setenv variable value   becomes   >os.environ['variable'] = 'value'
+
+This is generally to set the environment for programs that will be run, but
+these and other environment variables may be accessed within the command file
+provided that they are all upper case (A-Z, 0-9, and underscore are allowed)
+and enclosed in braces.  In other words, 
+.br
+${ENV_VAR}     becomes     os.environ('ENV_VAR').
+
+\\rm, \\rm -f, rm, and rm -f   all become   b3dremove -g
+
+cp or \\cp   become   b3dcopy, and if the following line has a chmod, -p is
+added to the b3dcopy
+
+\\rm -r, \\rm -rf, rm -r and rm -rf   are all replaced by a call to shutil.rmtree
+
+mkdir   is replaced by a call to os.mkdir
+
+\\mv   becomes   mv -f
+
+$if (-e file) mv file file~    is replaced by a call to the makeBackupFile function
+
+$echo text   becomes   >print "text"   after substituting variables in "text"
+
+$exit
+.br
+will cause the rest of the command file to be skipped, whereas
+.br
+$exit n
+.br
+will result in calling a function that terminates with sys.exit(n), but
+further lines will be processed.
+
+>print "text"   becomes   >prnstr("text", file=log)
+.br
+In other words, in Python statements, print commands not directed to a file
+will be redirected to the log file.  prnstr is function that works for
+printing with both Python 2.x and Python 3.x.
+
+b3dremove      becomes     b3dremove -g    on Windows
+.br
+On other systems, wildcards in the filename list are expanded by the shell
+that runs the command, but on Windows, b3dremove needs to glob the filenames.
+
+$if ($status) goto label
+.br
+When this construct is present, the program will collect lines between "label:" and
+"exit n" and move them into a function.  When the construct is encountered
+after running a command, a call to the function is inserted in the exception
+handler for the command.  
+
+$vmstocsh com.log < com.com
+.br
+When this construct is encountered, the line containing it, through a line
+containing "csh -ef", are replaced with commands to run vmstopy and to run the
+resulting script.
+
+`hostname`    is substituted with the computer hostname upon execution; Note
+that "hostname" must be enclosed in back-quotes (as for command execution in
+a shell); this character may not appear properly here.
+
+$$     is replaced by the PID of the Python running the command file
+
+Certain commands are eliminated from the command file:
+.br
+$set nonomatch
+.br
+$matchshifts
+.br
+$sync    (on Windows)
+
+.SH OPTIONS
+.TP
+.B -x
+Execute the script with a new Python instance.
+.TP
+.B -q
+Suppress output messages about the progress of running the script.
+.TP
+.B -c
+Output "CHUNK DONE" to the log file after successful execution.
+.TP
+.B -e \fIVAR=val\fR
+Set the environment variable VAR to the given value at the beginning of the
+script.  If no value is needed, "-e VAR" can be entered.  This option can be
+entered as many times as needed.
+.TP
+.B -f \fIdir\fR
+Add the given directory to the front of the system path.  This command
+may be entered multiple times, or multiple directories can be included
+in one entry with the path separator, unless they are Windows paths
+that need conversion to Cygwin paths.
+.TP
+.B -b \fIdir\fR
+Add the given directory to the back of the system path.  This command
+may be entered multiple times, or multiple directories can be included
+in one entry with the path separator, unless they are Windows paths
+that need conversion to Cygwin paths.
+.TP
+.B -n \fI#\fR
+Increment the process niceness by the given # at the beginning of the script.
+.TP
+.B -p
+Set permissions of the output script file to executable.
+.TP
+.B -t
+Run in test mode where all commands are prefixed by "echo2"; the output should
+be runnable in Python.
+.SH EXAMPLES
+.nf
+# Example 1: Command file to align an image stack
+# Note the comments embedded in the input to xftoxg
+#
+$xftoxg
+0       global fit
+# Name of input file
+g5a.prexf
+# Name of output file
+g5a.prexg
+$newstack -fl 2 -mo 0 -xf g5a.prexg g5a.st g5a.preali
+
+
+# Example 2: Command file to split a stack into two sets of files
+# Note the indentation for Python and command lines
+#
+>for i in range(100):
+>  if i % 2:
+$    newstack -sec %i data.st oddsec.%i
+>  else:
+$    newstack -sec %i data.st evensec.%i
+$header data.st
+>print "Splitting done"
+
+.fi
+.SH AUTHOR
+David Mastronarde,  mast@colorado.edu
+.SH SEE ALSO
+vmstocsh(1)
+.SH HISTORY
+Why vms and subm?  Parts of IMOD started under the VMS operating system.  The
+ability to submit command files in this kind of format to a queue and get a
+log file with the output was the one good feature of VMS.

@@ -1,0 +1,60 @@
+#!/usr/bin/python -u
+# adocdefaults - Makes a master adoc with a list of default values
+#
+# Author: David Mastronarde
+#
+# $Id$
+
+import sys, glob, re, os
+sys.path.insert(0, '../pysrc')
+from imodpy import *
+
+if len(sys.argv) < 2:
+   prnstr('Usage: adocdefaults path_to_autodocs output_file.adoc')
+   sys.exit(1)
+
+adocList = glob.glob(os.path.join(sys.argv[1], '*.adoc'))
+sectMatch = re.compile('^\[\s*Field\s*=\s*(\S+)\s*]')
+longMatch = re.compile('^\s*long\s*=(.*)')
+defMatch = re.compile('^\s*default\s*=(.*)')
+masterLines = ['Version = 1.0']
+for adoc in adocList:
+   (progName, ext) = os.path.splitext(adoc)
+   progName = os.path.basename(progName)
+   lines = readTextFile(adoc)
+   inSect = False
+   default = ''
+   needProg = True
+
+   # In each section, extract the field name, replace with a long = entry, and record
+   # if there is a default entry
+   for line in lines:
+      if re.search(sectMatch, line):
+         if inSect:
+            if default:
+
+               # When done with a section with a default, put out section line once
+               # and put out the option and default value
+               if needProg:
+                  masterLines += ('', '[Program = ' + progName + ']')
+               needProg = False
+               masterLines.append(longName + ' = ' + default)
+               default = ''
+
+         longName = re.sub(sectMatch, '\\1', line).strip()
+         inSect = True
+         
+      elif inSect and re.search(longMatch, line):
+         longName = re.sub(longMatch, '\\1', line).strip()
+         
+      elif inSect and re.search(defMatch, line):
+         default = re.sub(defMatch, '\\1', line).strip()
+
+   # Finish last section
+   if inSect and default:
+      if needProg:
+         masterLines += ('', '[Program = ' + progName + ']')
+      masterLines.append(longName + ' = ' + default)
+
+writeTextFile(sys.argv[2], masterLines)
+sys.exit(0)

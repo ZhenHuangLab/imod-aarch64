@@ -1,0 +1,317 @@
+#!/usr/bin/env python
+# ctf3dsetup - program to setup command files for reconstruction with 3D CTF correction
+#
+# Author: David Mastronarde
+#
+# $Id$
+#
+
+progname = 'ctf3dsetup'
+prefix = 'ERROR: ' + progname + ' - '
+
+
+#### MAIN PROGRAM  ####
+#
+# load System Libraries
+import os, sys, glob, math
+
+#
+# Setup runtime environment
+if os.getenv('IMOD_DIR') != None:
+   sys.path.insert(0, os.path.join(os.environ['IMOD_DIR'], 'pylib'))
+   from imodpy import *
+   addIMODbinIgnoreSIGHUP()
+else:
+   sys.stdout.write(prefix + " IMOD_DIR is not defined!\n")
+   sys.exit(1)
+
+#
+# load IMOD Libraries
+from pip import *
+from pysed import *
+from tomocoords import *
+
+boundPixels = parallelBoundarySize()
+outRoot = 'ctf3d'
+warnXtiltCrit = 0.3
+
+# Fallbacks from ../manpages/autodoc2man 3 1 ctf3dsetup
+options = ["reccom:TiltCommandFile:FN:", "ctfcom:CorrectionComFile:FN:",
+           "slabs:NumberOfSlabs:I:", "thickness:SlabThicknessInNm:I:",
+           "parallel:RunSlabsInParallel:B:", "procs:NumberOfProcessors:I:",
+           "perproc:ChunksPerProcessor:I:", "erase:EraseFiducials:B:",
+           "goldcom:GoldEraserComFile:FN:", "vertical:VerticalSlices:B:",
+           "oldstyle:OldStyleXtilting:B:", "tempdir:TemporaryDirectory:CH:",
+           "leave:LeaveTempFiles:B:", "boundary:BoundaryPixels:I:", "help:usage:B:"]
+
+(numOpts, numNonOpts) = PipReadOrParseOptions(sys.argv, options, progname, 1, 1, 0)
+
+# Get the com file name, derive a root name and new com file name, check exists
+tiltComFile = PipGetInOutFile('TiltCommandFile', 0)
+(tiltComFile, tiltRootname) = completeAndCheckComFile(tiltComFile)
+
+# get or derive ctf correction file and eraser file
+ctfComFile = getOrDeriveComFile('CorrectionComFile', 'ctfcorrection', tiltComFile,
+                                'CTF correction')
+
+doErase = PipGetBoolean('EraseFiducials', 0)
+if doErase:
+  eraseComFile =  getOrDeriveComFile('GoldEraserComFile', 'golderaser', tiltComFile,
+                                     'erasing gold')
+
+# get other options
+numSlabs = PipGetInteger('NumberOfSlabs', 0)
+maxSlabThick = PipGetInteger('SlabThicknessInNm', 0)
+if numSlabs <= 0 and maxSlabThick <= 0:
+   exitError('You must enter either the number of slabs or a slab thickness in nm')
+if numSlabs > 0 and maxSlabThick > 0:
+   exitError('You cannot enter both the number of slabs and a slab thickness')
+if numSlabs > 0 and numSlabs < 3:
+   exitError('The number of slabs to compute at different heights must be entered ' +\
+             'and must be at least 3')
+slabsInParallel = PipGetBoolean('RunSlabsInParallel', 0)
+numProcs = PipGetInteger('NumberOfProcessors', 8)
+procsEntered = PipGetErrNo() == 0
+if slabsInParallel and procsEntered:
+   exitError('You cannot enter a number of processors when running slabs in parallel')
+chunksPerProc = PipGetInteger('ChunksPerProcessor', 3)
+if slabsInParallel and PipGetErrNo() == 0:
+   exitError('You cannot enter chunks per processor when running slabs in parallel')
+boundPixels = PipGetInteger('BoundaryPixels', boundPixels)
+leaveTemp = PipGetBoolean('LeaveTempFiles', 0)
+tempDir = PipGetString('TemporaryDirectory', '.')
+if not os.path.isdir(tempDir) or not os.access(tempDir, os.W_OK):
+   exitError('Cannot write to ' + tempDir + ' as a temporary directory')
+doVert = PipGetBoolean('VerticalSlices', 0)
+oldStyle = PipGetBoolean('OldStyleXtilting', 0)
+if doVert and oldStyle:
+   exitError('You cannot enter options for both vertical slices and old-style X tilting')
+
+if tiltRootname == 'tilta' or tiltRootname == 'tiltb':
+   outRoot += tiltRootname[4]
+
+tiltLines = readTextFile(tiltComFile, 'Tilt command file')
+ctfLines = readTextFile(ctfComFile, 'CTF correction command file')
+if doErase:
+   eraseLines = readTextFile(eraseComFile, 'Gold erasing command file')
+             
+ubThickness = optionValue(tiltLines, 'thickness', 1, 1, numVal = 1)
+binning = optionValue(tiltLines, 'imagebinned', 1, 1, numVal = 1)
+recfile = optionValue(tiltLines, 'outputfile', 0, 1)
+alifile = optionValue(tiltLines, 'inputproj', 0, 1)
+shiftArr = optionValue(tiltLines, 'shift', 2, 1)
+pixelSize = optionValue(ctfLines, 'PixelSize', FLOAT_VALUE, numVal = 1) 
+defocusTol = optionValue(ctfLines, 'DefocusTol', INT_VALUE, numVal = 1) 
+
+# Get other parametersm, make sure aligned stack is not corrected and get its size
+(nx, ny, nz, xaxisTilt, useGPU, ctfXtilt, ctfUseGPU, aliPixSize, ctfInput, ctfOutput) = \
+   getCTFoptionsCheckIfCorrected(progname, tiltLines, ctfLines)
+
+if not recfile:
+   exitError('Cannot find output file name in ' + tiltComFile)
+
+if not binning:
+   binning = 1
+if not ubThickness:
+   exitError('Cannot find thickness in ' + tiltComFile)
+   
+if not pixelSize or not ctfInput or not ctfOutput:
+   exitError('Cannot find needed information in ' + ctfComFile + \
+             ' (PixelSize, input or output file)')
+
+startingZshift = 0
+xShift = 0.
+if shiftArr:
+   xShift = shiftArr[0]
+if shiftArr and len(shiftArr) > 1:
+   startingZshift = shiftArr[1]
+
+# Figure out slab sizes and number of slabs
+pixelsThickness = ubThickness // binning
+nmThickness = int(round(pixelsThickness * pixelSize))
+if maxSlabThick > 0:
+   numSlabs = (nmThickness + maxSlabThick - 1) // maxSlabThick
+   if numSlabs < 3:
+      exitError(fmtstr('The entered slab thickness would give only {} slabs; you ' +\
+                       'must enter a value less than {}', numSlabs, nmThickness // 2))
+pixelsPerSlab = pixelsThickness // numSlabs
+nmPerSlab = pixelsPerSlab * pixelSize
+slabNmInt = int(round(nmPerSlab))
+prnstr(fmtstr('{} slabs of thickness {:.0f} nm will be computed', numSlabs, nmPerSlab))
+if defocusTol:
+   defocusTol = min(defocusTol, slabNmInt)
+else:
+   defocusTol = slabNmInt
+
+# set up the slab limits
+remainder = pixelsThickness % numSlabs
+shiftsPixels = []
+offsetsPix = []
+thicknesses = []
+slabStart = 0
+for ind in range(numSlabs):
+   slabEnd = slabStart + pixelsPerSlab
+   if ind < remainder:
+      slabEnd += 1
+
+   # Positive tilt shift for slabs at the bottom
+   # But also positive Z offset for lower slabs, because negative Y is really positive Z
+   slabShift = (pixelsThickness - (slabEnd + slabStart)) / 2.
+   shiftsPixels.append(slabShift * binning + startingZshift)
+   offsetsPix.append(slabShift)
+   thicknesses.append((slabEnd - slabStart) * binning)
+   slabStart = slabEnd
+
+# Test for X tilt consistency and if it matters
+checkXtiltCtfVsRec(xaxisTilt, ctfXtilt, warnXtiltCrit, ny * pixelSize, nmPerSlab,
+                   'slab', progname)
+
+# figure out maximum views entry to splitcorrection
+if useGPU == None:
+   useGPU = -1
+if not slabsInParallel:
+   if useGPU >= 0 and not procsEntered:
+      numProcs = 1
+   if numProcs > 1:
+      numChunks = numProcs * chunksPerProc
+      maxSlices = max(1, (nz + numChunks - 1) // numChunks)
+
+cleanChunkFiles(outRoot)
+boundList = glob.glob(outRoot + '-bound-*.info')
+if boundList:
+   cleanupFiles(boundList)
+
+(setName, aliExt) = os.path.splitext(ctfInput)
+if setName.endswith('_ali') and aliExt != '.ali':
+   setName = setName[:-4]
+(aliRoot, aliExt) = os.path.splitext(ctfOutput)
+(recRoot, recExt) = os.path.splitext(recfile)
+if recExt != '.rec':
+   recExt = '_rec' + recExt
+aliRoot = os.path.join(tempDir, aliRoot)
+
+# Work on slabs now
+comNum = 1
+recNameLines = []
+for slab in range(numSlabs):
+   if slabsInParallel:
+      aliName = fmtstr('{}_{:02d}{}', aliRoot, slab, aliExt)
+      eraseName = fmtstr('{}_erase_{:02d}{}', aliRoot, slab, aliExt)
+   else:
+      aliName = fmtstr('{}_tmp{}', aliRoot, aliExt)
+      eraseName = fmtstr('{}_erase_tmp{}', aliRoot, aliExt)
+      
+   recName = fmtstr('{}_{:02d}{}', aliRoot, slab, recExt)
+   recNameLines.append('InputFile ' + recName)
+   tiltsed = [sedModify('InputProjections', aliName, delim = '|'),
+              sedModify('OutputFile', recName, delim = '|'),
+              sedModify('THICKNESS', thicknesses[slab], delim = '|')] + \
+      sedDelAndAdd('SHIFT', fmtstr('{} {}', round(float(xShift), 2), 
+                                   round(float(shiftsPixels[slab]), 2)), 'THICKNESS',
+                   delim = '|');
+   tiltMod = pysed(tiltsed, tiltLines, None, True, delim = '|')
+
+   ctfsed = [sedModify('OutputFileName', aliName, delim = '|')] + \
+      sedDelAndAdd('OffsetInZ', offsetsPix[slab], 'DefocusFile', delim = '|') + \
+      sedDelAndAdd('UseGPU', useGPU, 'DefocusFile', delim = '|') + \
+      sedDelAndAdd('DefocusTol', fmtstr('{}', defocusTol), 'DefocusFile', delim = '|')
+   ctfMod = pysed(ctfsed, ctfLines, delim = '|')
+   
+   if doErase:
+      eraseSed = [sedModify('InputFile', aliName, delim = '|'),
+                  sedModify('OutputFile', eraseName, delim = '|')]
+      eraseMod = pysed(eraseSed, eraseLines, delim = '|')
+      eraseMod.append(fmtstr('$b3drename "{}" "{}"', eraseName, aliName))
+   
+   # For parallel slabs, combine the two command into one file and output it
+   if slabsInParallel:
+      if doErase:
+         allLines = ctfMod + eraseMod + tiltMod
+      else:
+         allLines = ctfMod + tiltMod
+      allLines.append('$b3dremove "' + aliName + '"')
+      comName = fmtstr('{}-{:03d}.com', outRoot, comNum)
+      writeTextFile(comName, allLines)
+      comNum += 1
+   else:
+
+      # For sequential slabs, write each com either to numbered sync (1 proc) or to
+      # temp files
+      if numProcs > 1:
+         ctfComOut = os.path.join(tempDir, 'ctfcorrection.tmp.com')
+         tiltComOut = os.path.join(tempDir, 'tilt.tmp.com')
+      else:
+         ctfComOut = fmtstr('{}-{:03d}-sync.com', outRoot, comNum)
+         comNum += 1
+         if doErase:
+            eraseComOut = fmtstr('{}-{:03d}-sync.com', outRoot, comNum)
+            comNum += 1
+         tiltComOut = fmtstr('{}-{:03d}-sync.com', outRoot, comNum)
+         comNum += 1
+         if not leaveTemp:
+            tiltMod.append('$b3dremove ' + aliName)
+      writeTextFile(ctfComOut, ctfMod)
+      writeTextFile(tiltComOut, tiltMod)
+      if numProcs == 1 and doErase:
+         writeTextFile(eraseComOut, eraseMod)
+
+      # Now if multiple processors/GPUs, split each
+      if numProcs > 1:
+         try:
+            splitLines = runcmd(fmtstr('splitcorrection -i {} -o -m {} -b {} -uni ' +\
+                                       '-r {} "{}"', comNum, maxSlices, boundPixels, 
+                                       outRoot, ctfComOut))
+            numAdded = findSplitComNumber(splitLines, 'output of splitcorrection')
+            comNum += numAdded
+
+            if doErase:
+               eraseComOut = fmtstr('{}-{:03d}-sync.com', outRoot, comNum)
+               writeTextFile(eraseComOut, eraseMod)
+               comNum += 1
+
+            comLines = ['CommandFile  ' + tiltComOut,
+                        'RootNameOfOutput  ' + outRoot,
+                        'ProcessorNumber  ' + str(numProcs),
+                        'TargetChunks  ' + str(numProcs * chunksPerProc),
+                        'BoundaryPixels  ' + str(boundPixels),
+                        'InitialComNumber  ' + str(comNum),
+                        'OpenForMoreComs  1',
+                        'UniqueInfoFile  1',
+                        fmtstr('DimensionsOfStack  {},{}', nx, ny)]
+            if doVert:
+               comLines.append('VerticalSlices  1')
+            if oldStyle:
+               comLines.append('OldStyleXtiltPenalty  0.5')
+
+            splitLines = runcmd('splittilt -StandardInput', comLines)
+            numAdded = findSplitComNumber(splitLines, 'output of splittilt')
+            comNum += numAdded
+            if not leaveTemp:
+               lastSync = fmtstr('{}-{:03d}-sync.com', outRoot, comNum - 1)
+               lastLines = readTextFile(lastSync)
+               lastLines.append('$b3dremove "' + aliName + '"')
+               writeTextFile(lastSync, lastLines)
+
+         except ImodpyError:
+            exitFromImodError(progname)
+         
+# Time to assemble the slabs and clean up
+if not slabsInParallel and numProcs > 1:
+   cleanupFiles([ctfComOut, tiltComOut])
+assembleLines = ['$assemblevol -StandardInput',
+                 'NumberOfFilesInY ' + str(numSlabs),
+                 'OutputFile ' + setName + '_3dctf' + recExt] + recNameLines
+if not leaveTemp:
+   assembleLines.append(fmtstr('$b3dremove -g "{}_[0-9][0-9]{}"', aliRoot, recExt))
+   if slabsInParallel:
+      assembleLines.append(fmtstr('$b3dremove -g "{}_[0-9][0-9]{}"', aliRoot, aliExt))
+assembleLines.append(fmtstr('$b3dremove -g {0}-[0-9][0-9][0-9]*.com* ' +\
+                            '{0}-[0-9][0-9][0-9]*.log* {0}-finish*.com*', outRoot))
+writeTextFile(outRoot + '-finish.com', assembleLines)
+prnstr(str(comNum) + ' command files created with root name ' + outRoot + ' and')
+prnstr(' ready to run with processchunks or parallel processing interface in Etomo')
+if not slabsInParallel and numProcs == 1:
+   prnstr("Or with:")
+   prnstr("  subm " + outRoot + "*.com")
+   
+sys.exit(0)

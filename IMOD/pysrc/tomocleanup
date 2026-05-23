@@ -1,0 +1,305 @@
+#!/usr/bin/env python
+# tomocleanup - to clean up intermediate files from tomogram data set
+#
+# Author: David Mastronarde
+#
+# $Id$
+#
+
+progname = 'tomocleanup'
+prefix = 'ERROR: ' + progname + ' - '
+
+
+# glob the given patterm and add to removal list
+def findFilesAddToList(pattern):
+   global removeList
+   found = glob.glob(pattern)
+   if found:
+      removeList += found
+
+
+# Print a warning
+def warning(message):
+   prnstr('WARNING: ' + progname + ' - ' + message)
+
+
+#### MAIN PROGRAM  ####
+#
+# load System Libraries
+import os, sys, glob, stat
+
+#
+# Setup runtime environment
+if os.getenv('IMOD_DIR') != None:
+   sys.path.insert(0, os.path.join(os.environ['IMOD_DIR'], 'pylib'))
+   from imodpy import *
+   addIMODbinIgnoreSIGHUP()
+else:
+   sys.stdout.write(prefix + " IMOD_DIR is not defined!\n")
+   sys.exit(1)
+
+#
+# load IMOD Libraries
+from pip import *
+
+# Fallbacks from ../manpages/autodoc2man 3 1 tomocleanup
+options = ["dir:Directory:FNM:", "aligned:KeepAlignedStack:B:",
+           "untrimmed:KeepUntrimmedRec:B:", "axis:KeepAxisRecs:B:",
+           "sirt:KeepSIRTRecs:B:", "filter:KeepFilterTrials:B:", "trial:TrialRun:I:",
+           "help:usage:B:"]
+
+(numOpts, numNonOpts) = PipReadOrParseOptions(sys.argv, options, progname, 1, 0, 0)
+
+if numOpts + numNonOpts == 0 or PipGetBoolean('help', 0):
+   PipPrintHelp(progname, 0, 0, 0)
+   sys.exit(0)
+
+keepAli = PipGetBoolean('KeepAlignedStack', 0)
+keepUntrim = PipGetBoolean('KeepUntrimmedRec', 0)
+keepAxes = PipGetBoolean('KeepAxisRecs', 0)
+keepSirt = PipGetBoolean('KeepSIRTRecs', 0)
+keepFilter = PipGetBoolean('KeepFilterTrials', 0)
+trialRun = PipGetInteger('TrialRun', 0)
+numDirEntry = PipNumberOfEntries('Directory')
+dirList = []
+if numDirEntry:
+   for ind in range(numDirEntry):
+      dirList.append(PipGetString('Directory', ''))
+
+if numNonOpts:
+   for ind in range(numNonOpts):
+      dirList.append(PipGetNonOptionArg(ind))
+
+if not dirList:
+   exitError('You must enter at least one directory name; use "." for the current ' +\
+             'directory')
+
+curDir = os.getcwd()
+for tdir in dirList:
+   if not os.path.isdir(tdir):
+      exitError(tdir + ' is not a directory')
+   if not os.access(tdir, os.W_OK):
+      exitError('You do not have permission to remove files in the directory ' + tdir)
+
+for tdir in dirList:
+   os.chdir(curDir)
+   os.chdir(tdir)
+   axisType = None
+   etomoFile = glob.glob('*.edf')
+   typeExt = None
+   stackExt = None
+   if len(etomoFile) > 1:
+      warning('There is more than one .edf file in ' + tdir + '; skipping that directory')
+      continue
+   if etomoFile:
+      etomoFile = etomoFile[0]
+      etomoLines = readTextFile(etomoFile, returnOnErr = True)
+      if isinstance(etomoLines, str):
+         warning(etomoLines + '; skipping directory ' + tdir)
+         continue
+      setname = optionValue(etomoLines, 'Setup.DatasetName', STRING_VALUE, otherSep = '=')
+      if not setname:
+         warning(fmtstr('Cannot find dataset name in {} in directory {}; ' +\
+                        'falling back to analyzing command files', etomoFile, tdir))
+      else:
+         axisType = optionValue(etomoLines, 'Setup.AxisType', STRING_VALUE, 
+                                otherSep = '=')
+         if not axisType:
+            warning(fmtstr('Cannot find axis type in {} in directory {}; ' +\
+                       'falling back to analyzing command files', etomoFile, tdir))
+
+         typeExt = ''
+         etomoStyle = optionValue(etomoLines, 'Setup.ImageFile.ImageFilenameStyle',
+                                  STRING_VALUE, otherSep = '=')
+         if etomoStyle and etomoStyle == 'MRC':
+            typeExt = 'mrc'
+         if etomoStyle and etomoStyle == 'HDF':
+            typeExt = 'hdf'
+
+         stackExt = 'st'
+         etomoExt = optionValue(etomoLines, 'Setup.Setup.OrigImageStackExt', 
+                                STRING_VALUE, otherSep = '=')
+         if etomoExt:
+            stackExt = etomoExt
+
+   if axisType and axisType == 'Not Set':
+      axisType = None
+
+   if not axisType:
+      if not etomoFile:
+         warning('No .edf file found in ' + tdir + \
+                 '; falling back to analyzing command files')
+   
+      (comExt, dualNum, root, typeExtFound, stackExtFound) = findRootAxisAndExtensions()
+      if not root:
+         warning('Cannot find data set files in ' + tdir + '; skipping that directory')
+         continue
+      if etomoFile and setname and setname != root:
+         warning('The data set name from ' + etomoFile +
+                 ' conflicts with that found from data set files in '
+                 + tdir + '; skipping that directory')
+         continue
+         
+      setname = root
+
+      if dualNum == 2:
+         axisType = 'Dual Axis'
+      elif dualNum >= 0:
+         axisType = 'Single Axis'
+      else:
+         warning('Cannot determine axis type from data set files in ' + tdir + \
+                 '; skipping that directory')
+         continue
+         
+
+      if typeExtFound == None:
+         if typeExt == None:
+            warning('Cannot determine file name style from edf file or data set files in '
+                    + tdir + '; skipping that directory')
+            continue
+      elif typeExt != None and typeExtFound != typeExt:
+         warning('The file name style from ' + etomoFile +
+                 ' conflicts with the style found from data set files in '
+                 + tdir + '; skipping that directory')
+         continue
+
+      else:
+         typeExt = typeExtFound
+
+      if stackExtFound == None:
+         if stackExt == None:
+            warning('Cannot determine raw stack extension from edf file or data set ' + \
+                    'files in ' + tdir + '; skipping that directory')
+            continue
+      elif stackExt != None and stackExtFound != stackExt:
+         warning('The raw stack extension from ' + etomoFile +
+                 ' conflicts with that found from data set files in '
+                 + tdir + '; skipping that directory')
+         continue
+
+      else:
+         stackExt = stackExtFound
+         
+   # Information is now adequate one way or the other, set up name style
+   setRootAndExtension(setname, typeExt)
+   removeList = []
+   findFilesAddToList('*~')
+
+   trimmed = datasetFilename('.rec')
+   numAxes = 1
+   untrimmed = datasetFilename('_full.rec')
+
+   # If dual-axis, add sum.rec files
+   if axisType == 'Dual Axis':
+      numAxes = 2
+      untrimmed = datasetFilename('.rec', root = 'sum')
+      findFilesAddToList(datasetFilename('[0-9]*.rec', root = 'sum'))
+
+   # Remove untrimmed if not keeping and trimmed exists 
+   if not keepUntrim and os.path.exists(trimmed):
+      findFilesAddToList(untrimmed)
+
+   # Loop on axes
+   for axis in range(numAxes):
+      setlet = ''
+      if numAxes > 1:
+         setlet = 'a'
+         if axis:
+            setlet = 'b'
+      recext = setlet + '.rec'
+
+      # Remove single axis file if not keeping and combine or final trim exists
+      if numAxes > 1 and not keepAxes and \
+         (os.path.exists(trimmed) or os.path.exists(untrimmed)):
+         findFilesAddToList(datasetFilename(recext))
+
+      # Sample files
+      for base in ('mid', 'top', 'bot'):
+         findFilesAddToList(datasetFilename(recext, root = base))
+
+      # Unused files from various steps
+      findFilesAddToList(setname + setlet + '_fixed.' + stackExt)
+      for pref in ('_filt', '_ctfcorr', '_erase'):
+         findFilesAddToList(setname + setlet + pref + '.ali')
+
+      # Basic simple dataset named files
+      extList = ['bl', 'preali', 'dcst', 'alilog10', '_sub.ali', '_sub.alilog10',
+                 '_3dfind.rec']
+      if not keepAli:
+         extList.append('ali')
+      for ext in extList:
+         sep = ''
+         if '.' not in ext:
+            sep = '.'
+         findFilesAddToList(datasetFilename(setlet + sep + ext))
+
+      # diff files from SIRT, and set up the two prefixes
+      sirtPrefs = ('_full', '_sub')
+      if numAxes > 1:
+         sirtPrefs = (setlet, setlet + '_sub')
+
+      for pref in sirtPrefs:
+         findFilesAddToList(datasetFilename(pref + '.diff'))
+
+      # Other SIRT files with numbers
+      sirtList = ['vsr']
+      if not keepSirt:
+         sirtList += ['srec', 'strm', 'sint']
+         if os.path.exists(trimmed) or os.path.exists(untrimmed):
+            findFilesAddToList(datasetFilename(setlet + '.slfrec'))
+         
+      for sirt in sirtList:
+         for pref in sirtPrefs:
+            pattern = pref + '.' + sirt + '[0-9][0-9]*'
+            findFilesAddToList(datasetFilename(pattern))
+            
+      # Filter trial output
+      if not keepFilter:
+         multiExt = typeExt
+         if not multiExt:
+            multiExt = 'mrc'
+         for pref in ('slfi', 'efos', 'hlfs0.', 'gfc0.'):
+            findFilesAddToList(setname + setlet + '_' + pref + '[0-9][0-9]*.' + 
+                               multiExt)
+
+      # Leftover stuff from parallel runs
+      parallels = ['tilt' + setlet, 'ctfphaseflip' + setlet, 'tilt' + setlet + '_mulfil']
+      if axis:
+         parallels.append('volcombine')
+
+      for com in parallels:
+         for ext in ('log', 'com', 'pcm'):
+            findFilesAddToList(com + '-[0-9][0-9][0-9]*.' + ext)
+            findFilesAddToList(com + '-start.' + ext)
+            findFilesAddToList(com + '-finish.' + ext)
+
+      # Combine temp files
+      if numAxes > 1:
+         findFilesAddToList(setname + setlet + '.rec.mat[0-9][0-9][0-9][0-9]*')
+         findFilesAddToList(setname + setlet + '.rec.wrp[0-9][0-9][0-9][0-9]*')
+
+   # List is done, now report or use it
+   if not removeList:
+      prnstr('Nothing to remove in ' + tdir)
+      continue
+
+   if trialRun:
+      if trialRun == 1 or len(dirList) > 1:
+         prnstr('')
+         prnstr('Files to be removed in ' + tdir + ':')
+
+      numBackup = 0
+      for name in removeList:
+         if trialRun == 1 and name.endswith('~'):
+            numBackup += 1
+         else:
+            prnstr(name)
+      if numBackup:
+         prnstr(str(numBackup) + ' backup files (ending in ~)')
+
+   else:
+      cleanupFiles(removeList)
+      writeTextFile('cleanedUpFiles', removeList, returnOnErr = True)
+      prnstr(str(len(removeList)) + ' files removed from ' + tdir)
+
+sys.exit(0)

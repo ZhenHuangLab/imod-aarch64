@@ -1,0 +1,1210 @@
+Version = 1.2
+
+
+[Test = copy-tomo-coms]
+set.testdir = copy-tomo-coms
+set.adoc.dialog.a=copy-tomo-coms.adoc
+set.adoc.bdialog.b=copy-tomo-coms.adoc
+set.var.dataset = BB
+set.dataset = BB
+copy.file.a = %{dataset}a.st
+copy.file.b = %{dataset}b.st
+set.param = --autoclose3dmod
+set.param = --ignoreloc
+set.param = --namingstyle
+set.param = 0
+set.var.dual=
+set.interface.Recon=
+
+
+[Test = single-test-gui]
+set.testdir = single-test-gui
+#set.keep.testdir = single-test-gui
+set.adoc.dialog = recon.adoc
+set.var.dataset = BBa
+set.dataset = BB
+copy.file = %{dataset}.st
+set.param = --autoclose3dmod
+set.param = -ignoreloc
+#set.param = %{dataset}.edf
+set.param = --namingstyle
+set.param = 0
+set.param = -debug
+set.param = -1
+set.var.single=
+set.var.test-gui=
+set.var.auto-seed=
+set.var.run_sirt=
+set.interface.Recon=
+
+[Test = single]
+set.testdir = single
+set.adoc.dialog = recon.adoc
+set.var.dataset = BBa
+set.dataset = BB
+copy.file = %{dataset}.st
+set.param = --autoclose3dmod
+set.param = --ignoreloc
+set.param = --namingstyle
+set.param = 0
+set.var.single=
+set.var.build=
+set.var.quick=
+set.var.auto-seed=
+set.var.run_sirt=
+set.interface.Recon=
+
+[Test = single-test-gui-raptor]
+set.testdir = single-test-gui-raptor
+set.adoc.dialog = recon.adoc
+set.var.dataset = BBa
+set.dataset = BB
+copy.file = %{dataset}.st
+set.param = --autoclose3dmod
+set.param = --ignoreloc
+set.param = -debug
+set.param = 3
+set.param = --namingstyle
+set.param = 0
+set.var.single=
+set.var.test-gui=
+set.var.auto-seed=
+set.var.run_sirt=
+set.var.run-raptor=
+set.var.plain-final-alignment=
+set.var.stop-after-final-alignment=
+set.interface.Recon=
+
+[Test = single-raptor]
+set.testdir = single-raptor
+set.adoc.dialog = recon.adoc
+set.var.dataset = BBa
+set.dataset = BB
+copy.file = %{dataset}.st
+set.param = --autoclose3dmod
+set.param = --ignoreloc
+#set.param = %{dataset}.edf
+set.param = --namingstyle
+set.param = 0
+set.var.single=
+set.var.auto-seed=
+set.var.run_sirt=
+set.var.build=
+set.var.quick=
+set.var.run-raptor=
+set.interface.Recon=
+
+
+[Test = single-zero-bead-test-gui]
+set.testdir = single-zero-bead-test-gui
+set.adoc.dialog = recon.adoc
+set.var.dataset = BBa
+set.dataset = BB
+copy.file = %{dataset}.st
+set.param = --autoclose3dmod
+set.param = --ignoreloc
+set.param = --namingstyle
+set.param = 0
+set.var.zero-bead=
+set.var.single=
+set.var.test-gui=
+set.var.patch-tracking=
+set.var.run_sirt=
+set.var.plain-final-alignment=
+set.var.stop-after-final-alignment=
+set.interface.Recon=
+
+[Test = single-zero-bead]
+set.testdir = single-zero-bead
+set.adoc.dialog = recon.adoc
+set.var.dataset = BBa
+set.dataset = BB
+copy.file = %{dataset}.st
+set.param = --autoclose3dmod
+set.param = --ignoreloc
+set.param = --namingstyle
+set.param = 0
+set.var.zero-bead=
+set.var.single=
+#set.param = --debug
+#set.param = 3
+set.var.build=
+set.var.quick=
+set.var.patch-tracking=
+set.var.run_sirt=
+set.interface.Recon=
+
+[Test = single-test-gui-plugin]
+set.testdir = single-test-gui-plugin
+set.adoc.dialog = recon.adoc
+set.var.dataset = BBa
+set.dataset = BB
+copy.file = %{dataset}.st
+set.param = --autoclose3dmod
+set.param = --ignoreloc
+set.param = --plugin
+set.param = --namingstyle
+set.param = 0
+set.var.single=
+set.var.test-gui=
+set.var.auto-seed=
+set.var.run_sirt=
+set.interface.Recon=
+
+[Test = single-plugin]
+set.testdir = single-plugin
+set.adoc.dialog = recon.adoc
+set.var.dataset = BBa
+set.dataset = BB
+copy.file = %{dataset}.st
+set.param = --autoclose3dmod
+set.param = --ignoreloc
+set.param = --plugin
+set.param = --namingstyle
+set.param = 0
+set.var.single=
+set.var.build=
+set.var.quick=
+set.var.auto-seed=
+set.var.run_sirt=
+set.interface.Recon=
+
+[Test = dual-test-gui]
+set.testdir = dual-test-gui
+#set.keep.testdir = dual-test-gui
+set.adoc.dialog.a=recon.adoc
+set.adoc.bdialog.b=recon.adoc
+set.var.dataset = BB
+set.dataset = BB
+copy.file.a = %{dataset}a.st
+copy.file.b = %{dataset}b.st
+set.param = --autoclose3dmod
+set.param = --ignoreloc
+#set.param = --timestamp
+#set.param = --actions
+#set.param = %{dataset}.edf
+set.param = --namingstyle
+set.param = 0
+set.param = --debug
+set.param = -1
+set.var.dual=
+set.var.test-gui=
+set.var.auto-seed=
+set.var.run_sirt=
+set.interface.Recon=
+
+[Test = dual-test-gui-std]
+set.testdir = dual-test-gui-std
+set.adoc.dialog.a=recon.adoc
+set.adoc.bdialog.b=recon.adoc
+set.var.dataset = BB
+set.dataset = BB
+copy.file.a = %{dataset}a.st
+copy.file.b = %{dataset}b.st
+set.param = --autoclose3dmod
+set.param = --ignoreloc
+set.var.dual=
+set.var.test-gui=
+set.var.auto-seed=
+set.var.run_sirt=
+set.interface.Recon=
+
+[Test = dual-test-gui-std-hdf]
+set.testdir = dual-test-gui-std-hdf
+set.adoc.dialog.a=recon.adoc
+set.adoc.bdialog.b=recon.adoc
+set.var.dataset = BB
+set.dataset = BB
+copy.file.a = %{dataset}a.st
+copy.file.b = %{dataset}b.st
+set.param = --autoclose3dmod
+set.param = --ignoreloc
+set.param = --namingstyle
+set.param = 2
+set.var.dual=
+set.var.test-gui=
+set.var.auto-seed=
+set.var.run_sirt=
+set.interface.Recon=
+
+[Test = dual-patch-tracking-test-gui]
+set.testdir = dual-patch-tracking-test-gui
+set.adoc.dialog.a=recon.adoc
+set.adoc.bdialog.b=recon.adoc
+set.var.dataset = BB
+set.dataset = BB
+copy.file.a = %{dataset}a.st
+copy.file.b = %{dataset}b.st
+set.param = --autoclose3dmod
+set.param = --ignoreloc
+set.param = --namingstyle
+set.param = 0
+set.var.dual=
+set.var.test-gui=
+set.var.patch-tracking=
+set.var.only-processchunks-tilt=
+set.var.plain-final-alignment=
+set.interface.Recon=
+
+[Test = dual]
+set.testdir = dual
+set.adoc.dialog.a=recon.adoc
+set.adoc.bdialog.b=recon.adoc
+set.var.dataset = BB
+set.dataset = BB
+copy.file.a = %{dataset}a.st
+copy.file.b = %{dataset}b.st
+set.param = --autoclose3dmod
+set.param = --ignoreloc
+set.param = --namingstyle
+set.param = 0
+set.var.dual=
+set.var.quick=
+set.var.build=
+set.var.auto-seed=
+set.var.run_sirt=
+set.interface.Recon=
+
+[Test = dual-test-gui-plugin]
+set.testdir = dual-test-gui-plugin
+set.adoc.dialog.a=recon.adoc
+set.adoc.bdialog.b=recon.adoc
+set.var.dataset = BB
+set.dataset = BB
+copy.file.a = %{dataset}a.st
+copy.file.b = %{dataset}b.st
+set.param = --autoclose3dmod
+set.param = --ignoreloc
+set.param = --plugin
+set.param = --namingstyle
+set.param = 0
+set.var.dual=
+set.var.test-gui=
+set.var.run_sirt=
+set.var.canned=
+set.var.plugin=
+set.interface.Recon=
+
+[Test = dual-plugin]
+set.testdir = dual-plugin
+set.adoc.dialog.a=recon.adoc
+set.adoc.bdialog.b=recon.adoc
+set.var.dataset = BB
+set.dataset = BB
+copy.file.a = %{dataset}a.st
+copy.file.b = %{dataset}b.st
+set.param = --autoclose3dmod
+set.param = --ignoreloc
+set.param = --plugin
+set.param = --namingstyle
+set.param = 0
+set.var.dual=
+set.var.build=
+set.var.quick=
+set.var.run_sirt=
+set.var.canned=
+set.var.plugin=
+set.interface.Recon=
+
+[test = dual-from-brt]
+# --fromBRT --directive "/home/sueh/NOBACKUP/test datasets/Linux/Development4/UITests/dual-test-gui/batchDirective.adoc" --namingstyle 1 --
+# cpus "druid:2,sanguine:1,bebop:2,monalisa:2,bigfoot:2,tubule:4,eclipse:4"
+
+[Test = single-fidless-test-gui]
+set.testdir=single-fidless-test-gui
+set.adoc.dialog = recon.adoc
+set.var.dataset = BBa
+set.dataset = BB
+copy.file = %{dataset}.st
+set.param = --autoclose3dmod
+set.param = --ignoreloc
+set.param = --actions
+#set.param = %{dataset}.edf
+set.param = --namingstyle
+set.param = 0
+set.var.single=
+set.var.fidless=
+set.var.run_sirt=
+set.var.test-gui=
+set.var.plain-final-alignment=
+set.interface.Recon=
+
+[Test = single-fidless]
+set.testdir=single-fidless
+set.adoc.dialog = recon.adoc
+set.var.dataset = BBa
+set.dataset = BB
+copy.file = %{dataset}.st
+set.param = --autoclose3dmod
+set.param = --ignoreloc
+set.param = --actions
+#set.param = %{dataset}.edf
+set.param = --namingstyle
+set.param = 0
+set.var.single=
+set.var.fidless=
+set.var.run_sirt=
+set.var.build=
+set.var.quick=
+set.interface.Recon=
+
+
+[Test = single-simple-align-test-gui]
+set.testdir=single-simple-align-test-gui
+#set.keep.testdir=single
+set.adoc.dialog = recon.adoc
+set.var.dataset = BBa
+set.dataset = BB
+copy.file = %{dataset}.st
+set.param = --autoclose3dmod
+set.param = --ignoreloc
+#set.param = %{dataset}.edf
+set.param = --namingstyle
+set.param = 0
+set.var.single=
+set.var.simple-align=
+set.var.canned=
+set.var.test-gui=
+set.var.plain-final-alignment=
+set.interface.Recon=
+
+[Test = single-simple-align]
+set.testdir=single-simple-align
+#set.keep.testdir=single
+set.adoc.dialog = recon.adoc
+set.var.dataset = BBa
+set.dataset = BB
+copy.file = %{dataset}.st
+set.param = --autoclose3dmod
+set.param = --ignoreloc
+#set.param = %{dataset}.edf
+set.param = --namingstyle
+set.param = 0
+set.var.single=
+set.var.simple-align=
+set.var.canned=
+set.var.build=
+set.var.quick=
+set.interface.Recon=
+
+
+[Test = single-patch-tracking-test-gui]
+set.testdir = single-patch-tracking-test-gui
+#set.keep.testdir = single-test-gui
+set.adoc.dialog = recon.adoc
+set.var.dataset = BBa
+set.dataset = BB
+copy.file = %{dataset}.st
+set.param = --autoclose3dmod
+set.param = --ignoreloc
+#set.param = %{dataset}.edf
+set.param = --namingstyle
+set.param = 0
+set.var.single=
+set.var.test-gui=
+set.var.patch-tracking=
+set.var.run_sirt=
+set.interface.Recon=
+
+[Test = single-patch-tracking]
+set.testdir = single-patch-tracking
+set.adoc.dialog = recon.adoc
+set.var.dataset = BBa
+set.dataset = BB
+copy.file = %{dataset}.st
+set.param = --autoclose3dmod
+set.param = --ignoreloc
+set.param = --namingstyle
+set.param = 0
+set.var.single=
+set.var.build=
+set.var.quick=
+set.var.patch-tracking=
+set.var.run_sirt=
+set.interface.Recon=
+
+
+[Test = single-montage-test-gui]
+set.testdir = single-montage-test-gui
+set.adoc.dialog = recon.adoc
+set.var.dataset = midzone2a
+set.dataset = midzone2
+set.param = --autoclose3dmod
+set.param = --ignoreloc
+set.param = --namingstyle
+set.param = 0
+set.var.single=
+set.var.montage=
+set.var.auto-seed=
+set.var.test-gui=
+set.var.only-processchunks-tilt=
+
+
+
+[Test = single-montage-test-gui-std]
+set.testdir = single-montage-test-gui-std
+set.adoc.dialog = recon.adoc
+set.var.dataset = midzone2a
+set.dataset = midzone2
+set.param = --autoclose3dmod
+set.param = --ignoreloc
+set.var.single=
+set.var.montage=
+set.var.auto-seed=
+set.var.test-gui=
+set.var.only-processchunks-tilt=
+
+
+
+[Test = single-montage]
+set.testdir = single-montage
+set.adoc.dialog = recon.adoc
+set.var.dataset = midzone2a
+set.dataset = midzone2
+set.param = --autoclose3dmod
+set.param = --ignoreloc
+set.param = --namingstyle
+set.param = 0
+set.var.single=
+set.var.montage=
+set.var.auto-seed=
+set.var.run_sirt=
+set.var.build=
+set.var.quick=
+set.var.only-processchunks-tilt=
+
+
+
+[Test = dual-montage-test-gui]
+set.testdir = dual-montage-test-gui
+#set.keep.testdir = dual-montage-test-gui
+set.adoc.dialog.a=recon.adoc
+set.adoc.bdialog.b=recon.adoc
+set.var.dataset = midzone2
+set.dataset = midzone2
+set.param = --autoclose3dmod
+set.param = --ignoreloc
+#set.param = %{dataset}.edf
+#set.param= --names
+set.param = --namingstyle
+set.param = 0
+set.var.dual=
+set.var.montage=
+set.var.auto-seed=
+set.var.test-gui=
+set.var.only-processchunks-tilt=
+set.var.plain-final-alignment=
+
+
+[Test = dual-montage]
+set.testdir = dual-montage
+set.adoc.dialog.a=recon.adoc
+set.adoc.bdialog.b=recon.adoc
+set.var.dataset = midzone2
+set.dataset = midzone2
+set.param = --autoclose3dmod
+set.param = --ignoreloc
+set.param = --namingstyle
+set.param = 0
+set.var.dual=
+set.var.montage=
+set.var.auto-seed=
+set.var.build=
+set.var.quick=
+set.var.run_sirt=
+set.var.only-processchunks-tilt=
+
+[Test = single-montage-patch-tracking-test-gui]
+set.testdir = single-montage-patch-tracking-test-gui
+set.adoc.dialog = recon.adoc
+set.var.dataset = midzone2a
+set.dataset = midzone2
+set.param = --autoclose3dmod
+set.param = --ignoreloc
+set.param = --namingstyle
+set.param = 0
+set.var.single=
+set.var.montage=
+set.var.test-gui=
+set.var.patch-tracking=
+set.var.only-processchunks-tilt=
+set.var.plain-final-alignment=
+set.var.stop-after-final-alignment=
+
+[Test = dual-montage-patch-tracking-test-gui]
+set.testdir = dual-montage-patch-tracking-test-gui
+set.adoc.dialog.a=recon.adoc
+set.adoc.bdialog.b=recon.adoc
+set.var.dataset = midzone2
+set.dataset = midzone2
+set.param = --autoclose3dmod
+set.param = --ignoreloc
+set.param = --actions
+set.param = --namingstyle
+set.param = 0
+set.var.dual=
+set.var.montage=
+set.var.test-gui=
+set.var.run_sirt=
+set.var.patch-tracking=
+set.var.only-processchunks-tilt=
+set.var.plain-final-alignment=
+set.var.stop-after-final-alignment=
+
+
+[Test = dual-montage-patch-tracking]
+set.testdir = dual-montage-patch-tracking
+set.adoc.dialog.a=recon.adoc
+set.adoc.bdialog.b=recon.adoc
+set.var.dataset = midzone2
+set.dataset = midzone2
+set.param = --autoclose3dmod
+set.param = --ignoreloc
+set.param = --actions
+set.param = --namingstyle
+set.param = 0
+set.var.dual=
+set.var.montage=
+set.var.build=
+set.var.quick=
+set.var.run_sirt=
+set.var.patch-tracking=
+set.var.only-processchunks-tilt=
+
+
+
+[Test = join-test-gui]
+set.testdir = join-test-gui
+set.adoc.tab = join.adoc
+set.var.dataset = unicross
+set.dataset = unicross
+set.var.test-gui=
+copy.file = %{dataset}2.rec
+copy.file = %{dataset}3.rec
+set.param = --autoclose3dmod
+set.param = --ignoreloc
+set.param = -namingstyle
+set.param = 0
+set.param = --debug
+set.param = 2
+set.interface.Join=
+
+[Test = join-test-gui-std]
+set.testdir = join-test-gui-std
+set.adoc.tab = join.adoc
+set.var.dataset = unicross
+set.dataset = unicross
+set.var.test-gui=
+copy.file = %{dataset}2.rec
+copy.file = %{dataset}3.rec
+set.param = --autoclose3dmod
+set.param = --ignoreloc
+set.interface.Join=
+
+[Test = join]
+set.testdir = join
+set.adoc.tab = join.adoc
+set.var.dataset = unicross
+set.dataset = unicross
+set.var.build=
+set.var.quick=
+copy.file = %{dataset}2.rec
+copy.file = %{dataset}3.rec
+set.param = --autoclose3dmod
+set.param = --ignoreloc
+set.param = --namingstyle
+set.param = 0
+set.interface.Join=
+
+
+[Test = serial-sections-test-gui]
+set.testdir=serial-sections-test-gui
+set.adoc.dialog=serial-sections.adoc
+set.var.dataset=M154_03-03-11
+set.dataset=%{dataset}
+set.var.test-gui=
+set.param=--autoclose3dmod
+set.param=--ignoreloc
+set.param = --namingstyle
+set.param = 0
+
+[Test = serial-sections-test-gui-std]
+set.testdir=serial-sections-test-gui-std
+set.adoc.dialog=serial-sections.adoc
+set.var.dataset=M154_03-03-11
+set.dataset=%{dataset}
+set.var.test-gui=
+set.param=--autoclose3dmod
+set.param=--ignoreloc
+
+
+[Test = serial-sections-test-gui-std-hdf]
+set.testdir=serial-sections-test-gui-std-hdf
+set.adoc.dialog=serial-sections.adoc
+set.var.dataset=M154_03-03-11
+set.dataset=%{dataset}
+set.var.test-gui=
+set.param=--autoclose3dmod
+set.param=--ignoreloc
+set.param=--namingstyle
+set.param=2
+
+[Test = serial-sections]
+set.testdir=serial-sections
+set.adoc.dialog=serial-sections.adoc
+set.var.dataset=M154_03-03-11
+set.dataset=%{dataset}
+set.var.build=
+set.var.quick=
+set.param=--autoclose3dmod
+set.param=--ignoreloc
+set.param = --namingstyle
+set.param = 0
+
+[Test = serial-sections-montage-test-gui]
+set.testdir=serial-sections-montage-test-gui
+set.adoc.dialog=serial-sections.adoc
+set.var.dataset=mediumscansb2
+set.dataset=%{dataset}
+set.var.test-gui=
+set.var.montage=
+set.param=--autoclose3dmod
+set.param=--ignoreloc
+set.param = --namingstyle
+set.param = 0
+
+[Test = serial-sections-montage-test-gui-std]
+set.testdir=serial-sections-montage-test-gui-std
+set.adoc.dialog=serial-sections.adoc
+set.var.dataset=mediumscansb2
+set.dataset=%{dataset}
+set.var.test-gui=
+set.var.montage=
+set.param=--autoclose3dmod
+set.param=--ignoreloc
+
+[Test = serial-sections-montage-test-gui-std-hdf]
+set.testdir=serial-sections-montage-test-gui-std-hdf
+set.adoc.dialog=serial-sections.adoc
+set.var.dataset=mediumscansb2
+set.dataset=%{dataset}
+set.var.test-gui=
+set.var.montage=
+set.param=--autoclose3dmod
+set.param=--ignoreloc
+set.param=--namingstyle
+set.param=2
+
+[Test = serial-sections-montage]
+set.testdir=serial-sections-montage
+set.adoc.dialog=serial-sections.adoc
+set.var.dataset=mediumscansb2
+set.dataset=%{dataset}
+set.var.build=
+set.var.quick=
+set.var.montage=
+set.param=--autoclose3dmod
+set.param=--ignoreloc
+set.param = --namingstyle
+set.param = 0
+
+[Test = serial-sections-montage-std]
+set.testdir=serial-sections-montage-std
+set.adoc.dialog=serial-sections.adoc
+set.var.dataset=mediumscansb2
+set.dataset=%{dataset}
+set.var.dataset=mediumscansb2
+set.dataset=%{dataset}
+set.var.build=
+set.var.quick=
+set.var.montage=
+set.param=--autoclose3dmod
+set.param=--ignoreloc
+
+[Test = serial-sections-montage-std-hdf]
+set.testdir=serial-sections-montage-std-hdf
+set.adoc.dialog=serial-sections.adoc
+set.var.dataset=mediumscansb2
+set.dataset=%{dataset}
+set.var.build=
+set.var.quick=
+set.var.montage=
+set.param=--autoclose3dmod
+set.param=--ignoreloc
+set.param=--namingstyle
+set.param=2
+
+
+[Test = generic-test-gui]
+set.testdir = generic-test-gui
+set.adoc.dialog = generic.adoc
+set.dataset = BB
+set.var.dataset = tilt
+set.param = --autoclose3dmod
+set.param = --ignoreloc
+set.var.test-gui=
+set.interface.Generic=
+
+[Test = generic]
+set.testdir = generic
+set.adoc.dialog = generic.adoc
+set.dataset = BB
+set.var.dataset = tilt
+set.param = --autoclose3dmod
+set.param = --ignoreloc
+set.var.build=
+set.var.quick=
+set.interface.Generic=
+
+
+[Test = nad-test-gui]
+set.testdir = nad-test-gui
+set.adoc.dialog = nad.adoc
+set.var.dataset = unicross
+set.dataset = unicross
+set.param = --autoclose3dmod
+set.param = --ignoreloc
+set.param = --namingstyle
+set.param = 0
+set.var.test-gui=
+set.var.volume=unicross1.rec
+set.interface.Nad=
+
+[Test = nad-test-gui-std]
+set.testdir = nad-test-gui-std
+set.adoc.dialog = nad.adoc
+set.var.dataset = unicross
+set.dataset = unicross
+set.param = --autoclose3dmod
+set.param = --ignoreloc
+set.var.test-gui=
+set.var.volume=unicross1.rec
+set.interface.Nad=
+
+[Test = nad-test-gui-std-hdf]
+set.testdir = nad-test-gui-std-hdf
+set.adoc.dialog = nad.adoc
+set.var.dataset = unicross
+set.dataset = unicross
+set.param = --autoclose3dmod
+set.param = --ignoreloc
+set.param = --namingstyle
+set.param = 2
+set.var.test-gui=
+set.var.volume=unicross1.rec
+set.interface.Nad=
+
+[Test = nad]
+set.testdir = nad
+set.adoc.dialog = nad.adoc
+set.var.dataset = unicross
+set.dataset = unicross
+set.param = --autoclose3dmod
+set.param = --ignoreloc
+set.param = --namingstyle
+set.param = 0
+set.var.build=
+set.var.quick=
+set.var.volume=unicross1.rec
+set.interface.Nad=
+
+
+[Test = peet-test-gui]
+set.testdir = peet-test-gui
+set.adoc.dialog = peet.adoc
+set.var.dataset = pi
+set.dataset = pi
+set.param = --autoclose3dmod
+set.param = --ignoreloc
+set.var.test-gui=
+#set.var.clear-view =
+
+[Test = peet]
+set.testdir = peet
+set.adoc.dialog = peet.adoc
+set.var.dataset = pi
+set.dataset = pi
+set.param = --autoclose3dmod
+set.param = --ignoreloc
+set.var.build=
+set.var.quick=
+
+
+[Test = flatten-volume-test-gui]
+set.testdir = flatten-volume-test-gui
+set.adoc.flatten-volume = flatten.adoc
+set.var.dataset = BBa.rec
+set.dataset = BB
+copy.file = %{dataset}
+set.param = --autoclose3dmod
+set.param = --ignoreloc
+set.param = --namingstyle
+set.param = 0
+set.var.test-gui=
+set.interface.flatten=
+
+[Test = flatten-volume-test-gui-std]
+set.testdir = flatten-volume-test-gui-std
+set.adoc.flatten-volume = flatten.adoc
+set.var.dataset = BBa.rec
+set.dataset = BB
+copy.file = %{dataset}
+set.param = --autoclose3dmod
+set.param = --ignoreloc
+set.var.test-gui=
+set.interface.flatten=
+
+[Test = flatten-volume]
+set.testdir = flatten-volume
+set.adoc.flatten-volume = flatten.adoc
+set.var.dataset = BBa.rec
+set.dataset = BB
+copy.file = %{dataset}
+set.param = --autoclose3dmod
+set.param = --ignoreloc
+set.param = --namingstyle
+set.param = 0
+set.var.build=
+set.var.quick=
+set.interface.flatten=
+
+
+[Test = gpu-test-gui]
+set.testdir = gpu-test-gui
+set.adoc.flatten-volume = gpu.adoc
+set.param = --autoclose3dmod
+set.param = --ignoreloc
+set.param = --namingstyle
+set.param = 0
+set.var.test-gui=
+set.interface.gpu=
+
+[Test = gpu]
+set.testdir = gpu
+set.adoc.flatten-volume = gpu.adoc
+set.param = --autoclose3dmod
+set.param = --ignoreloc
+set.param = --namingstyle
+set.param = 0
+set.var.build=
+set.var.quick=
+set.interface.gpu=
+
+
+[Test = batch-test-gui]
+set.testdir=batch-test-gui
+set.adoc.tab=batch.adoc
+set.var.dataset=batchBB
+set.dataset=BB
+set.var.test-gui=
+set.param=--autoclose3dmod
+set.param=--ignoreloc
+set.param = --namingstyle
+set.param = 0
+set.interface.Batch=
+
+[Test = batch]
+set.testdir=batch
+set.adoc.tab=batch.adoc
+set.var.dataset=batchBB
+set.dataset=BB
+set.var.build=
+set.var.quick=
+set.param=--autoclose3dmod
+set.param=--ignoreloc
+set.param = --namingstyle
+set.param = 0
+set.interface.Batch=
+
+
+[dataset = BB]
+#clear-view turns off most popups
+set.var.clear-view =
+set.var.pixel-size = 2.02
+set.var.fiducial-diameter = 10
+set.var.image-rotation = -12.5
+set.var.positioning-tomogram-thickness = 200
+set.var.z-axis-min = 5
+set.var.z-axis-max = 70
+set.var.unbinned-bead-diameter = 4.95
+set.var.unbinned-bead-diameter-zero-bead = 0.0
+set.var.int-unbinned-bead-diameter = 5
+#PreProc
+set.var.maximum-radius=2.1
+set.var.maximum-radius-zero-bead=4.2
+#FidModel
+set.var.pixels-to-trim=26,26
+set.var.search-box-size=32,32
+set.var.#-of-beads-to-choose=15
+set.var.fractional-overlap-of-patches=.5,.5
+#FineAlign
+set.var.target=4.2
+set.var.target-restrict=8.9
+set.var.target-restrict-patch-tracking=8.9
+set.var.minimum=3.2
+set.var.minimum-restrict=8.8
+set.var.minimum-restrict-patch-tracking=8.8
+#FinalStack
+set.var.size-to-output-x=550
+set.var.size-to-output-y=550
+set.var.rounded-unbinned-bead-diameter = 5.0
+set.var.better-radius=2.5
+set.var.findbeads3d-binning = 1
+set.var.final-align-comscript=newst
+set.var.final-align-command=newstack
+set.var.ctfcorrection-binned-pixel-size=4.04
+#TomoPos
+set.var.fiducial-diameter-double = 10.0
+set.var.tilt-axis-rotation=-12.5
+set.var.tomogram-thickness=300
+set.var.final-tomogram-thickness=100
+#TomoGen
+set.var.output-density-scaling-factor=1000.0
+set.var.linear-density-scaling-factor=0.2
+set.var.tomogram-thickness-in-z.a=84
+set.var.tomogram-thickness-in-z.b=78
+set.var.tomogram-thickness-in-z-patch-tracking.a=84
+set.var.x-axis-tilt.a=2.0
+set.var.x-axis-tilt.b=-0.08
+set.var.x-axis-tilt-patch-tracking.a=1.27
+set.var.x-axis-tilt-simple-align.a=2.11
+set.var.x-axis-tilt-simple-align.b=2.04
+#combine
+set.var.axis-min = 24
+set.var.x-axis-max = 526
+set.var.y-axis-max = 526
+#set.var.x-axis-max-patch-tracking = 526
+#set.var.y-axis-max-patch-tracking = 526
+set.var.number-of-z-patches=2
+set.var.number-of-z-patches-patch-tracking=2
+set.var.z-low=5
+set.var.z-low-patch-tracking=5
+set.var.z-high=70
+set.var.z=84
+set.var.z-patch-tracking=84
+set.var.z-high-patch-tracking=70
+set.var.initial-match-size=84
+set.var.initial-match-size-patch-tracking=84
+#PostProc
+set.var.scaling-z-min=28
+set.var.scaling-z-max=56
+set.var.scaling-z-min-patch-tracking=28
+#set.var.scaling-z-min-patch-tracking-zero-bead=42
+set.var.scaling-z-min-patch-tracking-zero-bead=28
+set.var.scaling-z-min-simple-align=29
+set.var.scaling-z-max-patch-tracking=56
+#set.var.scaling-z-max-patch-tracking-zero-bead=85
+set.var.scaling-z-max-patch-tracking-zero-bead=56
+set.var.scaling-z-max-simple-align=58
+set.var.z-simple-align=88
+#set.var.size-to-output-x-patch-tracking=550
+#set.var.size-to-output-y-patch-tracking=550
+
+
+[dataset = midzone2]
+#set.var.clear-view =
+copy.file = %{dataset}.st
+copy.file.a = %{dataset}a.st
+copy.file.b = %{dataset}b.st
+set.var.montage=
+set.var.pixel-size = 1.42
+set.var.fiducial-diameter = 15
+set.var.image-rotation = 0.0
+set.var.positioning-tomogram-thickness = 200
+set.var.z-axis-min = 5
+set.var.z-axis-max = 70
+set.var.z-axis-min-patch-tracking = 8
+set.var.z-axis-max-patch-tracking = 84
+set.var.unbinned-bead-diameter = 10.56
+set.var.unbinned-bead-diameter-zero-bead =
+set.var.int-unbinned-bead-diameter = 11
+#PreProc
+set.var.maximum-radius=3.0
+set.var.maximum-radius-zero-bead=
+set.var.needs-pre-proc=
+#FidModel
+set.var.pixels-to-trim.a=98,51
+set.var.pixels-to-trim.b=51,98
+set.var.search-box-size=40,40
+set.var.#-of-beads-to-choose=30
+set.var.fractional-overlap-of-patches=.33,.33
+#FineAlign
+set.var.target=3.6
+set.var.target-restrict=16.1
+set.var.target-restrict-patch-tracking=11.3
+set.var.minimum=3.2
+set.var.minimum-restrict=16
+set.var.minimum-restrict-patch-tracking=11.2
+#FinalStack
+set.var.size-to-output-x.a=2000
+set.var.size-to-output-y.a=1050
+set.var.size-to-output-x.b=1050
+set.var.size-to-output-y.b=2000
+set.var.rounded-unbinned-bead-diameter = 10.6
+set.var.better-radius=5.3
+set.var.findbeads3d-binning = 2
+set.var.final-align-comscript=blend
+set.var.final-align-command=blendmont
+set.var.ctfcorrection-binned-pixel-size=2.84
+#TomoPos
+set.var.fiducial-diameter-double = 15.0
+set.var.tilt-axis-rotation=0.0
+set.var.tomogram-thickness=300
+set.var.final-tomogram-thickness=100
+#TomoGen
+set.var.output-density-scaling-factor.a=500.0
+set.var.output-density-scaling-factor.b=1000.0
+set.var.linear-density-scaling-factor.a=0.1
+set.var.linear-density-scaling-factor.b=0.2
+set.var.tomogram-thickness-in-z.a=96
+set.var.tomogram-thickness-in-z.b=84
+set.var.x-axis-tilt.a=2.05
+set.var.x-axis-tilt.b=0.22
+set.var.x-axis-tilt-simple-align.a=
+set.var.x-axis-tilt-simple-align.b=
+set.var.x-axis-tilt-patch-tracking.a=1.72
+set.var.x-axis-tilt-patch-tracking.b=0.33
+set.var.tomogram-thickness-in-z-patch-tracking.a=84
+set.var.tomogram-thickness-in-z-patch-tracking.b=112
+#combine
+set.var.axis-min = 36
+set.var.x-axis-max = 1964
+set.var.y-axis-max = 1014
+#set.var.x-axis-max-patch-tracking = 1914
+#set.var.y-axis-max-patch-tracking = 988
+set.var.number-of-patches=5
+set.var.number-of-z-patches=2
+set.var.number-of-z-patches-patch-tracking=3
+set.var.z-low=5
+set.var.z-low-patch-tracking=8
+set.var.z-high=70
+set.var.z=96
+set.var.z-patch-tracking=84
+set.var.z-high-patch-tracking=84
+set.var.initial-match-size=96
+set.var.initial-match-size-patch-tracking=84
+#PostProc
+set.var.scaling-z-min=32
+set.var.scaling-z-min-simple-align=
+set.var.scaling-z-min-patch-tracking=28
+set.var.scaling-z-min-patch-tracking-zero-bead=
+set.var.scaling-z-max=64
+set.var.scaling-z-max-simple-align=
+set.var.scaling-z-max-patch-tracking=56
+set.var.scaling-z-max-patch-tracking-zero-bead=
+set.var.z-simple-align=
+#set.var.size-to-output-x-patch-tracking.a=1950
+#set.var.size-to-output-y-patch-tracking.a=1024
+set.interface.Recon=
+
+[dataset = unicross]
+#set.var.clear-view =
+copy.file = %{dataset}1.rec
+
+[dataset = M154_03-03-11]
+#set.var.clear-view =
+copy.file = %{dataset}.st
+set.interface.serial-sections=
+set.var.comline=$colornewst -cnverbose -xform M154_03-03-11.xg -bin 1 -origin M154_03-03-11.rec M154_03-03-11_ali.
+
+[dataset = mediumscansb2]
+#set.var.clear-view =
+copy.file = %{dataset}.st
+copy.file = %{dataset}.st.mdoc
+set.interface.serial-sections=
+set.var.comline=ImageOutputFile*mediumscansb2_ali.
+set.var.comline2=ImageInputFile*mediumscansb2.rec
+
+[dataset = pi]
+#clear-view turns off most popups
+set.var.clear-view =
+copy.file = %{dataset}-a.rec
+copy.file = %{dataset}-a.mod
+copy.file = %{dataset}-b.rec
+copy.file = %{dataset}-b.mod
+copy.file = %{dataset}-a-initMOTL.csv
+copy.file = %{dataset}-b-initMOTL.csv
+set.var.angular-search-range-max=20
+set.var.angular-search-range-incr=4
+set.var.particle-volume=80
+set.interface.peet=
+
+
+[interface = Recon]
+[[open = interface]]
+	pnl.main-frame=
+[[]]
+goto.frame.pnl.main-frame =
+goto.frame.a.pnl.main-frame =
+goto.frame.b.pnl.sub-frame =
+open.dialog.PreProc.bn.pre = 
+open.dialog.CoarseAlign.bn.coarse =
+open.dialog.FidModel.bn.track =
+open.dialog.FineAlign.bn.fine =
+open.dialog.TomoPos.bn.pos =
+open.dialog.FinalStack.bn.stack =
+open.dialog.TomoGen.bn.gen =
+open.dialog.Combine.bn.comb =
+open.dialog.PostProc.bn.post =
+open.dialog.CleanUp.bn.clean =
+
+[interface = Join]
+[[open = interface]]
+	pnl.main-frame=
+	bn.join-serial-tomograms=
+[[]]
+goto.frame.pnl.main-frame =
+open.dialog.setup.tb.setup =
+open.dialog.align.tb.setup.1 =
+open.dialog.join.tb.setup.2 =
+open.dialog.model.tb.setup.3 =
+open.dialog.rejoin.tb.setup.4 =
+
+[interface = Serial-Sections]
+[[open = interface]]
+  pnl.main-frame=
+  bn.align-serial-sections-/-blend-montages=
+[[]]
+
+[interface = PEET]
+[[open = interface]]
+	pnl.main-frame=
+	bn.subvolume-averaging=
+[[]]
+
+[Interface = Nad]
+[[open = interface]]
+	pnl.main-frame=
+	bn.nonlinear-anisotropic-diffusion=
+[[]]
+goto.frame.pnl.main-frame =
+
+[Interface = Generic]
+[[open = interface]]
+	pnl.main-frame=
+	bn.generic-parallel-process=
+[[]]
+goto.frame.pnl.main-frame =
+
+[Interface = flatten]
+[[open = interface]]
+	pnl.main-frame=
+	open.tool.flatten-volume=
+[[]]
+goto.frame.pnl.manager-frame =
+
+
+[Interface = gpu]
+[[open = interface]]
+  pnl.main-frame=
+  open.tool.test-gpu=
+[[]]
+goto.frame.pnl.manager-frame =
+
+
+[interface = Batch]
+[[open = interface]]
+  pnl.main-frame=
+  bn.batch-tomograms=
+[[]]
+

@@ -1,0 +1,196 @@
+#!/usr/bin/env python
+# swaptomostacks - Exchange raw stack and other files for processing with same alignment
+#
+# Author: David Mastronarde
+#
+# $Id$
+
+progname = 'swaptomostacks'
+prefix = 'ERROR: ' + progname + ' - '
+stTag = '/st/'
+
+# substitute stack extension into stack-type suffix, or call datasetFilname
+def convertFilename(suff, root = None):
+   if not root:
+      root = rootname
+   if '/st/' in suff:
+      return root + suff.replace(stTag, stackExt)
+   return datasetFilename(suff, root = root)
+
+
+# Rename files with the given suffixes if they exist
+def renameFiles(suffixes, rootFrom, rootTo):
+   for suff in suffixes:
+      fromName = convertFilename(suff, root = rootFrom)
+      if os.path.exists(fromName):
+         toName = convertFilename(suff, root = rootTo)
+         try:
+            os.rename(fromName, toName)
+            prnstr('Renamed ' + fromName + ' -> ' + toName)
+         except OSError:
+            exitError(fmtstr('Renaming {} to {} gave the error {}', fromName, toName,
+                             str(sys.exc_info()[1])))
+
+
+# load System Libraries
+import sys, os
+
+#
+# Setup runtime environment
+if os.getenv('IMOD_DIR') != None:
+   sys.path.insert(0, os.path.join(os.environ['IMOD_DIR'], 'pylib'))
+   from imodpy import *
+   addIMODbinIgnoreSIGHUP()
+else:
+   sys.stdout.write(prefix + " IMOD_DIR is not defined!\n")
+   sys.exit(1)
+
+#
+# load IMOD Libraries
+from pip import *
+
+# Fallbacks from ../manpages/autodoc2man 3 1 swaptomostacks
+options = ["from:FromRootname:CH:", "to:ToRootname:CH:", "root:SetRootname:CH:",
+           "single:SingleAxisSet:B:", "excl:ExcludeType:I:", "help:short:B:"]
+
+# PIP startup and help
+(numOpts, numNonOpts) = PipReadOrParseOptions(sys.argv, options, progname, 2, 1, 1)
+
+# Get the options, which are almost all required
+rootname = PipGetString('SetRootname', '')
+
+fromRoot = PipGetInOutFile('FromRootname', 0)
+if not fromRoot:
+   exitError('You must enter the rootname to rename files from')
+toRoot = PipGetInOutFile('ToRootname', 1)
+if not toRoot:
+   exitError('You must enter the rootname to rename files to')
+exclude = PipGetInteger('ExcludeType', 0)
+forceSingle = PipGetBoolean('SingleAxisSet', 0)
+
+tryExts = allowedRawStackExtensions()
+
+(comExt, dualNum, root, typeExt, stackExt) = findRootAxisAndExtensions()
+single = dualNum != 2
+
+if not rootname:
+   if root:
+      if forceSingle and not single:
+         exitError('You must enter a root name including a or b for a dual-axis set' +\
+                   ' with the -single option')
+      rootname = root
+   else:
+      exitError('You must enter the data set root name; it cannot be determined')
+
+if typeExt == None:
+   (nameStyle, typeExt) = defaultNamingStyle()
+   warntx = 'descriptive extension style'
+   if typeExt:
+      warntx = 'extension ' + typeExt
+   prnstr('WARNING: ' + progname + \
+          ' - Cannot determine file naming style, assuming ' + warntx)
+      
+# Just check the stacks if axis type and extension found
+if stackExt:
+   if forceSingle:
+      single = True
+      dualNum = 0
+   if single and not os.path.exists(rootname + '.' + stackExt):
+      exitError('Cannot find single stack named ' + rootname + '.' + stackExt)
+   if dualNum and not os.path.exists(rootname + 'a.' + stackExt):
+      exitError('Cannot find A stack named ' + rootname + 'a.' + stackExt)
+   if dualNum and not os.path.exists(rootname + 'b.' + stackExt):
+      exitError('Cannot find B stack named ' + rootname + 'b.' + stackExt)
+
+else:
+
+   # Fall back to deducing single or dual set and standard extension
+   for stackExt in tryExts:
+      dualNum = 0
+      single = os.path.exists(rootname + '.' + stackExt)
+      if not forceSingle:
+         if os.path.exists(rootname + 'a.' + stackExt):
+            dualNum += 1
+         if os.path.exists(rootname + 'b.' + stackExt):
+            dualNum += 1
+      if single and dualNum:
+         exitError('Both single and dual-axis stacks exist with extension .' + stackExt)
+      if dualNum == 1:
+         exitError('Only one of the dual-axis stacks exists with extension .' + stackExt)
+      if single or dualNum:
+         break
+         
+   if not single and not dualNum:
+      exitError('Cannot find single or dual axis stacks with any standard extensions')
+   
+setRootAndExtension(rootname, typeExt)
+
+# Set up the suffixes to move; if you use a tuple you need ('',)
+moveSuffixes = []
+if single:
+   setLets = ['']
+else:
+   setLets = ['a', 'b']
+for let in setLets:
+   moveSuffixes += [let + '.' + stTag, let + '_orig.' + stTag, 
+                   let + '_xray.' + stTag + '.gz']
+
+# do a and b separately because of the rec variations
+if exclude < 2:
+   moveSuffixes.append('.rec')
+   if single:
+      moveSuffixes.append('_full.rec')
+   else:
+      moveSuffixes.append('a.rec')
+      moveSuffixes.append('b.rec')
+if exclude < 1:
+   if single:
+      moveSuffixes.append('.ali')
+   else:
+      moveSuffixes.append('a.ali')
+      moveSuffixes.append('b.ali')
+
+# Check for conflicts in the TI names before renaming anything
+for suff in moveSuffixes:
+   fromFile = convertFilename(suff)
+   toFile = convertFilename(suff, root = toRoot)
+   if os.path.exists(fromFile) and os.path.exists(toFile):
+      exitError('A file already exists with the name ' + toFile)
+
+# Now make sure the source stack(s) exist; allow them to be named st, mrc, hdf
+renameExts = [None, None]
+for ext in tryExts:
+   if single:
+      if os.path.exists(fromRoot + '.' + ext) and not renameExts[0]:
+         renameExts[0] = ext
+         break
+   else:
+      if os.path.exists(fromRoot + 'a.' + ext) and not renameExts[0]:
+         renameExts[0] = ext
+      if os.path.exists(fromRoot + 'b.' + ext) and not renameExts[1]:
+         renameExts[1] = ext
+      if renameExts[0] and renameExts[1]:
+         break
+
+if not renameExts[0] or (dualNum and not renameExts[1]):
+   exitError('No stacks exists with the "from" rootname ' + fromRoot)
+
+# Rename current files
+renameFiles(moveSuffixes, rootname, toRoot)
+
+# Rename the source stacks to standard extension if needed
+for ind in range(len(setLets)):
+   curName = fromRoot + setLets[ind] + '.' + renameExts[ind]
+   stdName = rootname + setLets[ind] + '.' + stackExt
+   if curName != stdName:
+      try:
+         os.rename(curName, stdName)
+         prnstr('Renamed ' + curName + ' -> ' + stdName)
+      except OSError:
+         exitError(fmtstr('Renaming {} to {} gave the error {}', curName, stdName,
+                          str(sys.exc_info()[1])))
+
+# Rename the source files
+renameFiles(moveSuffixes, fromRoot, rootname)
+
+sys.exit(0)

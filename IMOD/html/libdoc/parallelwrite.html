@@ -1,0 +1,47 @@
+<html><head><title>Parallel Writing Module</title>
+<body>
+<A NAME = "TOP"></A>
+<H2  align="center">Parallel Writing Module</H2>
+This module contains a set of functions for writing in parallel to a file from
+multiple processes.  The functions shown first apply generally or when a file is opened
+as an ImodImageFile, such as with <A HREF = "iimage.html#iiFOpen">iiFOpen</A>; the later functions
+apply when a file is opened for unit-based I/O.  For MRC files, data are
+written directly to a file from multiple processes with no locking, but also
+lines near defined boundaries are written to separate boundary files, which
+must be rewritten at the end with Fixboundaries.  For HDF
+files, a file lock is set up and the image file must be opened and closed for each
+use, but there are no boundary files written.
+<P>
+Parallel writing to an HDF file requires a specific sequence of operations.  When the
+file is first created, it needs to have at least one dataset (section) defined
+if not written; the routine <A HREF = "#iiuWriteDummySecToHDF">iiuWriteDummySecToHDF</A> or
+<A HREF = "iimage.html#hdfWriteDummySection">hdfWriteDummySection</A> can be used to do this without having
+to write or supply data.  When an existing file needs to be opened initially for
+writing, these are the steps:
+<OL> 
+<LI> Whether a file is HDF must be tested with 
+  <A HREF = "iimage.html#iiTestIfHDF">iiTestIfHDF</A>. 
+<LI> Initialization with <A HREF = "#parWrtInitialize">parWrtInitialize</A> or 
+  <A HREF = "#iiuParWrtInitialize">iiuparWrtInitialize</A> must be done with a negative
+  X dimension and any existing file that can be used for locking (the boundary
+  file is fine for this).
+<LI> The internal index of the lock file must be obtained by calling 
+  <A HREF = "#parWrtProperties">parWrtProperties</A>.
+<LI> The file lock must be obtained with 
+  <A HREF = "b3dutil.html#b3dLockFile">b3dLockFile</A>.
+<LI> The file can then be opened as usual, but then the underlying HDF file
+  should be closed immediately with 
+  <A HREF = "#parWrtRecloseHDF">parWrtRecloseHDF</A> or 
+  <A HREF = "#iiuParWrtRecloseHDF">iiuParWrtRecloseHDF</A>. 
+<LI> Writing proceeds as usual with the section or line routines below, and
+  this module will buffer the data and reopen and close the file as needed.
+<LI> Before exiting, the program must write all buffered data with
+  <A HREF = "#parWrtFlushBuffers">parWrtFlushBuffers</A> or <A HREF = "#iiuParWrtFlushBuffers">iiuParWrtFlushBuffers</A>, then terminate all the
+  locks with <A HREF = "#parWrtClose">parWrtClose</A>.
+</OL>
+<P>
+Header to include: iimage.h or iiunit.h
+<P>
+LIST FUNCTIONS FROM parallelwrite.c
+<P>
+DESCRIBE FUNCTIONS FROM parallelwrite.c

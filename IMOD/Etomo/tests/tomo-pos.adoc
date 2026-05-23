@@ -1,0 +1,220 @@
+Version = 1.2
+
+[function = build]
+if.var.quick.run.function.quick=
+if.var.quick.return=
+[[if = test-gui]]
+	run.function.test-create-sample-tomograms=
+	run.function.create-samples-&-boundary-model=
+	run.function.copy=
+	run.function.test-compute-z-shift-&-pitch-angles=
+	if.not.var.fidless.run.function.test-create-final-alignment=
+[[]]
+[[ifnot = test-gui]]
+	run.function.create-sample-tomograms=
+	run.function.copy=
+	run.function.compute-z-shift-&-pitch-angles=
+	if.not.var.fidless.run.function.create-final-alignment=
+  run.function.test-files=
+[[]]
+bn.done=
+
+
+[function = quick]
+bn.create-sample-tomograms =
+wait.process.creating-sample-tomogram = done
+run.function.copy=
+run.function.compute-z-shift-&-pitch-angles=
+if.not.var.fidless.run.function.create-final-alignment=
+bn.done=
+
+
+[function = create-sample-tomograms]
+cb.use-whole-tomogram = off
+tf.positioning-tomogram-thickness = %{positioning-tomogram-thickness}
+bn.create-sample-tomograms =
+wait.process.creating-sample-tomogram = done
+
+[function = create-samples-&-boundary-model]
+#Only using this for the B axis of BB patch-tracking
+if.not.var.patch-tracking.return=
+if.var.montage.return=
+if.equals.var.axis.return=a
+cb.use-whole-tomogram = off
+tf.positioning-tomogram-thickness = %{positioning-tomogram-thickness}
+bn.create-sample-tomograms =
+wait.process.creating-sample-tomogram = done
+
+[function = copy]
+[[if = simple-align]]
+  copy.file = tomopitch%{axis}_simple-align.mod|tomopitch%{axis}.mod
+[[]]
+if.var.simple-align.return=
+[[ifnot = patch-tracking]]
+  copy.file = tomopitch%{axis}.mod
+[[]]
+if.not.var.patch-tracking.return=
+copy.file = tomopitch%{axis}_patch-tracking.mod|tomopitch%{axis}.mod
+
+
+[function = test-files]
+if.var.fidless.return=
+assert.contains.file=tilt%{axis}.com|EXCLUDELIST*1
+
+
+[function = compute-z-shift-&-pitch-angles]
+bn.compute-z-shift-&-pitch-angles =
+wait.process.finding-sample-position = done
+
+
+[function = create-final-alignment]
+bn.create-final-alignment =
+wait.process.calculating-final-alignment = done
+
+
+[function = test-create-sample-tomograms]
+[[if = test-gui]]
+  run.function.test-gui=
+[[]]
+# check whole tomogram
+cb.use-whole-tomogram = on
+bn.create-whole-tomogram =
+wait.process.calculating-tomogram = done
+if.not.var.single.assert.exists.image-file = %{dataset}%{axis}.rec
+if.var.single.assert.exists.image-file = %{dataset}_full.rec
+cb.use-whole-tomogram = off
+run.function.create-sample-tomograms=
+assert.exists.file = sample%{axis}.log
+run.function.create-sample-tomograms=
+assert.exists.file = sample%{axis}.log~
+run.function.test-gui-post-run=
+
+
+[function = test-gui]
+run.function.test-gui-original-state=
+#test behavior
+cb.find-boundary-model-automatically=on
+if.not.var.montage.assert.enabled.cb.do-positioning-for-cryo-sample=
+if.var.montage.assert.disabled.cb.do-positioning-for-cryo-sample=
+assert.enabled.bn.create-samples-&-boundary-model=
+assert.enabled.bn.view-boundary-model=
+#
+[[ifnot = montage]]
+  cb.do-positioning-for-cryo-sample=on
+  assert.enabled.cb.sample-has-gold-beads-of-size=
+  if.not.var.zero-bead.assert.enabled.tf.sample-has-gold-beads-of-size=
+  if.var.zero-bead.assert.disabled.tf.sample-has-gold-beads-of-size=
+  assert.cb.use-whole-tomogram=on
+  assert.disabled.cb.use-whole-tomogram=
+  assert.enabled.bn.find-boundary-model-for-cryo=
+  assert.tf.added-border-thickness=25.0
+  #
+  if.not.var.zero-bead.cb.sample-has-gold-beads-of-size=off
+  if.not.var.zero-bead.assert.disabled.tf.sample-has-gold-beads-of-size=
+  if.var.zero-bead.cb.sample-has-gold-beads-of-size=on
+  if.var.zero-bead.assert.enabled.tf.sample-has-gold-beads-of-size=
+[[]]
+#reset
+[[ifnot = montage]]
+  if.not.var.zero-bead.cb.sample-has-gold-beads-of-size=on
+  if.var.zero-bead.cb.sample-has-gold-beads-of-size=off
+  cb.do-positioning-for-cryo-sample=off
+[[]]
+cb.find-boundary-model-automatically=off
+#
+if.not.var.montage.assert.enabled.bn.create-whole-tomogram=
+#reset
+cb.use-whole-tomogram=off
+run.function.test-gui-original-state=
+
+
+[function = test-gui-post-run]
+if.not.var.fidless.cb.coarse-alignment-only=on
+if.var.fidless.cb.coarse-alignment-only=off
+#check values
+assert.tf.total=0.0
+#check enabled/disabled
+assert.disabled.bn.compute-z-shift-&-pitch-angles=
+assert.disabled.tf.total=
+assert.disabled.tf.total.1=
+assert.disabled.tf.total.2=
+assert.disabled.tf.final-tomogram-thickness=
+#reset
+if.not.var.fidless.cb.coarse-alignment-only=off
+if.var.fidless.cb.coarse-alignment-only=on
+
+
+[function = test-gui-original-state]
+# check values
+assert.cb.use-the-gpu=off
+assert.cb.find-boundary-model-automatically=off
+assert.cb.do-positioning-for-cryo-sample=off
+[[ifnot = zero-bead]]
+  assert.cb.sample-has-gold-beads-of-size=on
+  assert.tf.sample-has-gold-beads-of-size=%{unbinned-bead-diameter}
+[[]]
+[[if = zero-bead]]
+  assert.cb.sample-has-gold-beads-of-size=off
+  assert.tf.sample-has-gold-beads-of-size=0.0
+[[]]
+assert.tf.positioning-tomogram-thickness=%{tomogram-thickness}
+if.not.var.fidless.assert.cb.coarse-alignment-only=off
+if.var.fidless.assert.cb.coarse-alignment-only=on
+assert.tf.tilt-axis-rotation=%{tilt-axis-rotation}
+assert.cb.use-whole-tomogram=off
+assert.sp.binning=3
+assert.bn.create-sample-tomograms=off
+assert.tf.added-border-thickness=5.0
+#angle-offset
+assert.tf.total=0.0
+#z-shift
+assert.tf.total.1=0.0
+#x-axis-tilt
+assert.tf.total.2=0.0
+assert.tf.final-tomogram-thickness=%{final-tomogram-thickness}
+# check enabled/disabled
+assert.enabled.cb.find-boundary-model-automatically=
+assert.disabled.cb.do-positioning-for-cryo-sample=
+assert.disabled.cb.sample-has-gold-beads-of-size=
+assert.disabled.tf.sample-has-gold-beads-of-size=
+assert.enabled.tf.positioning-tomogram-thickness=
+assert.enabled.cb.coarse-alignment-only=
+if.not.var.fidless.assert.disabled.tf.tilt-axis-rotation=
+if.var.fidless.assert.enabled.tf.tilt-axis-rotation=
+assert.enabled.cb.use-whole-tomogram=
+# Bug# 2014 - correcting binning enabling
+assert.disabled.sp.binning=
+assert.enabled.bn.create-sample-tomograms=
+assert.enabled.bn.create-boundary-model=
+assert.enabled.tf.added-border-thickness=
+#angle-offset
+assert.enabled.tf.total=
+#z-shift
+assert.enabled.tf.total.1=
+#x-axis-tilt
+assert.enabled.tf.total.2=
+assert.enabled.tf.final-tomogram-thickness=
+#behavior
+# Bug# 2014 - correcting binning enabling
+cb.use-whole-tomogram=on
+assert.enabled.sp.binning=
+assert.enabled.bn.create-whole-tomogram=
+cb.use-whole-tomogram=off
+
+
+[function = test-compute-z-shift-&-pitch-angles]
+run.function.compute-z-shift-&-pitch-angles=
+assert.exists.file = tomopitch%{axis}.log
+run.function.compute-z-shift-&-pitch-angles=
+assert.exists.file = tomopitch%{axis}.log~
+
+
+[function = test-create-final-alignment]
+run.function.create-final-alignment=
+assert.exists.file = align%{axis}.log
+run.function.create-final-alignment=
+assert.exists.file = align%{axis}.log~
+
+
+
+

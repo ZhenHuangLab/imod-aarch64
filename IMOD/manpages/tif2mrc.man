@@ -1,0 +1,206 @@
+.na
+.nh
+.TH tif2mrc 1 3.6.17 IMOD
+.SH NAME
+tif2mrc \- Make a MRC file from TIFF image files.
+.SH SYNOPSIS
+tif2mrc [options]  TIFF_input_files...  MRC_output_file
+.SH DESCRIPTION
+tif2mrc takes a series of TIFF files and converts them
+into an MRC stack.  
+tif2mrc can also convert a single multi-page TIFF file to an MRC stack.
+.P
+Only grayscale and color image files are supported.
+Grayscale images can be 8 or 16 bit integers or 32 bit floats or integers,
+with 32-bit integers converted to floats in the MRC file.
+Color images can be 24 or more bits as long as pixels are stored as 
+8-bit red-green-blue triplets followed by the extra bytes if any (e.g., in
+RGBA images, the alpha is an extra byte).  Color images can also be
+8-bit with an embedded colormap.  All color
+images will be converted to 24 bit RGB images, since this is the kind of 
+color MRC file that IMOD defines.  If a grayscale image file has multiple
+sample values per pixel, then each sample will be converted to a separate
+section in the output file, and the input file will be treated like a
+multi-page TIFF file.  The multiple
+samples can be stored either contiguously or in separate planes.  Files with
+data stored in LZW, ZIP, or JPEG compression can be read when running with the
+TIFF libraries distributed with IMOD.
+.P
+Images from different files need not all be the same size.
+The x and y dimensions of the stack
+are set from the x and y size of the first image, unless the 
+.B -o
+option is used to set the output size.
+Images that are larger than the output size will be cropped around all four
+sides, and images that are smaller will be placed in the center of the output
+area and surrounded with gray.
+.P
+Most of the options have to do with the treatment of unsigned 16-bit numbers.
+The standard MRC file mode for holding 16-bit integers is mode 1, which holds
+signed (positive and negative) values and has a range from -32768 to 32767.
+Unsigned integers, with a range from 0 to 65535, can be stored in file mode 6,
+which is a nonstandard mode.  If the TIFF file has a tag indicating that it
+contains unsigned integers, then by default the program will preserve these
+values in a file of mode 6.  You can alter this behavior and store the numbers
+as signed values (mode 1) in three ways: 1) with the
+.B -u
+option to subtract 32768, which will preserve the dynamic range of the values;
+2) with the
+.B -d
+option to divide by 2, which will throw away one bit of precision but keep the
+numbers positive; or 3) with the
+.B -s
+option to force the numbers to be saved unmodified in mode 1, which will be
+fine as long as there are no values above 32767.  Finally, if the TIFF file
+lacks a tag indicating that it is unsigned but the numbers do range above
+32767, you can preserve unsigned integers and force output into a file of mode
+6 with the 
+.B -k
+option.  
+.P
+Since IMOD is distributed with version 4 of the TIFF library, the program will read TIFF
+files bigger than 2 GB, including ones in the BigTIFF format.
+
+.SH OPTIONS
+.TP
+.B -g
+This
+option will convert 24-bit color images to 8-bit grayscale in the MRC stack by
+equal weighting of the three color components.  This weighting has always been
+used with this option to Tif2mrc, and is also the way that 3dmod read in color
+data with its -G option prior to IMOD 3.12.10.
+.TP
+.B -G
+This
+option will convert 24-bit color images to 8-bit grayscale in the MRC stack by
+the NTSC weighting of the three color components, which is used when reading
+color data as grayscale into 3dmod (as of IMOD 3.12.10), and when changing
+the mode of images from color to grayscale with Clip(1).
+.TP
+.B -u
+With this option, the program will convert 16-bit numbers from unsigned to
+signed integers by subtracting 32768.
+Use this option if the TIFF files have positive numbers ranging above 32767,
+you want an output file of mode 1, and
+you do not want to lose any of the dynamic range of the numbers.
+.TP
+.B -d
+With this option, the program will treat 16-bit numbers as unsigned integers
+and divide them by two.  The resulting numbers will range between 0 and 32767.
+Use this option if the TIFF files have positive numbers ranging above 32767,
+you want an output file of mode 1, you want the numbers to remain positive,
+and you do not mind losing one bit of precision.
+.TP
+.B -s
+With this option, the program will treat 16-bit numbers as signed integers and just
+store them in a file of mode 1.  Use this option if an unsigned integer file
+contains values under 32768 and you want a file of mode 1.
+The program will print the minimum and maximum values in the output
+file.  If the min is near -32768 and the max is near 32767, this option was
+chosen incorrectly.
+.TP
+.B -k
+With this option, the program will treat 16-bit numbers as unsigned and output data
+into a file of mode 6 even if there is no tag indicating the data are unsigned.
+.TP
+.B -B \fI#\fR
+This entry controls how bytes are stored in the output file and
+overrides both the default behavior of writing signed bytes and the setting of the
+environment variable WRITE_MODE0_SIGNED.  Enter 0 for unsigned numbers
+or 1 for signed numbers.  Unsigned output may be needed for
+compatibility with external software that has not accommodated to the
+new MRC standard.  Regardless of the representation in the file, bytes
+are read into IMOD programs as unsigned with a range of 0 to 255
+.TP
+.B -i
+Invert the order of sections in the output stack.  Either the multiple files
+or the pages of a a multi-page stack will be processed in inverted order to
+produce the output.  This option will preserve preserve handedness if the images being
+stacked are serial images obtained while cutting into a block face 
+and are in the same orientation as views looking down on the block.
+.TP
+.B -f
+If only one input file is given and it is a multi-page TIFF file, the program
+will convert all of the pages in the file into sections in an MRC file.  Use
+this option to make the program ignore the multiple pages and read only the
+first image.  This option is no longer needed to process files with thumbnail 
+images embedded; if there are pages with differnt sizes, only the largest size
+will be converted to sections, and thus a thumbnail image will be ignored.
+.TP
+.B -o \fI#,#\fR
+Set the size of the output to the given dimensions in X and Y.  This option
+has no effect for multi-page input files.
+.TP
+.B -F \fI#\fR
+Set the value to use when filling regions that have no image data because an
+image is smaller than the output size.  The default is to fill with the mean
+value of each image.  The value must be within the valid
+range for the output data type (e.g., between 0 and 255 for byte output).  For
+color image output, the fill value will be used for red, green, and blue
+components.
+.TP
+.B -P
+Set the pixel spacing in the header of the output file from resolution values
+in the TIFF file, if any, regardless of the size of these values.  The default
+is to use a resolution value only if the resulting pixel size is no bigger
+that 1 micron.  This option is one way to override that limit.  To
+override the limit automatically, define the environment variable TIFF_RES_PIXEL_LIMIT
+to the desired limit, a floating point number in microns.  Pixel size is
+assigned from the size found in the first input file.
+.TP
+.B -p \fI#\fR
+Set the pixel spacing in the header of the output file to the given value.
+This spacing is defined as having units of Angstroms, but you can place
+arbitrary values there.  This option cannot be used with 
+.B -p
+and the entered value supercedes any resolution value in the TIFF file.
+.TP 
+.B -b \fIfile\fR
+This option loads a background file in TIFF format.
+If a background file is loaded its values are subtracted from
+the values in the rest of the files.
+The background file must have the same data type as the images from which
+it is being subtracted (8-bit or 16-bit grayscale).
+.TP
+.B -T \fIfile\fR
+When the input files are produced by TVIPS data acquisition software (after
+October, 2012), this option can be used to output tilt angles, one per line,
+to the given file.  Regardless of whether this option is used, when the
+program recognizes such files, it will
+add a title to the header with the tilt axis rotation angle, binning, and spot
+size if available.
+.TP
+.B -m
+Turn off file-to-memory mapping in the TIFF library.  This mapping could be a
+problem working with large files on some systems.  If you experience
+performance issues such as excessive disk swapping, you can experiment
+with this setting.  With mapping on, the virtual memory
+usage of the program is alarming and the resident memory size continually 
+increases as the file is read, even though it
+is being processed in chunks.  However, in tests on Red Hat Enterprise Linux
+5, reading and writing a file had the
+same potential to cause other programs' memory to be swapped to disk
+regardless of whether mapping was on or off, apparently because the mapped
+memory is coincident with file system cache.
+.TP
+.B -t \fIvalue\fR
+Set the criterion for processing each file in chunks to the given value in
+megabytes (fractional values are allowed).  Whole images will be 
+read in, processed, and saved as a unit if they are less than this criterion
+(default 100 MB).  Above the criterion, images will be read, processed, and
+saved in chunks of about this size, with much lower memory requirements, as
+long as the image matches the size of the output file and there is no
+background subtraction.
+.SH FILES
+If the output file already exists, it will be made a backup file by adding ~
+to its name.
+.SH AUTHORS
+Jim Kremer and David Mastronarde
+.SH SEE ALSO
+raw2mrc(1)
+.SH BUGS
+If a standard TIFF library is not installed, images must be uncompressed and
+must consist of strips rather than tiles, and only a subset of image types
+can be read.  
+
+Email bug reports to mast@colorado.edu.

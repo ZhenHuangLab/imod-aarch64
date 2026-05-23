@@ -1,0 +1,163 @@
+#!/usr/bin/env python
+# subtractcurves - program to subtract curves between corresponding files with averaging
+#
+# Author: David Mastronarde
+#
+# $Id$
+#
+
+progname = 'subtractcurves'
+prefix = 'ERROR: ' + progname + ' - '
+
+def outputAccum():
+   global accum, numAccum, radSum, outLines
+   out = ''
+   if hasTypes:
+      out += accum[0]
+   for ind in range(hasTypes, numCol):
+      if ind:
+         out += '  '
+      if ind == radialCol - 1:
+         out += str(accum[ind] / numAccum)
+      else:
+         out += str(accum[ind] / radSum)
+   outLines.append(out)
+   accum = numCol * [0]
+   numAccum = 0
+   radSum = 0.
+      
+
+# load System Libraries
+import os, sys
+
+#
+# Setup runtime environment
+if os.getenv('IMOD_DIR') != None:
+   sys.path.insert(0, os.path.join(os.environ['IMOD_DIR'], 'pylib'))
+   from imodpy import *
+   addIMODbinIgnoreSIGHUP()
+else:
+   sys.stdout.write(prefix + " IMOD_DIR is not defined!\n")
+   sys.exit(1)
+
+#
+# load IMOD Libraries
+from pip import *
+
+# Fallbacks from ../manpages/autodoc2man 3 1 subtractcurves
+options = ["pos:PositiveInputFile:FN:", "neg:NegativeInputFile:FN:",
+           "output:OutputFile:FN:", "column:ColumnToSubtract:I:",
+           "average:AverageLines:I:", "radial:RadialWeightColumn:I:",
+           "notype:NoTypeColumn:B:"]
+
+(numOpts, numNonOpts) = PipReadOrParseOptions(sys.argv, options, progname, 3, 2, 1)
+
+if numOpts + numNonOpts < 3:
+   PipPrintHelp(progname, 0, 0, 0)
+   sys.exit(0)
+
+posFile = PipGetInOutFile('PositiveInputFile', 0)
+if not posFile:
+   exitError('Positive input file must be entered')
+negFile = PipGetInOutFile('NegativeInputFile', 1)
+if not negFile:
+   exitError('Negative input file must be entered')
+outFile = PipGetInOutFile('OutputFile', 2)
+if not outFile:
+   exitError('Output file must be entered')
+
+subCol = PipGetInteger('ColumnToSubtract', 0)
+numAverage = PipGetInteger('AverageLines', 0)
+noTypes = PipGetBoolean('NoTypeColumn', 0)
+radialCol = PipGetInteger('RadialWeightColumn', 0)
+
+posLines = readTextFile(posFile)
+negLines = readTextFile(negFile)
+outLines = []
+if len(posLines) != len(negLines):
+   prnstr('WARNING: subtractcurves - Input files do not have the same number of lines')
+
+lspl1 = posLines[0].split()
+lspl2 = negLines[0].split()
+if len(lspl1) != len(lspl2):
+   exitError('Input files do not have the same number of columns')
+   
+numCol = len(lspl1)
+if numCol < 2:
+   exitError('Input files only have one column')
+hasTypes = 0
+if numCol > 2 and not noTypes:
+   hasTypes = 1
+
+if not subCol:
+   subCol = hasTypes + 2
+
+if subCol <= hasTypes or subCol > numCol:
+   exitError('Column to subtract is out of range')
+if (radialCol > 0 and radialCol <= hasTypes) or radialCol < 0 or radialCol > numCol:
+   exitError('Column to use for radial weighting is out of range')
+if subCol == radialCol:
+   exitError('Column to subtract cannot be used for radial weighting')
+
+
+   
+accum = numCol * [0]
+numAccum = 0
+radSum = 0.
+outLines = []
+try:
+
+   if hasTypes:
+      lastType = int(lspl1[0])
+   
+   for ind in range(min(len(posLines), len(negLines))):
+      lspl1 = posLines[ind].split()
+      lspl2 = negLines[ind].split()
+      if numAverage <= 1:
+         out = ''
+         for ind in range(numCol):
+            valStr = lspl1[ind]
+            if ind == subCol - 1:
+               valStr = str(float(lspl1[ind]) - float(lspl2[ind]))
+            if ind:
+               out += '  '
+            out += valStr
+         outLines.append(out)
+
+      else:
+         if hasTypes and int(lspl1[0]) != lastType:
+            lastType = int(lspl1[0])
+            if numAccum:
+               outputAccum()
+               accum = numCol * [0]
+               numAccum = 0
+               radSum = 0.
+
+         if hasTypes:
+            accum[0] = lspl1[0]
+         weight = 1.
+         if radialCol:
+            weight = float(lspl1[radialCol - 1])
+         radSum += weight
+         for ind in range(hasTypes, numCol):
+            val = float(lspl1[ind])
+            if ind == subCol - 1:
+               val = float(lspl1[ind]) - float(lspl2[ind])
+            if ind == radialCol - 1:
+               accum[ind] += val
+            else:
+               accum[ind] += weight * val
+
+         numAccum += 1
+         if numAccum == numAverage:
+            outputAccum()
+
+   if numAccum:
+      outputAccum()
+
+except ValueError:
+   exitError('Error converting a value to a number on line ' + str(ind + 1))
+
+makeBackupFile(outFile)
+writeTextFile(outFile, outLines)
+

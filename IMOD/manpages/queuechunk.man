@@ -1,0 +1,124 @@
+.na
+.nh
+.TH queuechunk 1 3.10.18 IMOD
+.SH NAME
+queuechunk \- Place a csh or python script file on a queue or kill a job
+.SH SYNOPSIS
+queuechunk [options]  root_name_of_script_file
+
+.SH DESCRIPTION
+Queuechunk will take a csh or python script file and submit it to a cluster queue,
+and also allows such jobs to be removed from the queue.  It currently
+supports PBS and PBS-maui, SGE, and slurm queues, and would need to be
+modified to support other types.  It is designed to
+perform these actions when it is
+called by Processchunks(1) with Python files produced from IMOD command files
+with Vmstopy(1).  However, csh files produced by Vmstocsh(1) could be
+used instead.  The script file will be deleted when the operation
+finishes.  
+
+The filesystem on which Queuechunk is run must be accessible from the cluster.
+
+The script file must be named with the extension .py or .csh,
+depending on the script type.  The last argument of
+the command to Queuechunk must be the root name of the script file, excluding
+the extension but including everything before the extension (-001, etc).
+If the action requested with -a is L to report a load average or C:<cmd>
+to execute a user-defined command, this argument may be omitted.
+
+.SH OPTIONS
+.TP
+.B -t \fItype\fR
+Type of queue.  This option must be entered with the value of either pbs or
+pbs-maui (for a PBS queue), sge (for a Grid Engine queue) or slurm 
+(for the Slurm workload manager).  Type pbs-maui can be used if the 
+queue software has been configured so that
+   showq -p queuename
+.br
+gives output for the cpus assigned to that queue of the form
+     0 Active Jobs       0 of   40 Processors Active (0.00%)
+.TP
+.B -q \fIname\fR
+Name of queue to submit to or desired quality of service (qos)
+on a Slurm queue which uses qos for resource specification. (For Slurm 
+queues which use partition names or other means of selecting resources, 
+see the -l option below). This option is required if the queue type
+is pbs-maui.
+.TP
+.B -h \fIname\fR
+Name of the head node.  When this option is entered, commands (e.g. to 
+queue a chunk, request status, or kill a running chunk)
+are run via ssh to the head node.  It is necessary to have 
+passwordless access between machines for this to work.
+.TP
+.B -w \fIdir\fR
+Name of the current working directory, as it must be used by the machine
+running the job.  If this name contains spaces, they should be escaped
+with backslashes.  The default is the current directory name.
+.TP
+.B -a \fIaction\fR
+The action to be performed:
+   R       - Run the job by placing it on the queue
+   S       - Run the job synchronously on the queue, 
+             waiting until it is done
+   K       - Kill the job unconditionally
+   P       - Delete the job if it has not started yet (pause)
+   L       - Report a load average
+   C:<cmd> - Execute command <cmd> on the queue. 
+             Separate optional arguments with spaces and enclose
+             entire string in double quotes. The base command 
+             name may not contain spaces.
+.TP
+.B -l \fIresources\fR
+A resources entry to make with the "-l" option
+when running qsub on a PBS queue, or additional option(s) to 
+srun or sbatch when running under Slurm. Defaults to "nodes=1" under
+PBS and "-n1,-c1" under Slurm. In both cases, entries made here
+will replace, rather than be appended to the default. Spaces are
+not allowed in resources; use commas to separate multiple entries.
+For use with Slurm, commas will be translated back to spaces by queuechunk.
+
+.SS Specifications
+Here are the essential features of this script, which would have to replicated
+by any program to be run from Processchunks(1).  In order to work from Etomo
+as well, the script mush be in bash.
+
+The program must accept the 
+.B -w
+option with a working directory name.
+
+The program must accept the 
+.B -a
+option with at least the five actions, R, S, K, P, and C:<cmd>.  
+For running from Etomo, the program must also respond to the L action with
+either NA for no information, or one or more values separated by commas.
+
+A secondary script file should be created to submit to the queue, with the
+name rootname.job.  It should be prepared to deal with a script file named
+either rootname.csh or rootname.py.  It should run rootname.csh with "csh -ef"
+or rootname.py with "python -u" and end by deleting the rootname.csh or
+rootname.py file.  The .job file will be cleaned up by Processchunks.
+
+A string containing an identifier for the job or job step
+resulting from chunk submission must be written to a file rootname.qid. 
+Often, suitable information will be printed by the queue when a chunk 
+is submitted. This file will also be cleaned up by Processchunks.
+
+When a job is run with the S action, the program must not return until the job
+is finished, and should exit with an error status if the job failed.
+Queuechunk does this by submitting to the queue, but as an alternative,
+the .csh or .py file could be run on the local host with "csh -ef" or 
+"python -u".
+
+.SH FILES
+The program creates a script file named rootname.job and places queue
+submission output into a file named rootname.qid.  The job script deletes the
+rootname.py or rootname.csh file upon completion.
+
+.SH AUTHORS
+David Mastronarde  <mast@colorado.edu>
+.br
+John Heumann  <john.heumann@colorado.edu>
+.SH SEE ALSO
+processchunks(1), vmstocsh(1)
+

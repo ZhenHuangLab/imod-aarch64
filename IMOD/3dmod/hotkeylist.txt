@@ -1,0 +1,230 @@
+This is a list of the hot keys used in 3dmod.  Plugins (e.g. Drawing Tools)
+may intercept some of these keys.
+
+Popup menus are defined for general hot keys in utilities.cpp, for model view
+in mv_window.cpp, and for specific windows in zap_classes.cpp,
+slicer_classes.cpp, and xyz.cpp
+
+a - Zap - advances to and fills next section when auto contouring,
+       or applies current image process if that is open
+A - Autocontrast - set to target mean and SD of intensity.
+Ctrl-A - Zap - adds multiple contours on the current section to the 
+Ctrl-Shift-A - Zap - adds multiple contours on the current
+b - Zap - builds a contour when AutoContour window is open.
+B - Zap - toggles the rubber band on and off.  The rubber band can be 
+Ctrl-B - Break contour if contour break routine open
+c - Go to previous contour.
+C - Go to next contour.
+D - Delete current contour or all selected contours.
+Ctrl+D - Truncate current contour at current point.
+Ctrl+Shift+D - Delete current surface.
+e - Unselect current point.
+E - Unselect current contour.
+f - Print current pixel value in information window.
+F - Find the maximum pixel within 10 pixels and report its value, or toggle slicer FFT
+Ctrl+F - Print filename at current Z for single-image files
+g - Toggle previous contour ghost draw mode.
+G - Open Graph window.
+Ctrl-G - Toggle gap at current point
+Shift-H - Open Grab with Note (Ctrl-H hides windows on Mac - do not use)
+i - Zap - toggles the modeling direction.
+I - Zap - prints information about the window and image size and 
+
+J - Join selected contours.
+k - (Toggle) center in Zap, Slicer and XYZ
+K - Copy contour if contour copy dialog open
+m - Toggle model edit mode and movie mode.
+M - Move contour to selected object or surface.
+n - Create a new contour.
+N - Create a new contour with a new surface number.
+o - Go to previous object.
+O - Toggle contour open/closed
+p - Go to next object.
+P - Zap - Toggles a contour transform mode; XYZ - toggles projections
+Ctrl+P - Open/raise the image processing window
+q - Zap & Slicer & XYZ - Report 2D distance from current point to cursor
+R - Zap - resizes the window.  With the rubber band off, the window 
+Ctrl+R - Raise all 3dmod windows above other windows.
+Ctrl+Shift+R - resize image in rubber band to window
+s - Save model file.
+S - Make non-TIFF snapshot of image in window (Tumbler also).
+Ctrl+S - Make TIFF snapshot of image in window (Tumbler also).
+Ctrl+Shift+S - Make snapshot with second non-TIFF format.
+t - Toggle model drawing on/off.
+T - Toggle current point/contour markers on/off.
+Ctrl+T - Toggle current object on/off.
+u - Zap - smooths a filled area when auto contouring.
+U - Open Model View and Isosurface windows.
+v - Open Model View window.
+w - Grab with Note to database
+W - Grab to image
+Ctrl+Shift+W - Grab to image and to database  (Ctrl-W closes windows on Mac)
+x - Align to x axis in slicer
+X - Align to x axis in slicer
+Crtl-X - Open XYZ window
+y - Align to y axis in slicer
+Y - Align to y axis in slicer
+Ctrl-Y - Redo model changes that were undone.
+z - Open Zap window, or align to z axis in Slicer
+Z - Zap - toggles auto section advance on and off; align to Z axis in slicer
+Ctrl-Z - Undo changes to the model.
+
+0 - Create a new object.
+1/2 - Previous/Next Time Index.
+3/4 - Start or stop a movie through time in forward/reverse direction.
+5/6 - Go to previous/next contour in same surface.
+7/8 - Go to previous/next surface.
+!/@ - Set time index to beginning/end (using Start or End for Time in Edit-Movie dialog).
+#/$ - Start or stop a movie through Z in forward/reverse direction.
+- - Decrease Zoom
+= or + - Increase Zoom (except Slicer, where only = and Keypad + zoom up)
+[ or < - Go to previous point.
+] or > - Go to next point.
+{ or ( - Go to first point in contour.
+} or ) - Go to last point in contour.
+\ - Open Slicer window.
+Delete - Delete current model point.
+, - Decrease movie speed.
+. - Increase movie speed.
+Page-Up - Increase Z
+Page-Down - Decrease Z
+Shift-Page-Up - Increase Z to next section with contour in object
+Shift-Page-Down - Decrease Z to next section with contour in object
+Up-Arrow - Increase Y
+Down-Arrow - Decrease Y
+Right-Arrow - Increase X
+Left-Arrow - Decrease X
+End - Go to Z = 1;
+Home - Go to Z = max;
+Insert - Go to middle Z of stack (use Help key next to Home on Mac)
+Shift-Home - Go to middle Z of stack (for Mac without Help nor Insert)
+Keypad-2/4/6/8 - Move current model point in model mode,
+Keypad-/  Step down by 10 in Z
+Keyapd-*  Step up by 10 in Z
+Ins - Zap - on the keypad: In model mode, this key works the same as 
+Arrows - Pan in zap window in model mode.
+F1 - Decrease Black Level
+F2 - Increase Black Level
+F3 - Decrease White Level
+F4 - Increase White Level
+F5 - Decrease Contrast.
+F6 - Increase Contrast.
+F7 - Decrease Brightness.
+F8 - Increase Brightness.
+F9 - Select Color map ramp # 1.
+F10 - Cycle through Color map ramps: 1 - 2 - 3 - 4 - 1.
+F11 or & - Invert Color map.
+F12 or * - Toggle False Color.
+
+
+MODEL VIEW KEYS
+a - Invert the parallax angle
+Ctrl+A - Select all visible contours in current object
+b - Show bottom of model
+B - Open background color window
+c - Output clipping plane information
+C - Open controls window
+Ctrl+C - Toggle current clipping plane on and off
+Ctrl+Shift+C - Next contour in scattered obj
+d - Toggle double buffering
+D - Delete selected contour(s) if picked in model view
+f - Show front of model
+Ctrl+F - Apply last change applied in the Fine Grain dialog 
+g - Increase the quality of sphere drawing
+G - Decrease the quality of sphere drawing
+h - Rotate around Z viewing axis
+Ctrl+H - Rotate clip around Z viewing axis
+i - Rotate around Y viewing axis
+I - Open image overlay control window (only when run from 3dmod)
+Ctrl+I - Rotate clip around Y viewing axis
+j - Rotate around X viewing axis
+Ctrl+J - Rotate clip around X viewing axis
+k - Show back of model
+l - Show left side of model
+L - Open Object List window
+m - Open movie control window
+M - Open model selection window
+Ctrl+M - Mesh one object (objed open)
+N - Open movie sequence window
+o - Output transformation information and movie frames/sec
+O - Open Object Edit window
+Ctrl+0 - Open model (standalone only)
+Ctrl+Shift+O - Previous object
+p - Toggle display of current point (only when run from 3dmod)
+Ctrl+Shift+P - Next object
+q - Close Model View or Quit 3dmodv
+r - Show right side of model
+R - Open Rotation tool with buttons for rotating model or clipping plane
+Ctrl+R - Toggle low resolution drawing of mesh and spheres
+s - Toggle stereo mode
+S - Snapshot image as a non-TIFF file to modvnnnn.xxx
+Ctrl+S - Snapshot image as a TIFF file to modvnnnn.tif
+Ctrl+Shift+S - Snapshot image in second non-TIFF format 
+t - Show top of model
+u - Toggle continuous rotation on and off
+U - Open isosurface display control window (only when run from 3dmod)
+Ctrl+U - Rotate clip around Y viewing axis
+V - Open view editing window
+Ctrl+V
+Ctrl+Shift+V - Toggle use of vertex buffer objects
+X - Toggle display of X image planes (only when run from 3dmod)
+Ctrl+Shift+X - Previous contour in scattered obj
+y - Rotate around Y viewing axis
+Y - Toggle display of Y image planes (only when run from 3dmod)
+Ctrl+Y - Redo the last undone change to model
+z - Toggle display of Z image planes (only when run from 3dmod)
+Ctrl+Z - Undo the last change to model
+
+0 - Next model
+Ctrl+0 - Next point in scattered obj
+1 - Decrease time for 4D models
+Ctrl+1 - Toggle Object clip plane #1 when objed open
+2 - Increase time for 4D models
+Ctrl+2 - Toggle Object clip plane #2 when objed open
+Ctrl+3 - Toggle Global clip plane #1 when objed open
+Ctrl+4 - Toggle Global clip plane #2 when objed open
+6 - Rotate around Z viewing axis
+Ctrl+6 - Rotate clip around Z viewing axis
+7 - Rotate around X viewing axis
+Ctrl+7 - Rotate clip around X viewing axis
+8 - Toggle displaying all models or one model
+9 - Previous model
+Ctrl+9 - Previous point in scattered obj
+
+[ - Adjust parallax for stereo viewing
+Ctrl+[ - Previous point in scattered obj
+] - Adjust parallax for stereo viewing
+Ctrl+] - Next point in scattered obj
+Ctrl+{ - Previous point in scattered obj
+Ctrl+} - Next point in scattered obj
+Ctrl+( - Previous point in scattered obj
+Ctrl+) - Next point in scattered obj
+, - Decrease rotation increment and speed
+. - Increase rotation increment and speed
+& - Switch threshold for isosurface to other side of distribution
+- - Decrease zoom by small steps
+Keypad - - Increase zoom by small steps
++ - Increase zoom by big steps
+Keypad + - Increase zoom by small steps
+= - Increase zoom by small steps
+_ - Decrease zoom by big steps
+
+Ctrl+Shift+Delete - Delete the current point if it is in a scattered point
+F1 - Switch to Contour Lines
+F2 - Switch to Mesh Fill
+F3 - Switch to Mesh Lines
+F4 - Cycle among those 3 modes
+F11 - Switch threshold for isosurface to other side of distribution
+
+Arrows - Translate model in X and Y
+Ctrl-Arrows - Translate clipping plane in X and Y
+Ctrl+Shift Arrows Translate current point if it is a scattered point.
+PageUp/PageDown - Translate model in Z, or translate clipping plane with
+Ctrl held down, or translate current point with Ctrl and Shift held down, if
+it is a scattered point.
+    object and 3dmod is in model mode.
+Keypad-2/8 - Rotate around X viewing axis
+Keypad-4/6 - Rotate around Y viewing axis
+Keypad-3/9 - Rotate around Z viewing axis
+Keypad-Enter - Toggle continuous rotation on and off (Keypad-5 may
+also do this)

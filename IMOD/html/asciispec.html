@@ -1,0 +1,329 @@
+<html><head><title>
+IMOD Model ASCII File Format.
+</title>
+
+<body>
+<A NAME = "TOP"></A>
+<H1>Imod ASCII File Format Version 2.0</H1>
+<HR>
+The imod ASCII file format holds a subset of the binary data.
+Its main use is to simplify creating or transferring an IMOD model file.
+The format was upgraded in IMOD 3.10.11 to include most object, contour, and
+mesh properties, plus slicer angles and clipping planes, but few model-view
+related properties are stored.  For the complete definition of any flags,
+check the <A href="binspec.html#TOP">description</A> of the binary model file
+format.
+<p>
+Comment lines begin with a '#' character; blank lines are skipped.
+Data lines begin with a word directive followed by data.  Some directives
+will assume data on new lines.
+<p>
+The first data line must begin with the word 'imod' followed by the
+number of objects in the model on the same line.
+<p>
+<code><b>imod</b> (<i>Number of Objects</i>)</code>
+
+<H4>Optional model directives.</H4>
+The following directives are optional. They can be in any order 
+anywhere in the file, except in the middle of contour or mesh data
+Each of these directives have three data values for x, y and z.
+The offsets and angles directives should be set to zero; they correspond to
+unused variables in the model that have been superceded by the image reference
+variables specified in the ref... directives below.
+The x and y scale values should be set to 1.0 and the z value
+should be set to compensate for the thickness of the image slices
+used to create the model.
+The max directive is set to the values of the image size used to
+make the model.  
+<p>
+The ref... directives specify the relation between model and
+image coordinates for the last image file that the model was loaded with.  The
+refcurscale and refcurrot values are based on the pixel spacing and rotation
+angles of the image file; refoldtrans values are based on the origin values in
+the image file, but with the original, internal IMOD sign convention (subareas have
+negative values); and refcurtrans
+values are based on the starting coordinate that was loaded in the image file.
+For example, if there is no rotation, then to get from an X coordinate
+in the model to the X pixel coordinate in the full image file, one would add
+((refoldtrans x) - (refcurtrans x)) / (refcurscale x).
+
+<p>
+<code>
+<b>offsets</b> (<i>x</i>) (<i>y</i>) (<i>z</i>)
+<br>
+<b>max</b> (<i>x</i>) (<i>y</i>) (<i>z</i>)
+<br>
+<b>scale</b> (<i>x</i>) (<i>y</i>) (<i>z</i>)
+<br>
+<b>angles</b> (<i>x</i>) (<i>y</i>) (<i>z</i>)
+<br>
+<b>refcurscale</b> (<i>x</i>) (<i>y</i>) (<i>z</i>)
+<br>
+<b>refcurtrans</b> (<i>x</i>) (<i>y</i>) (<i>z</i>)
+<br>
+<b>refcurrot</b> (<i>x</i>) (<i>y</i>) (<i>z</i>)
+<br>
+<b>refoldtrans</b> (<i>x</i>) (<i>y</i>) (<i>z</i>)
+</code>
+<P>
+Additional model directives are as follows.  The units should be nm, um, or mm.
+The <b>slicerAngle</b> entry specifies X, Y, and Z angles then the X, Y, Z 
+center position.
+<code>
+<br>
+<b>drawmode</b>  (<i>1 to draw model, -1 not to</i>)
+<br>
+<b>b&w_level</b>   (<i>black_slider,white_slider</i>)
+<br>
+<b>resolution</b>   (<i>pixel spacing for drawing model points</i>)
+<br>
+<b>threshold</b>   (<i>threshold for autocontouring</i>)
+<br>
+<b>pixsize</b>   (<i>pixel size</i>)
+<br>
+<b>units</b>   (<i>units</i>)
+<br>
+<b>slicerAngle</b> (<i>time</i>) (<i>x</i>) (<i>y</i>) (<i>z</i>) (<i>x</i>)
+(<i>y</i>) (<i>z</i>) (<i>label</i>) 
+<br>
+<b>currentview</b>   (<i>view number</i>)
+<br>
+</code>
+<HR>
+<H3>The view directive.</H3>
+Initializes a new view and sets it as the current one.  The index is ignored.
+<br>
+<code>
+<b>view</b> (<i>index</i>) 
+</code>
+<H4>Optional view directives</H4>
+See the <a href="binspec.html">binary model specification</a> of the VIEW
+chunk for the definition of bits in <b>viewflags</b>.
+<code>
+<br>
+<b>viewfovy</b>  (<i>perspective</i>)
+<br>
+<b>viewcnear</b>  (<i>near Z clipping plane value</i>)
+<br>
+<b>viewcfar</b>  (<i>far Z clipping plane value</i>)
+<br>
+<b>viewflags</b>  (<i>flags for lighting and transformation properties</i>)
+<br>
+<b>viewtrans</b>  (<i>x shift</i>) (<i>y shift</i>) (<i>z shift</i>)
+<br>
+<b>viewrot</b>  (<i>x rotation</i>) (<i>y rotation</i>) (<i>z rotation</i>)
+<br>
+<b>viewlight</b>  (<i>x position</i>)  (<i>y position</i>)
+<br>
+<b>depthcue</b>  (<i>starting distance</i>)  (<i>ending distance</i>)
+<br>
+<b>viewlabel</b>  (<i>text string with view name</i>)
+<br>
+<b>globalclips</b> (<i># of planes</i>) (<i>flags</i>) (<i>trans</i>) (<i>current plane</i>) 
+</code>
+<p>
+The <b>globalclips</b> line is followed by one line per clip plane, containing
+the X, Y, Z components of the normal vector and X, Y, Z coordinates of a point
+in the plane.  Bits 0-6 of <i>flags</i> indicate which planes are on.
+<HR>
+<H3>The object directive.</H3>
+Initializes and selects the current object.
+<br>
+<code>
+<b>object</b> (<i>index</i>) (<i>number of contours in object</i>) (<i>number of meshes in object</i>)
+</code>
+<H4>optional object directives</H4>
+<code>
+<b>color</b> (<i>red</i>) (<i>green</i>) (<i>blue</i>) (<i>trans</i>)
+<br>
+<b>Fillcolor</b> (<i>red</i>) (<i>green</i>) (<i>blue</i>)
+<br>
+<b>name</b>  (<i>text string with object name</i>)
+<br>
+<b>linewidth</b>   (<i>2D line width</i>)
+<br>
+<b>surfsize </b>   (<i>maximum surface number in object</i>)
+<br>
+<b>pointsize</b>   (<i>3D sphere size</i>)
+<br>
+<b>axis     </b>   (<i>unused</i>)
+<br>
+<b>drawmode </b>   (<i>unused</i>)
+<br>
+<b>width2D  </b>   (<i>2D line width</i>)
+<br>
+<b>symbol   </b>   (<i>symbol type</i>)
+<br>
+<b>symsize  </b>   (<i>symbol size</i>)
+<br>
+<b>symflags </b>   (<i>flags for end symbols: bit 0 fill, bit 1 draw
+beginning/end symbols</i>)
+<br>
+<b>ambient  </b>   (<i>ambient light value</i>)
+<br>
+<b>diffuse  </b>   (<i>diffuse light value</i>)
+<br>
+<b>specular </b>   (<i>specular setting</i>)
+<br>
+<b>shininess</b>   (<i>shininess setting</i>)
+<br>
+<b>obquality</b>   (<i>sphere drawing quality</i>)
+<br>
+<b>valblack</b>   (<i>black level for value display</i>)
+<br>
+<b>valwhite</b>   (<i>white level for value display</i>)
+<br>
+<b>matflags2</b>   (<i>flags for value drawing: bit 0 skip low, bit 1 skip
+high, bit 2 constant color</i>)
+<br>
+<b>objclips</b> (<i># of planes</i>) (<i>flags</i>) (<i>trans</i>) (<i>current plane</i>) 
+</code>
+<p>
+The <b>objclips</b> line is followed by one line per clip plane, containing
+the X, Y, Z components of the normal vector and X, Y, Z coordinates of a point
+in the plane.  Bits 0-6 of <i>flags</i> indicate which planes are on, and bit
+7 indicates whether to ignore global clipping planes.
+<p>
+The following are object flags.
+<code>
+<br>
+<b>open</b>:  Contours are open
+<br>
+<b>closed</b>:  Contours are not open
+<br>
+<b>scattered</b>:  Do not connect points
+<br>
+<b>fill</b>:   Draw model filled
+<br>
+<b>drawmesh</b>:   Draw mesh
+<br>
+<b>nolines</b>:   Do not draw lines with mesh
+<br>
+<B>nodraw</b>:   Turn off object
+<br>
+<b>bothsides</b>:   Light both sides
+<br>
+<b>insideout</b>:   Light the inside surface
+<br>
+<b>usefill</b>:   Use fill color to draw mesh
+<br>
+<b>pntusefill</b>:   Use fill color for 3D points
+<br>
+<b>pntonsec</b>:   Draw 3D points only on section
+<br>
+<b>antialias</b>:   Antialias line drawing
+<br>
+<b>hastimes</b>:   Contour data has times
+<br>
+<b>usevalue</b>:   Draw values in mesh display
+<br>
+<b>valcolor</b>:   Show values in false color
+
+
+</code>
+<HR>
+<H3>The contour directive.</H3>
+The contour directive is used for each contour in current object.
+Three data variables are expected, the index to the contour that
+is being defined, a surface value, and the number of points in the contour.
+An optional fourth value can specify a general floating point value for the
+contour. Point data follows on the next line, one line for each point.
+Any point line can have one or two optional values: if there is one value, it
+is the point size; if there are two values, the first is a point size (which
+should be -1 if there is no size for the point) and the second is a general
+floating point value.
+<code>
+<br><br>
+<b>contour</b> (<i>index</i>) (<i>surface</i>) 
+(<i>number of points in contour</i>) [<i>value</i>]
+<br>
+(<i>x</i>) (<i>y</i>) (<i>z</i>)
+<br>
+(<i>x</i>) (<i>y</i>) (<i>z</i>) [<i>point size</>] [<i>value</i>]</code> ... for each point.
+</code>
+<p>
+Following the contour data may be two optional directives:
+<code>
+<br>
+<b>contflags</b>   (<i>contour flags: bit 3 open, bit 4 wild, bit 17 scan
+contour</i>)
+<br>
+<b>conttime</b>   (<i>contour time</i>)
+</code>
+<HR>
+<H3>The mesh directive.</H3>
+An object can have more than one mesh.  A mesh is organized into polygons,
+which are strips of triangles connecting two Z-levels of the object.
+The mesh data consist of a single list of
+unique vertices, with a normal at each vertex, plus a list of indices
+into the vertex/normal list describing how the polygons are drawn.
+Each mesh starts with a 
+mesh directive followed by the data for that mesh.  The vertex list in 
+principle could consist of just vertices, but currently files contain just
+vertex/normal pairs as indicated below:
+<p>
+<code>
+<b>mesh</b> (<i>index</i>)
+(<i># of vertices + # of normals</i>) (<i>index list size</i>)
+<br>
+(<i>x</i>) (<i>y</i>) (<i>z</i>)</code>     vertex
+<code>
+<br>
+(<i>x</i>) (<i>y</i>) (<i>z</i>)</code>     normal
+<code>
+<br>
+(<i>x</i>) (<i>y</i>) (<i>z</i>)</code>     vertex
+<code>
+<br>
+(<i>x</i>) (<i>y</i>) (<i>z</i>)</code>     normal   ... for each vertex
+<code>
+<br>
+(<i>index</i>)
+<br>
+(<i>index</i>) </code>  ... for each list index
+<p>	
+negative index values give the following drawing instructions.
+<pre>
+     -1  end of list array                
+    -20  next item on list is normal vector.
+    -21  begin concave polygon
+    -22  end polygon
+    -23  begin vertex,normal polygon pairs.
+    -24  begin large convex polygon with normals.
+    -25  begin vertex,normal polygon pairs with vertex indices
+
+</pre>
+Currently, meshes in model files consist only of polygons with vertex, normal
+pairs, starting with -23 or -25 and ending with -22.  In polygons starting
+with -23, each set
+of 6 indices describes a triangle as follows:
+<pre>
+<i>index to normal 1</i>
+<i>index to vertex 1</i>
+<i>index to normal 2</i>
+<i>index to vertex 2</i>
+<i>index to normal 3</i>
+<i>index to vertex 3</i>
+</pre>
+In polygons starting with -25, each normal is assumed to follow its
+corresponding vertex, and each triangle is described by only 3 indices:
+<pre>
+<i>index to vertex 1</i>
+<i>index to vertex 2</i>
+<i>index to vertex 3</i>
+</pre>
+It is also legal to have polygons consisting only of vertices, without
+normals; these polygons start with -21 and each triangle is described by
+3 indices as above for the polygons starting with -25.
+<p>
+Following all of the mesh data may be three optional directives:
+<code>
+<br>
+<b>Meshflags</b>   (<i>mesh flags; bit 16 normals have magnitudes; bits 20-23
+resolution</i>)
+<br>
+<b>Meshsurf</b>   (<i>mesh surface number</i>)
+<br>
+<b>Meshtime</b>   (<i>mesh time</i>)
+</code>
+</body></html>

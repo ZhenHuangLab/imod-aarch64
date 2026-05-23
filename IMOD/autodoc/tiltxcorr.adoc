@@ -1,0 +1,635 @@
+Version = 1.0
+Pip = 1
+
+[Field = InputFile]
+short = input
+type = FN
+usage = Input image file
+tooltip = Image file to correlate.
+manpage = Input file with images to correlate.  If this option
+is not entered, the first non-option argument will be used for this input
+file.
+
+[Field = PieceListFile]
+short = piece
+type = FN
+usage = Piece file with rearranged Z values
+tooltip = 
+manpage = Piece list file for reordering the Z values in the stack
+
+[Field = OutputFile]
+short = output
+type = FN
+usage = Output file for transforms or for patch tracking model
+tooltip = Output file for transformations or for patch tracking model
+manpage = Output file for transformations or for patch tracking model.  If
+this option is not entered, the second non-option argument will be used for
+this input file.
+
+[Field = RotationAngle]
+short = rotation
+type = F
+usage = Rotation angle from the Y axis to the tilt axis
+tooltip = 
+manpage = Angle of rotation of the tilt axis in the images; specifically, the
+angle from the vertical to the tilt axis (counterclockwise positive).
+
+[Field = FirstTiltAngle]
+short = first
+type = F
+usage = Tilt angle of first view in degrees
+tooltip = 
+manpage = Tilt angle of first view, in degrees.  Use this option together with
+TiltIncrement.
+
+[Field = TiltIncrement]
+short = increment
+type = F
+usage = Increment between tilt angles
+tooltip = 
+manpage = Increment between tilt angles, in degrees.  Use this option together
+with FirstTiltAngle.
+
+[Field = TiltFile]
+short = tiltfile
+type = FN
+usage = File with tilt angles
+tooltip = 
+manpage = Use this option if tilt angles are in a file, one per line.
+
+[Field = TiltAngles]
+short = angles
+type = FAM
+usage = Individual tilt angles for each view
+tooltip = 
+manpage = Use this option to enter the tilt angles for each view individually,
+in degrees.
+
+[Field = AngleOffset]
+short = offset
+type = F
+usage = Amount to add to all entered tilt angles
+tooltip = Amount to add to all entered tilt angles.  If the angle offset
+needed to make the specimen level in the reconstruction is more than a few
+degrees, applying this offset here will sharpen the correlations.
+manpage = Amount to add to all entered tilt angles.  If the specimen is 
+significantly tilted at zero tilt, then the amount of cosine stretching become
+inaccurate at high tilt.  Sharper correlations can be obtained by adding this
+angle offset, which is the same as the offset needed in Tiltalign(1) or
+Tilt(1) to make the specimen flat in the reconstruction.
+
+[Field = ReverseOrder]
+short = reverse
+type = B
+usage = Reverse order of processing when all views have same tilt angle
+tooltip = 
+manpage = Reverse order of processing when all views have same tilt angle.
+Specifically, this will cause the program to start with the last view at
+minimum tilt instead of the first one.
+
+[Field = FilterRadius1]
+short = radius1
+type = F
+usage = Left cutoff radius for filter
+tooltip = 
+manpage = Low spatial frequencies in the cross-correlation will be attenuated
+by a Gaussian curve that is 1 at this cutoff radius and falls off below this
+radius with a standard deviation specified by FilterSigma2.  Spatial
+frequency units range from 0 to 0.5.  Use FilterSigma1 instead of this entry
+for more predictable attenuation of low frequencies.
+
+[Field = FilterRadius2]
+short = radius2
+type = F
+usage = Right cutoff radius for filter
+tooltip = High frequency cutoff radius for Gaussian filter
+manpage = High spatial frequencies in the cross-correlation will be attenuated
+by a Gaussian curve that is 1 at this cutoff radius and falls off above this
+radius with a standard deviation specified by FilterSigma2.
+
+[Field = FilterSigma1]
+short = sigma1
+type = F
+usage = Sigma for low-frequency inverted Gaussian filter
+tooltip = 
+manpage = Sigma value to filter low frequencies in the correlations with a
+curve that is an inverted Gaussian.  This filter is 0 at 0 frequency and decays
+up to 1 with the given sigma value.  However, if a negative value of radius1
+is entered, this filter will be zero from 0 to |radius1| then decay up to 1.
+
+[Field = FilterSigma2]
+short = sigma2
+type = F
+usage = Sigma for Gaussian rolloff below radius1 and above radius2
+tooltip = Sigma for Gaussian rolloff below low frequency cutoff and above 
+high frequency cutoff
+manpage = Sigma value for the Gaussian rolloff below and above the cutoff
+frequencies specified by FilterRadius1 and FilterRadius2
+
+[Field = ExcludeCentralPeak]
+short = exclude
+type = B
+usage = Exclude central correlation peak due to fixed pattern noise
+tooltip = Ignore correlation peaks due to fixed pattern noise if
+various conditions on peak strength and width are satisfied
+manpage = Exclude a central correlation peak caused by fixed pattern
+noise in the images.  In tilted images, these peaks can occur anywhere within
+an extended, narrow strip perpendicular to the tilt axis.  A peak in this
+region will now be excluded only if conditions are met both by this peak and
+by the highest peak outside this region, as described above.
+
+[Field = CentralPeakExclusionCriteria]
+short = central
+type = FT
+usage = Three criterion values controlling exclusion of a peak at (0, 0)
+tooltip = 
+manpage = This option specifies three of the criteria applied when deciding
+whether to exclude a peak at (0, 0): the minimum ratio of the second to the
+third peak strength (default 3); the absolute width of the central peak
+in the unbinned, unstretched correlation (default 1.5); and the minimum ratio
+of the second to the first peak width (default 1.6).
+
+[Field = ShiftLimitsXandY]
+short = shift
+type = IP
+usage = Limits on distance in X and Y to search for correlation peak
+tooltip = Limits on distance in X and Y to search for correlation peak, in
+pixels.  Images or patch centers will not shift by more than this amount
+between views.
+manpage = Limits on distance in X and Y to search for correlation peak, in
+pixels before binning is applied internally.  This option can be used to
+prevent a spurious correlation peak outside these limits from giving a bad
+alignment.  As of IMOD 4.6.31, the peak must be located within an ellipse
+whose axes are defined by the limits in X and Y.  If the program does not find
+an actual peak, i.e. a pixel higher than all its neighbors, within these
+limits, then it will give a zero shift. If cumulative correlations are being
+used, the program will seek a peak within this distance of the peak for the
+previous view and assign that view's shift instead of zero if no peak is
+found.
+
+[Field = RectangularLimits]
+short = rect
+type = B
+usage = Limit peaks to within a rectangular rather than elliptical area
+tooltip = 
+manpage = With this option, the -shift option works as it did before IMOD
+4.6.31, requiring a peak to be within the rectangle defined by the limits in X
+and Y.
+
+[Field = CorrelationCoefficient]
+short = ccc
+type = B
+usage = Find peak with best normalized cross-correlation coefficient
+tooltip = 
+manpage = Compute a normalized cross-correlation coefficient at the 10 highest
+correlation peaks and pick the peak with the highest coefficient.  This
+computation requires 5 Fourier transforms instead of 3, because filtered
+images must be used for computing the correlation coefficient.
+
+[Field = BordersInXandY]
+short = border
+type = IP
+usage = Number of pixels to trim off each edge in X and in Y
+tooltip = Pixels to trim off each side in X, and in Y; the default is 0.  Some
+trimming should be used with patch tracking.
+manpage = Number of pixels to trim off each edge in X and in Y (the default is
+to use the whole image).
+
+[Field = XMinAndMax]
+short = xminmax
+type = IP
+usage = Starting and ending coordinates to correlate in X (overrides X border)
+tooltip = Starting and ending coordinates to correlate in X (overrides
+trimming in X)
+manpage = Starting and ending X coordinates of a region to correlate, based on
+the position of the region at zero tilt.  This
+entry will override an X border value entered with BordersInXandY.
+
+[Field = YMinAndMax]
+short = yminmax
+type = IP
+usage = Starting and ending coordinates to correlate in Y (overrides Y border)
+tooltip = Starting and ending coordinates to correlate in Y (overrides
+trimming in Y)
+manpage = Starting and ending Y coordinates of a region to correlate.  This
+entry will override a Y border value entered with BordersInXandY.
+
+[Field = BoundaryModel]
+short = boundary
+type = FN
+usage = Model file with boundary contours around areas to correlate
+tooltip = Model file with boundary contours around areas to correlate or areas
+to track patches within.
+manpage = Model file with boundary contours around areas to correlate.  When
+correlating whole images to obtain transforms, the area outside the contours
+is masked out; when tracking patches, only patches inside the contours will be
+tracked (see above for details).
+
+[Field = BoundaryObject]
+short = objbound
+type = I
+usage = Object number to use from boundary model; default is all closed objects
+tooltip =
+manpage = The number of the object to use from the model with boundary
+contours.  The default is to use all the contours in closed-contour objects,
+but with this option only the given object will be used.
+
+[Field = BinningToApply]
+short = binning
+type = I
+usage = Binning or other reduction to apply to the trimmed, padded images
+tooltip = 
+manpage = Binning or other reduction to apply to the trimmed, padded images.
+Ordinary binning is used unless the -antialias option is given.
+By default, a reduction will be selected that makes the maximum dimension of the
+trimmed, padded image be no more than 1250 pixels, up to a reduction of 4.
+Reduction will be increased above 4 only to keep the reduced image within a
+size of about 4K, up to a reduction of 16.  This default behavior might result
+in more reduction
+than desired, and the reduction might change when the amount of trimming
+is changed.  This option allows direct control of the reduction instead and
+also allows a reduction up to 32.
+
+[Field = AntialiasFilter]
+short = antialias
+type = I
+usage = Type of antialiasing filter to reduce images with instead of binning
+tooltip =
+manpage = Type of antialiasing filter to use for image reduction instead of
+binning.  Antialiasing becomes important when the images contain a strong
+noise component at the high frequencies being eliminated by the image
+reduction.  Ordinary binning reduces aliasing, but not as much as these filters
+do.  As in Newstack(1), the available types here are:
+^    2: Blackman - fast but not as good at antialiasing as slower 
+^                  filters
+^    3: Triangle - fast but smooths more than Blackman
+^    4: Mitchell - good at antialiasing, smooths a bit
+^    5: Lanczos 2 lobes - good at antialiasing, less smoothing 
+^                  than Mitchell
+^    6: Lanczos 3 lobes - slower, even less smoothing but more 
+^                  risk of ringing
+
+[Field = LeaveTiltAxisShifted]
+short = leaveaxis
+type = B
+usage = Do not adjust tilt axis back to center if correlated box is not 
+centered
+tooltip = 
+manpage = Leave the tilt axis in the center of the region that was correlated;
+the default is to shift it back to the center of the whole image.  With this
+option, the program will output global transforms ready to use in Newstack(1),
+rather than the transforms relating one view to the next that would need to be
+converted to global transforms with Xftoxg(1).  The reason for this difference
+is that the transforms must contain a net shift away from the center of the
+image, which would be lost in Xftoxg(1).
+
+[Field = PadsInXandY]
+short = pad
+type = IP
+usage = Number of pixels to pad images on each side in X and in Y
+tooltip = Padding on each side in X, and in Y; the default is 10% of the image size.
+manpage = Number of pixels to pad images on each side in X and in Y, before binning.
+With no padding, shifts greater than 50% of the image size will not be
+treated correctly.  Each 1% of padding allows proper treatment of shifts more than
+50% by an additional 2% of image size.
+The default is 5% of images dimensions for patch tracking or finding warping,
+or 10% for regular correlations, allowing shifts up to 70% of the image size
+to be determined.
+
+[Field = TapersInXandY]
+short = taper
+type = IP
+usage = Number of pixels to taper images in X and in Y
+tooltip = Pixels to taper in X, and in Y; the default is 10% of the image size.
+manpage = Number of pixels to taper images in X and in Y.  The default
+is 10% of the image dimensions.
+
+[Field = StartingEndingViews]
+short = views
+type = IP
+usage = Starting and ending view numbers for doing a subset of views
+tooltip = Starting and ending view numbers to correlate (numbered from 1); 
+the default is all views.
+manpage = Starting and ending view numbers, numbered from 1, for doing 
+a subset of views.
+
+[Field = SkipViews]
+short = skip
+type = LI
+usage = List of views to skip, aligning across skipped views (ranges OK)
+tooltip =
+manpage = List of views to skip, while maintaining alignment across skipped
+views.  The program will not find the transform for aligning a listed view to
+the previous one.  When a view is skipped, the following view will be aligned
+to the last unskipped view and a unit transform will be output for the skipped
+view.  With patch tracking, no model points will be placed on the skipped
+views.  Comma-separated ranges of views (numbered from 1) can be entered.  The
+default is to use all of the views.
+
+[Field = BreakAtViews]
+short = break
+type = LI
+usage = List of views to break alignment at (ranges OK)
+tooltip =
+manpage = List of views to break alignment at.  This option is like
+"-skip"
+in that no transform is found for aligning a listed view to
+the previous one and a unit transform is written for the listed view.
+However, the following view will be aligned to the
+listed view, and nothing will be aligned to the previous view.  This
+breaks the chain of alignment through the series of views.  This option
+cannot be used with tilt series patch tracking, but can be used when finding
+warping.
+
+[Field = CumulativeCorrelation]
+short = cumulative
+type = B
+usage = Add up previously aligned pictures as reference for next alignment
+tooltip = 
+manpage = Use this option to add up previously aligned pictures to get the
+reference for the next alignment.  Alignments will start at low tilt and
+work up to high tilt.
+
+[Field = AbsoluteCosineStretch]
+short = absstretch
+type = B
+usage = Cosine stretch each image added into the cumulative sum
+tooltip = 
+manpage = Stretch each image added into the cumulative sum by 1 over the
+cosine of its tilt angle.
+
+[Field = NoCosineStretch]
+short = nostretch
+type = B
+usage = Do not do any cosine stretching for correlations or for accumulating
+into the reference (overrides -absstretch)
+tooltip = 
+manpage = Do not do any cosine stretching for correlations or for accumulating
+into the reference (this option overrides AbsoluteCosineStretch).
+
+[Field = IterateCorrelations]
+short = iterate
+type = I
+usage = Number of iterations to reduce interpolation of peak position
+tooltip = Number of iterations of each correlation to reduce interpolation of
+peak position.
+manpage = Number of iterations of the correlation.  After finding the
+pixel with the peak correlation, the program achieves subpixel accuracy by
+fitting a parabola to the correlation values in X or Y and interpolating from
+the parabola.  If the correlation is iterated, this subpixel shift is applied
+to the cosine-stretched image
+before the correlation, which tends to shift the peak to being exactly on a
+pixel.  As a result, the shift has slightly higher subpixel accuracy than when
+it is derived by parabolic interpolation.  The program will terminate the
+iterations if the remaining fractional shift is less than 0.02 pixel or if 
+a lower correlation value is obtained than on the previous iteration.  In the
+latter case it reverts to the shift that gave the highest correlation.  Two or
+three iterations are generally sufficient.  Iteration is not programmed
+efficiently, so computation time will be proportional to the number of
+iterations.
+
+[Field = SearchMagChanges]
+short = search
+type = B
+usage = Search for magnification (size) changes
+tooltip = Search for magnification (size) changes at selected views
+manpage = Search for the magnification factor that gives the highest
+correlation coefficient at one or more views.  This factor will be
+incorporated into the transformation for the respective view.  If a maximum
+value of the correlation coefficient is not found within the allowed range
+(specified with the -mag option), a magnification of 1 is used.  This option
+cannot be used together with rotation scan, cumulative correlation, patch
+tracking, or when finding warping.
+
+[Field = ViewsWithMagChanges]
+short = changes
+type = LI
+usage = List of views at which to search for size changes (default is all)
+tooltip =
+manpage = List of views at which to search for magnification changes.  Ranges
+are allowed.  The default is to do all views.
+
+[Field = MagnificationLimits]
+short = mag
+type = FP
+usage = Lower and upper limits for size change (default 0.9,1.1)
+tooltip =
+manpage = Lower and upper limits for size change when searching for
+magnification factors.  The default is 0.9,1.1.
+
+[Field = ScanRotationMaxAndStep]
+short = scan
+type = FP
+usage = Maximum angle and step size to scan for best rotation, or one angle and 0
+tooltip =
+manpage = Either the maximum angle and angular step size at which to apply
+rotation in order to estimate the best rotation; or a single rotation angle to
+apply and a 0 step size.  With a positive step size to estimate rotation, the
+program does a coarse scan just at the given interval from the negative to
+positive maximum angle, then estimates the best
+rotation by interpolation.  This is unlike the magnification search, which
+reduces its step size to refine the estimate.  The final correlation is done
+at the interpolated angle.  With a step size of 0, the angle given as the
+maximum (which can be negative) is applied before correlating.  The resulting
+transformation incorporates the rotation in either case.  This option cannot
+be used together with magnification search, cumulative correlation, patch
+tracking, or when finding warping.
+
+[Field = ReferenceFile]
+short = reference
+type = FN
+usage = Input file containing an image to use as a reference
+tooltip = 
+manpage = Input file containing an image to use as a reference.  Each view
+from the main input image file will be aligned with this reference image,
+which will be assumed to be at zero tilt.  The output file will contain a
+linear transform for every view in the input file; if a subset of views
+is specified with \fB-views\fR or some views are skipped, unaligned views will
+be given a unit transform.  This option cannot be used with cumulative
+correlations, patch tracking, or when finding warping.
+
+[Field = ReferenceView]
+short = rview
+type = I
+usage = View number of image to use in reference file
+tooltip = 
+manpage = View number of image to use in reference file, numbered from 1.
+
+[Field = SecondPeakBoxSize]
+short = second
+type = IP
+usage = Report on second peak if within box of given length and width
+tooltip = 
+manpage = Report on the second peak position if it is within a box of the
+given length and width before binning, centered on the first peak and with its
+width along the tilt axis and its length perpendicular to the tilt axis.
+
+[Field = SizeOfPatchesXandY]
+short = size
+type = IP
+usage = Size in X and Y of patches to track by correlation
+tooltip =
+manpage = Size in X and Y of patches to track by correlation.  This option
+will cause the program to track a set of patches of the given size from the
+starting view to the high tilt view in each direction, and to output the
+positions of the patch centers in an IMOD model.  By default, patches will
+overlap in each direction by the default value for the -overlap option (see
+below).  You can change the overlap with the -overlap option, specify the
+number of patches directly with the -number option, or enter a model of
+points to track with the -seed option, but you can enter only one of these
+options.  Patch tracking cannot be used with cumulative correlation.
+
+[Field = NumberOfPatchesXandY]
+short = number
+type = IP
+usage = Number of patches in X and Y to track by correlation
+tooltip =
+manpage = Number of patches in X and Y to track by correlation.  The given
+number of patches will be regularly spaced apart and fill the X and Y ranges
+of the trimmed image area.
+
+[Field = OverlapOfPatchesXandY]
+short = overlap
+type = IP
+usage = Fractional overlap in X and Y between patches (default 0.33, 0.33)
+tooltip =
+manpage = Fractional overlap in X and Y between patches that are tracked by
+correlation.  These overlaps are used to determine the number of patches when
+-number is not entered.  The default, 0.33, 0.33, which will make patches that
+overlap by one-third in each direction.  A value of 0 will result in no
+overlap, and values less than 0 will result in space between the patches.
+
+[Field = SeedModel]
+short = seed
+type = FN
+usage = Input model file with center points to track by correlation
+tooltip =
+manpage = Input model file with center points to track by correlation.  Only
+points whose patches fit entirely within the trimmed image area at zero
+degrees will be tracked.  See above for details.
+
+[Field = SeedObject]
+short = objseed
+type = I
+usage = Number of object to use in seed model; default is all scattered objects
+tooltip =
+manpage = Number of the object from the seed model with the points for
+tracking patches.  The default is to
+use all objects containing scattered points; with this option only the given
+object will be used. 
+
+[Field = LengthAndOverlap]
+short = length
+type = IP
+usage = Contour length and minimum overlap for breaking contour into pieces
+tooltip = Contour length and minimum overlap for breaking contour into
+pieces, which will reduce residuals in Tiltalign if patch positions are not
+consistent through the whole tilt series.
+manpage = When tracking patches by correlation, the default is to produce one
+contour per patch passing through the whole set of views.  With this option,
+the contour will be broken into pieces of the given length, and overlapping
+by at least the given amount.  If the centers of the tracked areas wander
+enough to give a bad fit when the resulting model is used in Tiltalign(1),
+then breaking the contours into overlapping pieces might improve the fit.
+Some overlap is needed to use the model in Tiltalign (1).  
+
+[Field = PrealignmentTransformFile]
+short = prexf
+type = FN
+usage = File with transforms used to align images for patch tracking
+tooltip = 
+manpage = File with transformations applied to align the images being used for
+patch tracking.  With the shift information in these transforms, each patch is
+evaluated for whether it contains blank image area because of the shifting.
+Patches that are more than 30% blank will not be tracked further, and patches
+with some blank area less than this amount will be tapered down to the edge of
+the blank area.
+
+[Field = ImagesAreBinned]
+short = imagebinned
+type = I
+usage = The current binning of the images relative to raw stack
+tooltip = 
+manpage = The current binning of the images relative to the unaligned stack.
+This entry is needed to scale the transforms supplied with the -prexf option
+if the binning is not 1.
+
+[Field = UnalignedSizeXandY]
+short = unali
+type = IP
+usage = Size of unaligned stack in X and Y
+tooltip =
+manpage = The full size of the unaligned stack that was transformed to create
+the images being aligned with patch tracking.  This entry is needed if 
+an output size was specified when creating the stack being aligned and if
+transforms are supplied with the -prexf option.
+
+[Field = FindWarpTransforms]
+short = warp
+type = I
+usage = Use patch correlations to find and save warping transformations
+tooltip = 
+manpage = Use patch correlations to find and save warping transformations
+between successive images.  The output file will be a file with warp
+transforms, not a model.  Enter 1 for transforms with the linear component
+separated out, and -1 to not separate the linear component.  Tilt angles
+cannot be entered with this option, nor can the -reverse option.  Unlike with
+tilt series patch tracking, you can break the alignment at views as well as
+skip views.  Limits in X and Y and a boundary model can be used to constrain
+patch locations, but there must be at least 3 patches in the area defined by
+all the boundary contours.
+
+[Field = RawAndAlignedPair]
+short = pair
+type = IP
+usage = View # being aligned and total # of views for finding warp between aligned
+and raw image
+tooltip =
+manpage = After transforms relating each section to the previous have been
+obtained, this option can be used to find a warping alignment between a pair
+of sections, where the first is an unaligned image and the second is a section
+transformed into linear alignment with it.  The option specifies the view
+number (numbered from 1, as usual) of the second view of the pair and the
+total number of sections.  If this option is entered, the file of
+section-to-section transforms must be entered with the -prexf option.  The
+input images must not be binned or resized from the ones on which those
+transforms are based.  This option is used by Xfalign(1).
+
+[Field = AppendToWarpFile]
+short = append
+type = B
+usage = Add warp transform from pair to an existing output file
+tooltip = 
+manpage = When doing a raw and aligned pair, this option can be used to add
+the warp transform from the pair to an existing file.  The output file must be
+a valid warp transform file.
+
+[Field = TestOutput]
+short = test
+type = FN
+usage = File to save processed images and correlations into
+tooltip = 
+manpage = Specify a filename with this option to have two padded, tapered
+images and the cross-correlation saved for every pair of images that are 
+correlated. 
+
+[Field = VerboseOutput]
+short = verbose
+type = B
+usage = Output diagnostic information
+tooltip =
+manpage = 
+
+[Field = ParameterFile]
+short = param
+type = PF
+usage = Read parameter entries from file
+tooltip = 
+manpage = Read parameter entries as keyword-value pairs from a parameter file.
+
+[Field = usage]
+short = help
+type = B
+usage = Print help output
+tooltip = 
+manpage = 

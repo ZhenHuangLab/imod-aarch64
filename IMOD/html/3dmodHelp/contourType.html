@@ -1,0 +1,164 @@
+<head>
+<title>Surface/Contour/Point Dialog</title>
+</head>
+<A NAME = "TOP"><H2>Surface/Contour/Point Dialog</H2></A>
+This dialog has a collection of controls for more advanced modeling features:
+defining and manipulating surface numbers for contours; adjusting some
+properties of contours; giving sizes to individual points; and assigning names
+to surfaces, contours or points.  There are also controls for the display of
+ghost contours from adjacent sections.
+<P>
+<H3>Surface controls</H3>
+<P>
+Each contour has its own surface number.  The surface number can be used for
+subgrouping contours without having to create new objects.  The surface number
+of the current contour is displayed in the <B>Surface</B> spin box.  To the
+right of the spin box is the maximum surface number in the current object
+("/ #").  You can go to the first contour in the next or previous surface by
+clicking the up or down arrows of the spin box.  Non-existent surfaces are
+skipped when you move between surfaces.  You can also go to the first contour of
+any surface by entering a number in the box and pressing Enter; the program will
+select the nearest available surface.
+<P>
+When the current object has a mesh with multiple surfaces but no contours, as
+can be produced wen saving an object from the 
+<A HREF="modvIsosurface.html">Isosurface dialog</A>, then the program keeps
+track of a current surface number within this object.  In this case,
+the <B>Surface</B> spin box will show the current mesh surface and can be
+used to step between surfaces.
+<P>
+The <B>Contour in surf</B> Up and Down arrows can be used to step to the next
+and previous contours within the current surface.  If there are multiple
+times, it will step only to a contour at the same time as the current contour.
+<P>
+The <B>New</B> button will start a new surface with the next free number and
+create an empty contour with that surface number.
+<P>
+The <B>Ghost</B> check box may be used during model editing to highlight the
+current contour, along with all other contours with the same surface number.
+<P>
+It is possible to have a label for each surface.  The <B>Label</B> text box
+shows the label of the current surface; simply enter or change text in this box.
+<P>
+<H3>Contour controls</H3>
+<P>
+The <B>Closed</B> and <B>Open</B> radio buttons select between closed and open
+contours in an object defined as having closed contours.  The default is a
+closed contour where the last point is connected to the first.  An open contour
+will not be connected between the last and first points, thus allowing a
+partially cut surface to be represented by an object containing both closed and
+open contours. This setting has no effect for an object defined as having open
+or scattered point contours, so the buttons are disabled in that case.  
+<P>
+If you have selected multiple contours, then changing the open/closed property
+for the current contour will also change all selected contours in closed
+contour objects.  You will be asked to confirm that you want to change
+multiple contours.  For example, you can use this function after selecting
+many contours with Ctrl and the right
+mouse button in the Model View window (to see the selected contours there,
+turn on <B>Thicken current contour</B> in the Lines panel of the
+Edit-Objects dialog).  There is also a hot key, <B>Shift+O</B>, for toggling the state
+of selected contours between open and closed, which has the same effect as
+pressing one of these radio buttons.
+<P>
+Two more features facilitate working with closed and open contours.  First,
+when you start a new contour, it will inherit this property from the
+previously current contour, which is usually what you want.  Second, when the
+current contour is open, triangles rather than circles are drawn at its
+endpoints, so that you can tell what kind of contour you have without looking
+at this dialog.
+<P>
+The <B>Time Index</B> spin box can be used to change the time index of
+contours in 4-dimensional datasets. The box shows the time index of the
+current
+contour, which can be incremented or decremented with the spin box arrows, or
+changed by typing in a new number followed by <B>Enter</B>.  Contours with a
+non-zero time index display at only the relevant time; contours with a zero
+index display at all times.  This box is active only when the <B>Contours have
+time values</B> check box is selected for the particular object in the
+<B>Edit</B>-<B>Object</B>-<B>Type</B> dialog.
+<P>
+It is possible to have a label for each contour.  The <B>Label</B> text box
+shows the label of the current contour; simply enter or change text in this box.
+<P>
+<H3>Point controls</H3>
+<P>
+It is possible to assign a size for each point.  Any point with an individual
+size will be displayed as a 3D sphere of this radius, even if the object type
+is not scattered points.  The units are pixels in the image file, i.e.,
+unbinned
+pixels if images are loaded in binned.  Points without a size will still be
+displayed at the size specified for the object as a whole.  You can change a
+size either by typing a number into the text box (followed by <B>Enter</B>) or
+by using the slider.  If a point has no size, the text box displays the global
+point size for the object and "-Default".
+<P>
+If <B>Set with mouse wheel</B> is checked, then you can adjust the size of the
+current point with the scroll wheel when the mouse is in a Zap, XYZ, or Slicer 
+window.  This feature will work for
+points that already have some size.  If a point does not have an individual
+size and the default size for the object is 0, then the wheel control is
+disabled. (This is to prevent inadvertent size changes while drawing ordinary
+planar contours.)  To use the wheel control in this case, click the slider
+in this dialog to get some size, then go back to the Zap window and adjust
+with the wheel.
+The change in size for one click of the wheel varies with zoom for zooms
+between 1 and 4; to get the smallest increment, zoom up to 4 or higher.
+<P>
+Each individual point can also have its own label, which will be written to
+the right of the point in the Zap and Slicer windows.  These labels will also be shown in
+the 3-D model display if you turn on <B>Point Labels</B> in the View menu of
+the Model View window. The <B>Label</B> text box
+shows the label of the current point; simply enter or change text in this
+box.  The <A href="objectEdit.html#TOP">Object Edit</A> dialog has controls to
+turn off the drawing and to adjust the text size.  The text will have the same
+color as the object or the point if it is different.
+<P>
+<H3>Section ghost controls</H3>
+<P>
+These items may be used to control the ghost display mode, for showing items
+not on the current section in the Zap window.
+Use the spin box to control how far away items to be displayed can be from the
+current section.  The distance set here works differently depending on the
+type of object.
+For closed contour objects and open contours that lie in a plane, the number
+simply corresponds to sections. For example, with a value of 3, contours will be
+displayed as ghosts from up to 3 sections away.  With the special value of 
+"Near", ghost contours will be displayed from the nearest section on which the
+object has contours.  
+<P>
+For scattered point objects, the number set in the
+spinner is multiplied by the default diameter of the points (twice the radius
+set for the object in the Object Type dialog).  Thus, this ghost display works
+in terms of "virtual sections" approximately the same thickness as the
+number of sections over which a point would display normally.  For example,
+with a point radius of 4 and a distance of 1, a point will display normally up
+to 3 sections away from its central plane, and then display as a ghost for
+the next 8 sections.  With the value of "Near", such points will display as ghosts
+from the 8 sections starting at the one with the nearest point in Z to the
+current section.  Enter a large number in the spin box to display points from
+all Z levels.  The ghost points will be displayed as they appear in their
+central planes, i.e., full-sized with a small cross in the center.
+<P>
+If the <B>Up</B> box is
+checked, then contours or points will be displayed as ghosts on following sections; the
+<B>Down</B> check box will display contours or points as ghosts on previous sections.
+The <B>G</B> hot key will toggle the combination selected by these boxes on
+and off.
+<P>
+If <B>Lighter</B> box is checked, the ghosts will be displayed in a
+lighter color, otherwise they will be drawn with a darker color.  However, if
+items are being displayed from both directions (<B>Up</B> and <B>Down</B> both
+checked), the color of display is modified when <B>Two shades</B> is
+checked.  In this case, the default is to show contours from lower and higher Z
+planes as darker and lighter, respectively, and the <B>Lighter</B> box
+reverses this scheme.
+<P>
+If the
+<B>All closed/open objects</B> box is checked, ghosts will be drawn for all
+objects with closed or planar open contours, instead of just for the current object.
+Similarly, if the
+<B>All scattered objects</B> box is checked, ghosts will be drawn for all
+objects with scattered points, instead of just for the current object.
+<P>
+<A HREF="index.html#TOP">Help Index<A>

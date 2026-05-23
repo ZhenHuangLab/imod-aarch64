@@ -1,0 +1,33 @@
+# Command file to run Tilt
+#
+####CreatedVersion#### 4.0.15
+# 
+# RADIAL specifies the frequency at which the Gaussian low pass filter begins
+#   followed by the standard deviation of the Gaussian roll-off
+#
+# LOG takes the logarithm of tilt data after adding the given value
+#
+$tilt -StandardInput
+InputProjections BBa.ali
+OutputFile BBa_3dfind.rec
+IMAGEBINNED 1
+FULLIMAGE 512 512
+LOCALFILE BBalocal.xf
+LOG 0.0
+MODE 1
+OFFSET 0.0
+PERPENDICULAR 
+AdjustOrigin 
+RADIAL 0.35 0.035
+FalloffIsTrueSigma 1
+SCALE 0.0 1000.0
+SHIFT 0.0 -12.8
+SUBSETSTART -19 -19
+THICKNESS 98
+TILTFILE BBa.tlt
+XAXISTILT 2.0
+XTILTFILE BBa.xtilt
+ZFACTORFILE BBa.zfac
+ActionIfGPUFails 1,2
+EXCLUDELIST 1
+$if (-e ./savework) ./savework

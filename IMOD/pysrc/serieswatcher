@@ -1,0 +1,1192 @@
+#!/usr/bin/env python
+# serieswatcher - look for tilt series stacks and run batchruntomo on them
+#
+# Author: David Mastronarde
+#
+# $Id$
+#
+
+progname = 'serieswatcher'
+prefix = 'ERROR: ' + progname + ' - '
+openTSext = '.openTS'
+activeEbt = '.ebt.active'
+(StackInd, MtimeInd, SizeInd, TimeInd, OtsInd, MaturInd, ErrTimeInd) = tuple(range(7))
+
+# Give message and exit for an action of F or Q
+def processCheckAction(action):
+   if action != 'Q' and action != 'F':
+      return
+   if action == 'Q':
+      prnstr('Sent signal to quit to all processes')
+   else:
+      prnstr('Exiting and allowing all processes to finish')
+   if projectRoot and os.path.exists(outProjRoot + activeEbt):
+      makeBackupFile(outProjRoot + '.ebt')
+      os.rename(outProjRoot + activeEbt, outProjRoot + '.ebt')
+   sys.exit(0)
+
+
+# Check for new stacks and completion of ones already found
+def checkForStacks():
+   numReady = 0
+   firstReady = -1
+
+   # Get the full list of matching files and loop on it
+   fullList = glob.glob(os.path.join(watchDir, pattern))
+   fullList.sort()
+   for stack in fullList:
+      
+      # get root and extension, eliminate unwanted extensions and a axis files
+      (root, ext) = os.path.splitext(stack)
+      if ext in ('.mdoc', openTSext) or stack in erredList or stack in doneList:
+         continue
+      #if masterCom and dualAxis and not doOneAxis and root.endswith('a'):
+      #   continue
+
+      # Check if stack is in waiting list already, if not add it
+      for waiter in waitingList:
+         if stack == waiter[StackInd]:
+            break
+      else:    # ELSE ON FOR
+         try:
+            waitingList.append([stack, os.path.getmtime(stack), os.path.getsize(stack),
+                                time.time(), 0, neverOTSmaturedTime, 0.])
+            if debugMode:
+               prnstr('Added ' + stack + ' to waitingList')
+         except OSError:
+            prnstr(stack + ' gave error getting size or modification time; skipping it')
+            erredList.append(stack)
+
+   # Go through list checking for openTS and times
+   # Do this with C-style loop index in order to go forward and be able to remove as
+   # you go.  Increment index before any continue; drop index when remove an item
+   ind = 0
+   while ind < len(waitingList):
+      removeIt = False
+      testForRemoval = False
+      stack = waitingList[ind][StackInd]
+      errTime = waitingList[ind][ErrTimeInd]
+      stackBase = os.path.basename(stack)
+      (stackRoot, stackExt) = os.path.splitext(stackBase)
+      aStackBusy = masterCom and dualAxis and stackRoot.endswith('b') and \
+            (stackRoot[:-1] + 'a' + stackExt) in stackInSlot
+
+      # If a stack disappears, remove it
+      if not errTime and not os.path.exists(stack):
+         waitingList.pop(ind)
+         continue;
+
+      # If a stack is mature, skip it if the A axis is running
+      if not waitingList[ind][MaturInd]:
+         if aStackBusy:
+            ind += 1
+            continue
+
+         # OK to run, record if it is the first one and skip the rest of this
+         if not numReady:
+            firstReady = ind
+         numReady += 1
+         ind += 1
+         continue
+
+      # Check for whether openTS file is there, change maturation time when it is 
+      # first seen and when it disappears.  Do not check and errored one for this
+      if waitingList[ind][OtsInd] < 2 and not errTime:
+         if os.path.exists(stack + openTSext):
+            if waitingList[ind][OtsInd] <= 0:
+               if debugMode:
+                  prnstr('Saw .opentS ' + stackBase)
+               waitingList[ind][OtsInd] = 1
+               waitingList[ind][MaturInd] = otsThereMaturedTime
+         else:
+            if waitingList[ind][OtsInd] > 0:
+               if debugMode:
+                  prnstr('.opentS gone for ' + stackBase)
+               waitingList[ind][OtsInd] = 2
+               waitingList[ind][MaturInd] = otsGoneMaturedTime
+
+      # Check if the modification time or the size has changed and keep track of 
+      # time when that happened, for direct comparison with current time
+      try:
+
+         # Check an errored one only occasionally
+         nowTime = time.time()
+         if errTime and (nowTime - errTime < recheckErredTime or \
+                         not os.path.exists(stack)):
+            ind += 1
+            continue
+
+         thisMtime = os.path.getmtime(stack)
+         thisSize = os.path.getsize(stack)
+
+         # If there is change, record the time of it
+         if thisMtime != waitingList[ind][MtimeInd] or \
+            thisSize != waitingList[ind][SizeInd]:
+            waitingList[ind][MtimeInd] = thisMtime
+            waitingList[ind][SizeInd] = thisSize
+            waitingList[ind][TimeInd] = nowTime
+
+            # If an errored one changed, revive it, starting fresh
+            if errTime:
+               waitingList[ind][ErrTimeInd] = 0.
+               waitingList[ind][OtsInd] = 0
+               waitingList[ind][MaturInd] = neverOTSmaturedTime
+               if debugMode:
+                  prnstr(stackBase + ' has changed, so it will be watched again')
+               continue
+
+         modDiff = max(0, nowTime - waitingList[ind][TimeInd])
+
+         # It is mature, check that its angle range is enough
+         if modDiff > waitingList[ind][MaturInd]:
+            testHeader = True
+            try:
+               tiltLines = runcmd('extracttilts "' + stack + '"')
+               if len(tiltLines) > 15:
+                  minAngle = 999.
+                  maxAngle = -999.
+                  try:
+                     for linInd in range(len(tiltLines) - 1, -1, -1):
+                        if tiltLines[linInd].strip() == '':
+                           continue
+                        lsplit = tiltLines[linInd].split()
+                        if len(lsplit) > 1:
+                           break
+                        angle = float(lsplit[0])
+                        minAngle = min(minAngle, angle)
+                        maxAngle = max(maxAngle, angle)
+
+                     if debugMode:
+                        prnstr(fmtstr('Min and max angle {:.1f}  {:.1f}', 
+                                      minAngle, maxAngle))
+
+                     # Report a tilt series with low range, be silent about non-tilts
+                     if maxAngle >= minAngle:
+                        remMess = fmtstr('{} has a tilt range of only {:.0f} deg;' +\
+                                         ' skipping it for now', stackBase, 
+                                         maxAngle - minAngle)
+                        testHeader = False
+                        testForRemoval = maxAngle - minAngle < minTiltRange
+
+                  except ValueError:
+                     pass
+
+            except ImodpyError:
+               pass
+
+            # Test Z range if angle range could not be found
+            if testHeader:
+               remMess = stackBase + ' gave an error reading the header, skipping ' +\
+                         'it for now'
+
+               # First try to get montage size, then header Z size
+               try:
+                  montSize = runcmd('montagesize "' + stack + '"')
+                  lsplit = montSize[0].split()
+                  nz = int(lsplit[-1])
+
+               except Exception:
+                  try:
+                     (nx, ny, nz) = getmrcsize(stack)
+                  except ImodpyError:
+                     testForRemoval = True
+
+               if not testForRemoval and nz < minZsize:
+                  remMess = fmtstr('{} has only {} views; skipping it for now', 
+                                   stackBase, nz)
+                  testForRemoval = True
+
+            # If it passes all the tests, zero the mature time and consider it ready
+            # unless the A stack is running
+            if not testForRemoval:
+               waitingList[ind][MaturInd] = 0
+               if not aStackBusy:
+                  if not numReady:
+                     firstReady = ind
+                  numReady += 1
+
+      except OSError:
+         if not errTime: 
+            prnstr(stackBase + ' gave error getting size or modification time; ' + \
+                   'skipping it')
+         removeIt = True
+
+      # If no openTS was seen, retry a few times, otherwise remove it
+      if testForRemoval:
+         if waitingList[ind][OtsInd] <= 0 and \
+            -waitingList[ind][OtsInd] < maxRetriesIfNoOpenTS:
+            waitingList[ind][OtsInd] -= 1;
+            waitingList[ind][TimeInd] = nowTime
+            if debugMode:
+               prnstr(stackBase + ' does not pass tests, retry it')
+         else:
+            removeIt = True
+            prnstr(remMess)
+
+      # Mark stack as errored, actually remove it if this didn't follow a test
+      if removeIt:
+         waitingList[ind][ErrTimeInd] = nowTime
+         if not testForRemoval:
+            waitingList.pop(ind)
+            continue
+
+      # Increment ind at loop end
+      ind += 1
+
+   return (numReady, firstReady)
+
+
+# Deliver the stack if there is a delivery directory
+def deliverStackAndMdoc():
+   global runOneAxis
+   #if not deliverDir:
+   #   return 0
+   skipIt = 0
+   mess = ''
+
+   # Does the stack itself exist in other place?
+   if deliverDir and os.path.exists(os.path.join(deliverDir, stackBase)):
+      mess = 'stack already exists in ' + deliverDir
+      skipIt = 1
+
+   if not skipIt and masterCom:
+
+      # For dual axis, A must exist somewhere or the directory must
+      moveAstack = False
+      setDir = os.path.join(runningDir, setRoot)
+      dataDirExists = os.path.exists(setDir)
+      dataDirReusable = False
+
+      # If the dir exists and the stack does not exist there, test for the size of files
+      # to see if it is "reusable"
+      if dataDirExists and not \
+         os.path.exists(os.path.join(setDir, stackBase)):
+         allFiles = os.listdir(setDir)
+         for inside in allFiles:
+            if os.path.getsize(os.path.join(setDir, inside)) > maxSizeInExistingDir:
+               break
+         else:    # ELSE ON FOR
+            dataDirReusable = True
+
+      # Do first axis if that is what we got
+      runOneAxis = 0
+      if dualAxis and stackRoot.endswith('a'):
+         runOneAxis = 1
+      if dualAxis and not runOneAxis:
+
+         # If we have B axis, test for a stack, whether it exists and needs to be moved
+         aStackBase = setRoot + 'a' + stackExt
+         aStack = os.path.join(watchDir, aStackBase)
+         aIsMoved = os.path.exists(os.path.join(runningDir, aStackBase))
+         moveAstack = deliverDir and os.path.exists(aStack)
+
+         # If we still think the data dir is reusable but the stack exists there, it is
+         # not reusable - this is a weak test since stacks can be renamed
+         if dataDirExists and dataDirReusable and \
+            os.path.exists(os.path.join(runningDir, setRoot, aStackBase)):
+            dataDirReusable = False
+
+         # Error if there is more than one A stack or if there is an A stack
+         # and the data directory exists
+         if moveAstack and aIsMoved:
+            mess = 'the first axis stack exists in both ' + runningDir +\
+                   ' and ' + watchDir
+            skipIt = 1
+         elif (moveAstack or aIsMoved) and dataDirExists and not dataDirReusable:
+            mess = 'the data set directory already exists but there is a ' +\
+                   'first axis stack in ' 
+            if moveAstack:
+               mess += watchDir
+            else:
+               mess +=  runningDir
+            skipIt = 1
+
+         # Error if nothing exists anywhere
+         elif not (moveAstack or aIsMoved or (dataDirExists and not dataDirReusable)):
+            mess = 'there is no first axis stack or data set directory'
+            skipIt = 1
+
+         # If the directory does exist and could have the first axis, then just do the 
+         # second axis
+         elif dataDirExists and not dataDirReusable:
+            runOneAxis = 2
+
+         # Otherwise now copy the A stack and mdoc file
+         elif moveAstack:
+            if (moveOrCopyWithRetry(aStack, deliverDir, 'moving first axis stack', False,
+                                    1)):
+               skipIt = 1
+            else:
+               mdocFile = aStack + '.mdoc'
+               if os.path.exists(mdocFile):
+                  moveOrCopyWithRetry(mdocFile, deliverDir,
+                                      'moving first axis .mdoc file', False, 5)
+
+      # Now apply similar tests to single/b/a only stack that was watched
+      if not skipIt:
+         if deliverDir and os.path.exists(os.path.join(deliverDir, stackBase)):
+            mess = 'There is already a stack ' + stackBase + ' in ' + deliverDir
+            skipIt = 1
+         elif runOneAxis < 2 and dataDirExists and not dataDirReusable:
+            mess = 'The data set directory for ' + stackBase +\
+                   ' already exists and has sizable files in it'
+            skipIt = 1
+
+   # if not skipping, copy the main stack now
+   if not skipIt and deliverDir:
+      if (moveOrCopyWithRetry(stack, deliverDir, 'moving', False, 1)):
+
+         # If it fails there could be a file lock: give it one or multiple retries as
+         # for original testing of stack size etc
+         skipIt = 1
+         if (waitingList[ind][OtsInd] <= 0 and \
+            -waitingList[ind][OtsInd] < maxRetriesIfNoOpenTS) or \
+            waitingList[ind][OtsInd] == 2:
+            if waitingList[ind][OtsInd] == 2:
+               waitingList[ind][OtsInd] = 3
+            else:
+               waitingList[ind][OtsInd] -= 1;
+            waitingList[ind][TimeInd] = time.time()
+            skipIt = 2
+            if debugMode:
+               prnstr(stackBase + ' failed to move, retry it')
+
+      else:
+         if not masterCom:
+            prnstr('Moved stack ' + stackBase)
+         mdocFile = stack + '.mdoc'
+         if os.path.exists(mdocFile):
+            moveOrCopyWithRetry(mdocFile, deliverDir, '.mdoc file', False, 5)
+   
+   if skipIt == 1:
+      messOut = 'Skipping stack ' + stackBase
+      if mess:
+         messOut += ' ; ' + mess
+      prnstr(messOut)
+      erredList.append(stack)
+
+   return skipIt
+            
+
+# Change a set of lines in the ebt line and rewrite the file
+def changeEBTlines(startLine, numText, path, run, logEnabled, etomoEnabled, tomoDone,
+                   trimDone, recEnabled, status, endStep):
+   tfText = {False : 'false', True : 'true'}
+   startText = 'meta.row.' + numText
+   if path:
+      outEbtLines[startLine] =  'meta.ref.' + numText + '=' + path
+   outEbtLines[startLine + 1] = startText + '.Run=' + tfText[run]
+   outEbtLines[startLine + 2] = startText + '.Log.Enabled=' + tfText[logEnabled]
+   outEbtLines[startLine + 3] = startText + '.Etomo.Enabled=' + tfText[etomoEnabled]
+   outEbtLines[startLine + 4] = startText + '.Tomogram.Done=' + tfText[tomoDone]
+   outEbtLines[startLine + 5] = startText + '.Trimvol.Done=' + tfText[trimDone]
+   outEbtLines[startLine + 6] = startText + '.Rec.Enabled=' + tfText[recEnabled]
+   if status:
+      outEbtLines[startLine + 7] = startText + '.DatasetStatus=' + status
+   if endStep >= 0:
+      outEbtLines[startLine + 8] = startText + '.EndingStep=' + str(endStep)
+   else:
+      outEbtLines[startLine + 8] = ''
+
+   err = writeTextFile(outProjRoot + activeEbt, outEbtLines, True)
+   if err:
+      prnstr('WARNING: ' + err)
+
+
+# Set up a new set of entries in the ebt lines or modify an old one, or leave a axis alone
+# Return the index of the line with the path that starts the set of 9 lines
+def initializeEBTentry(path):
+   global numEbtRows, lastIDlineInd, outEbtLines
+   doChange = True
+   indNew = -1
+   
+   # If dual axis and this is the b axis, look for an existing entry
+   if dualAxis:
+      (pathRoot, ext) = os.path.splitext(path)
+      pathBase = os.path.basename(pathRoot)
+      if pathRoot.endswith('b'):
+         for ind in range(len(outEbtLines)):
+            line = outEbtLines[ind]
+            if line.startswith('meta.ref.ebt') and pathBase[:-1] in line:
+               indEqual = line.find('=')
+               if indEqual > 0:
+
+                  # IF found a valid entry with =, set the index, and set flag to change
+                  # the existing entry if it is a b axis entry
+                  (refBase, ext) = os.path.splitext(os.path.basename(line[indEqual + 1:]))
+                  if refBase.startswith(pathBase[:-1]):
+                     indNew = ind
+                     doChange = refBase.endswith('b')
+                     break
+
+   # If not an existing set, make new lines
+   if indNew < 0:
+      numEbtRows += 1
+      numText = 'ebt' + str(numEbtRows)
+
+      # Make a new line for the lastID if necessary
+      if lastIDlineInd < 0:
+         outEbtLines.append('')
+         lastIDlineInd = len(outEbtLines) - 1
+
+      # Set the last IS and row #, then add 9 blank lines
+      outEbtLines[lastIDlineInd] = 'meta.ref.ebt.lastID=' + numText
+      outEbtLines.append('meta.row.' + numText + '.RowNumber=' + str(numEbtRows))
+      outEbtLines.append('meta.row.' + numText + '.dual=' + ('false', 'true')[dualAxis])
+      outEbtLines.append('meta.row.' + numText + '.OrigStack=' + path)
+      indNew = len(outEbtLines)
+      outEbtLines += [''] * 9
+
+   # Set the lines
+   if doChange:
+      changeEBTlines(indNew, numText, path, True, True, False, False, False, False,
+                     '', -1)
+
+   return indNew
+   
+
+# Go through the log to determine state of data set and update the ebt lines
+def parseBRTlogUpdateEBT(stack, logLines, lineInEbt):
+   reachedStep = [-1, -1]
+   failed = [False, False]
+   newName = ['', '']
+   delivered = False
+   axisInd = 0
+
+   # Read the cumulative log in the dataset if possible, fall back to the com log
+   cumulLog = os.path.join(runningDir, datasetDir, 'batchruntomo.log')
+   cumulLines = readTextFile(cumulLog, returnOnErr = True)
+   if isinstance(cumulLines, str):
+      if isinstance(logLines, str):
+         prnstr('WARNING: Cannot update .ebt file: ' + cumulLines)
+         return
+
+   # detect rename and delivery from the com log
+   if not isinstance(logLines, str):
+      for line in logLines:
+         if '[brt9]' in line:
+            toInd = line.find(' to: ')
+            if toInd > 0:
+               newName[axisInd] = line[toInd + 5:]
+
+         if '[brt8]' in line:
+            delivered = True
+
+   # Loop on lines of dataset log
+   for line in cumulLines:
+
+      # Keep track of step reached
+      if line.startswith('Reached step'):
+         try:
+            reachedStep[axisInd] = max(int(line[12:]), reachedStep[axisInd])
+         except Exception:
+            pass
+      if 'Successfully finished volcombine' in line:
+         reachedStep[0] = 19
+      if 'Successfully finished trimvol' in line:
+         reachedStep[0] = 20
+
+      # Detect what axis we are in and look for axis failure/success
+      if dualAxis:
+         if 'Starting axis' in line:
+            axisInd = 0
+            if 'axis B' in line:
+               axisInd = 1
+         if 'Completed axis' in line:
+            failed[axisInd] = False
+         if 'ABORT AXIS' in line:
+            failed[axisInd] = True
+
+      if 'ABORT SET' in line:
+         failed[0] = True
+
+   # Condense arrays into first/only axis slot
+   if dualAxis:
+      if failed[1]:
+         failed[0] = True
+      if reachedStep[1] > -1 and reachedStep[1] < 14:
+         reachedStep[0] = min(reachedStep)
+      if not newName[0]:
+         newName[0] = newName[1]
+
+   # Set the name to the undelivered stack 
+   name = os.path.join(runningDir, stack)
+   pathLine = outEbtLines[lineInEbt]
+   indEqual = pathLine.find('=')
+   numText = pathLine[9:]
+   if indEqual > 0:
+
+      # If old name found and it ends with a and this is b axis, leave it alone
+      numText = pathLine[9:indEqual]
+      oldPathBase = os.path.basename(pathLine[indEqual + 1:])
+      (oldRoot, oldExt) = os.path.splitext(oldPathBase)
+      if dualAxis and stackRoot.endswith('b') and oldRoot.endswith('a'):
+         name = ''
+
+   # Modify name for delivery and rename
+   if name and delivered:
+      name = os.path.join(runningDir, datasetDir, stack)
+   if name and newName[0]:
+      (oldRoot, oldExt) = os.path.splitext(name)
+      (newRoot, newExt) = os.path.splitext(newName[0])
+      name = oldRoot + newExt
+
+   # Figure out status
+   endStep = reachedStep[0]
+   status = ''
+   if failed[0]:
+      status = 'Failed'
+   elif endingStep >= 0 or (dualAxis and stackRoot.endswith('a')):
+      status = 'Stopped'
+      if dualAxis and stackRoot.endswith('a'):
+         endStep = 0
+   else:
+      status = 'Done'
+      endStep = -1
+
+   tomoDone = (not dualAxis and reachedStep[0] >= 14) or reachedStep[0] >= 19
+   changeEBTlines(lineInEbt, numText, name, status != 'Done', True, reachedStep[0] >= 0, 
+                  tomoDone, reachedStep[0] >= 20, tomoDone, status, endStep)
+
+
+# Run the stack with batchruntomo
+def runBRTonStack():
+   global logForSlot, projectAdocWritten, ebtLineForSlot
+   procRoot = 'swbrt_' + setRoot + '.' + str(os.getpid())
+   outComFile = procRoot + '.' + defaultComExtension()
+   adocFile = os.path.join(runningDir, procRoot) + '.adoc'
+   if projectRoot:
+      adocFile = os.path.join(runningDir, outProjRoot) + '_' + setRoot + '.adoc'
+   adocLines = copy.deepcopy(batchLines)
+   logForSlot[firstReadySlot] = os.path.join(runningDir, procRoot) + '.log'
+   
+   # Determine if montage from header output
+   try:
+      montage = 0
+      headLines = runcmd('header "' + os.path.join(runningDir, stackBase) + '"')
+      for line in headLines:
+         if 'Piece coordinates' in line:
+            montage = 1
+            break
+
+   except ImodpyError:
+      return (2, 'Error running header on stack')
+
+   # Modify or add directive lines
+   dualDirec = fmtstr('{} = {}', dualText, dualAxis)
+   if lineNumDict[dualText][0] >= 0:
+      adocLines[lineNumDict[dualText][0]] = dualDirec
+   else:
+      adocLines.append(dualDirec)
+
+   montageDirec = fmtstr('{} = {}', montageText, montage)
+   if lineNumDict[montageText][0] >= 0:
+      adocLines[lineNumDict[montageText][0]] = montageDirec
+   else:
+      adocLines.append(montageDirec)
+
+   twoSurfDirec = fmtstr('{} = {}', twoSurfText, numSurfaces)
+   if lineNumDict[twoSurfText][0] >= 0:
+      adocLines[lineNumDict[twoSurfText][0]] = twoSurfDirec
+   else:
+      adocLines.append(twoSurfDirec)
+
+   stackExtText = curExtText
+   if dualAxis and not runOneAxis != 1:
+      stackExtText = curBExtText
+   stackExtDirec = fmtstr('{} = {}', stackExtText, stackExt[1:])
+   if lineNumDict[stackExtText][0] >= 0:
+      adocLines[lineNumDict[stackExtText][0]] = stackExtDirec
+   else:
+      adocLines.append(stackExtDirec)
+
+   # Write the adoc
+   err = writeTextFile(adocFile, adocLines, True)
+   if err:
+      return (1, 'Error ' + err)
+
+   if projectRoot and not projectAdocWritten:
+      writeTextFile(outProjRoot + '.adoc', adocLines)
+      projectAdocWritten = True
+
+   # Modify the com file
+   sedcom = ['|batchruntomo -St|a|RootName	' + setRoot + '|',
+             '|batchruntomo -St|a|DirectiveFile	' + adocFile + '|',
+             '|batchruntomo -St|a|CurrentLocation	' + absRunningDir + '|',
+             '|batchruntomo -St|a|CheckFile	' + procRoot + '.cmds|',
+             '|batchruntomo -St|a|MakeSubDirectory	1|',
+             '|batchruntomo -St|a|CPUMachineList	' +cpuLists[firstReadySlot] + '|']
+   if remoteRunDir:
+      sedcom.append('|batchruntomo -St|a|RemoteDirectory       ' + remoteRunDir + '|')
+
+   if gpuLists[firstReadySlot]:
+      sedcom.append('|batchruntomo -St|a|GPUMachineList	' + gpuLists[firstReadySlot] +'|')
+   if dualAxis and runOneAxis:
+      sedcom.append('|batchruntomo -St|a|ProcessOneAxis	' + str(runOneAxis) + '|')
+   if numParallel > 1:
+      sedcom.append('|batchruntomo -St|a|SingleOnFirstCPU   1|')
+
+   if pysed(sedcom, reducedLines, os.path.join(runningDir, outComFile), retErr = True,
+            delim = '|'):
+      return (1, 'Error making batchruntomo command file')
+
+   # Run the process from the runningDir and cd back
+   comArray = ['localhost', '-s', outComFile]
+   try:
+      mess = runningDir
+      os.chdir(runningDir)
+
+      notify = 'Starting to process stack ' + stackBase
+      if dualAxis and not runOneAxis:
+         notify = 'Starting to process data set ' + setRoot
+      if numParallel > 1:
+         notify += ' on machine slot ' + str(firstReadySlot + 1)
+      prnstr(notify)
+      mess = startProcesschunks(comArray, pcOutFiles[firstReadySlot], 
+                                pcCheckFiles[firstReadySlot], paramArray[firstReadySlot])
+      if mess:
+         return (1, mess)
+
+      mess = startingDir
+      os.chdir(startingDir)
+
+   except OSError:
+      exitError('Changing to directory ' + mess)
+      
+   slotBusy[firstReadySlot] = True
+   stackInSlot[firstReadySlot] = stackBase
+   if projectRoot:
+      ebtLineForSlot[firstReadySlot] = initializeEBTentry(os.path.join(runningDir, 
+                                                                       stackBase))
+   return (0, '')
+
+
+#### MAIN PROGRAM  ####
+#
+# load System Libraries
+import os, sys, glob, time, shutil, copy, math, datetime
+
+#
+# Setup runtime environment
+if os.getenv('IMOD_DIR') != None:
+   sys.path.insert(0, os.path.join(os.environ['IMOD_DIR'], 'pylib'))
+   from imodpy import *
+   addIMODbinIgnoreSIGHUP()
+else:
+   sys.stdout.write(prefix + ' IMOD_DIR is not defined!\n')
+   sys.exit(1)
+
+#
+# load IMOD Libraries
+from pip import *
+from pysed import *
+from comchanger import *
+from prochunks import *
+
+# Fallbacks from ../manpages/autodoc2man 3 1 serieswatcher
+options = ["watch:WatchDirectory:FN:", "deliver:DeliverToDirectory:FN:",
+           "remote:RemoteDirectory:FN:", "match:MatchPatternOrExt:CH:",
+           "age:MinimumAgeOfStacks:F:", "opents:MinHoursIfOpenTSPresent:F:",
+           "range:MinimumTiltRange:F:", "views:MinimumNumberOfViews:I:",
+           "com:CommandFile:FN:", "adoc:DirectiveFile:FN:", "check:CheckFile:FN:",
+           "dual:DualAxis:I:", "two:TwoSurfaces:I:", "cpus:CPUMachineList:CH:",
+           "gpus:GPUMachineList:CH:", "parallel:ParallelRuns:I:", "DebugMode:debug:B:",
+           "help:usage:B:"]
+
+(opts, nonopts) = PipReadOrParseOptions(sys.argv, options, progname, 1, 0, 0)
+
+# Constants and parameters
+copyPrefix = 'setupset.copyarg.'
+setupPrefix = 'setupset.'
+scopeTmplText = setupPrefix + 'scopeTemplate'
+userTmplText = setupPrefix + 'userTemplate'
+sysTmplText = setupPrefix + 'systemTemplate'
+curExtText = setupPrefix + 'currentStackExt'
+curBExtText = setupPrefix + 'currentBStackExt'
+dualText = copyPrefix + 'dual'
+montageText = copyPrefix + 'montage'
+twoSurfText = 'comparam.align.tiltalign.SurfacesToAnalyze'
+userTemplateDir = ''
+otsGoneMaturedTime = 2.    # seconds
+otsThereMaturedHours = 17.
+recheckErredTime = 300.
+minZsize = 12
+maxRetriesIfNoOpenTS = 5
+maxSizeInExistingDir = 1000000
+projectAdocWritten = False
+numEbtRows = 0
+lastIDlineInd = -1
+endingStep = -1
+
+emptyVal = -12345
+nodi = (-1, '')
+lineNumDict = {scopeTmplText : nodi, sysTmplText : nodi, userTmplText : nodi, 
+               curExtText : nodi, curBExtText : nodi, dualText : nodi, twoSurfText : nodi,
+               montageText : nodi}
+templFileErrorNames = ['scope template', 'system template', 'user template']
+monthName = ('Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 
+             'Nov', 'Dec')
+
+# Get options
+watchDir = PipGetString('WatchDirectory', '.')
+deliverDir = PipGetString('DeliverToDirectory', '')
+pattern = PipGetString('MatchPatternOrExt', '.mrc')
+neverOTSmaturedTime = PipGetFloat('MinimumAgeOfStacks', 300.)
+remoteStartDir = PipGetString('RemoteDirectory', '')
+minTiltRange = PipGetFloat('MinimumTiltRange', 40.)
+otsThereMaturedHours = PipGetFloat('MinHoursIfOpenTSPresent', otsThereMaturedHours)
+otsThereMaturedTime = otsThereMaturedHours * 3600.
+debugMode = PipGetBoolean('DebugMode', 0)
+remoteRunDir = ''
+
+masterCom = PipGetString('CommandFile', '')
+batchFile = PipGetString('DirectiveFile', '') 
+projectRoot = PipGetString('EtomoProjectRoot', '')
+
+# If there is a project root, get a new root and strip the ebt lines
+if projectRoot:
+   if masterCom or batchFile:
+      exitError('You cannot enter a command or directive file with a project root name')
+   masterCom = projectRoot
+
+   # Figure out which adoc to use: prefer a dataset specific one
+   batchList = glob.glob(projectRoot + '_*.adoc')
+   dfltFile = projectRoot + '.adoc'
+   if len(batchList):
+      batchFile = batchList[0]
+      if len(batchList) > 1:
+         prnstr('WARNING: There is more than one data set specific .adoc file, ' + \
+                'using ' + batchFile)
+   elif os.path.exists(dfltFile):
+      batchFile = dfltFile
+   else:
+      exitError('There is no .adoc file with that project root name')
+
+   ebtLines = readTextFile(projectRoot + '.ebt')
+   nowDate = datetime.datetime.now()
+   outProjRoot = 'batch' + monthName[nowDate.month - 1] + nowDate.strftime('%d-%H%M%S')
+   prnstr('New project root name: ' + outProjRoot)
+   
+   # Clean out all row information from the ebt
+   outEbtLines = ['meta.RootName=' + outProjRoot]
+   for line in ebtLines:
+      if not ('meta.row.ebt' in line or 'meta.ref.ebt' in line or \
+              'meta.RootName' in line):
+         outEbtLines.append(line)
+
+dualAxis = 0
+twoSurfaces = 0
+numParallel = PipGetInteger('ParallelRuns', 1)
+
+if (masterCom and not batchFile) or (batchFile and not masterCom):
+   exitError('You must enter both a command file and a batch directive file')
+if not masterCom and not deliverDir:
+   exitError('You must enter a directory to deliver to when not reconstructing')
+
+startingDir = os.getcwd()
+if masterCom:
+   (masterCom, root) = completeAndCheckComFile(masterCom)
+   masterLines = readTextFile(masterCom)
+   batchLines = readTextFile(batchFile)
+
+   # Set up check file
+   topCheckFile = PipGetString('CheckFile', '')
+   if topCheckFile:
+      topCheckFile = imodAbsPath(topCheckFile)
+   else:
+      topCheckFile = imodAbsPath(os.path.join(startingDir, progname + '.' +
+                                           str(os.getpid()) + '.input'))
+   prnstr('To quit all processing, place a Q in the file: ' + topCheckFile)
+   if os.path.exists(topCheckFile):
+      cleanupFiles([topCheckFile])
+
+
+   # Find lines in the directive file for things we are looking for
+   for ind in range(len(batchLines)):
+      line = batchLines[ind].lstrip()
+      lsplit = line.split('=')
+      if len(lsplit) < 2:
+         continue
+      lineDirec = lsplit[0].strip()
+      if lineDirec in lineNumDict:
+         lineNumDict[lineDirec] = (ind, lsplit[1].strip())
+
+   # Read in template files after getting their absolute paths
+   allLines = [[], [], [], batchLines]
+   for (tmplText, ind) in ((scopeTmplText, 0), (sysTmplText, 1), (userTmplText, 2)):
+      if lineNumDict[tmplText][1]:
+         (absTmplName, err, userTemplateDir,
+          errMess) = absTemplatePath(lineNumDict[tmplText][1], ind, userTemplateDir, 
+                                     templFileErrorNames[ind])
+         if err < 0:
+            exitError(errMess)
+         allLines[ind] = readTextFile(absTmplName, templFileErrorNames[ind])
+         batchLines[lineNumDict[tmplText][0]] = tmplText + ' = ' + absTmplName
+
+   # Now evaluate a few directives through the heirarchy
+   for ind in range(4):
+      dualValue = optionValue(allLines[ind], dualText, BOOL_VALUE, otherSep = '=')
+      if dualValue != None:
+         dualAxis = 0
+         if dualValue:
+            dualAxis = 1
+      surfValue = optionValue(allLines[ind], twoSurfText, INT_VALUE, numVal = 1, 
+                              otherSep = '=', emptyReturn = emptyVal)
+      if surfValue:
+         twoSurfaces = 0
+         if surfValue >= 2:
+            twoSurfaces = 1
+
+# Finally override with option values
+dualAxis = PipGetInteger('DualAxis', dualAxis)
+twoSurfaces = PipGetInteger('TwoSurfaces', twoSurfaces)
+numSurfaces = 1
+if twoSurfaces:
+   numSurfaces = 2
+
+# Modify the pattern with a * if it has no wild cards
+if '*' not in pattern and '?' not in pattern and not ('[' in pattern and ']' in pattern):
+   if '.' not in pattern:
+      pattern = '.' + pattern
+   pattern = '*' + pattern
+
+# Set up for making a command file and running
+if masterCom:
+   reducedLines = []
+   reduceList = ['RootName', 'CurrentLocation', 'DeliverToDirectory', 'DirectiveFile',
+                 'CheckFile', 'RemoteDirectory', 'MakeSubDirectory', 'CPUMachineList',
+                 'GPUMachineList', 'ProcessOneAxis', 'SingleOnFirstCPU']
+
+   # Get needed options from com file, and then get option entries to override the machine
+   # lists
+   remoteComDir = optionValue(masterLines, 'RemoteDirectory', STRING_VALUE)
+   deliverDirCom = optionValue(masterLines, 'DeliverToDirectory', STRING_VALUE)
+   cpuListIn = optionValue(masterLines, 'CPUMachineList', STRING_VALUE)
+   gpuListIn = optionValue(masterLines, 'GPUMachineList', STRING_VALUE)
+
+   cpuListIn = PipGetString('CPUMachineList', cpuListIn)
+   gpuListIn = PipGetString('GPUMachineList', gpuListIn)
+   endingStep = optionValue(masterLines, 'EndingStep', INT_VALUE, numVal = 1)
+   if endingStep == None:
+      endingStep = -1
+
+   if not cpuListIn:
+      exitError('You must enter a CPU machine list; there is none in the command file')
+   if not deliverDir:
+      deliverDir = deliverDirCom
+
+   # Get rid of all the possible multiple entries 
+   for line in masterLines:
+      for opt in reduceList:
+         if opt in line:
+            break
+      else:    # ELSE ON FOR
+         reducedLines.append(line)
+
+   # Add back the current resources to a copy and write the new project com file
+   if projectRoot:
+      newProjComLines = copy.deepcopy(reducedLines)
+      newProjComLines.append('CPUMachineList ' + cpuListIn)
+      if gpuListIn:
+         newProjComLines.append('GPUMachineList ' + gpuListIn)
+      writeTextFile(outProjRoot + '.' + defaultComExtension(), newProjComLines)
+
+   # Set up machines lists for parallel situation
+   numParallel = max(1, numParallel)
+   if numParallel > 1:
+      totalCPU = 0
+      totalGPU = 0
+      cpuMachines = []
+      cpuCores = []
+      gpuMachines = []
+      gpuNumArr = []
+
+      # Parse the CPU list and get arrays of machines and number of cores
+      csplit = cpuListIn.split(',')
+      for mach in csplit:
+         msplit = mach.split(':')
+         num = 1
+         if len(msplit) > 1:
+            num = convertToInteger(msplit[1], 'number of cores in CPUMachineList')
+         cpuMachines.append(msplit[0])
+         cpuCores.append(num)
+         totalCPU += num
+
+      # If there is a GPU list, parse the entry to get machines and array of GPU numbers
+      # for each
+      if gpuListIn:
+         try:
+
+            # First try for local-only entry
+            localOnly = int(gpuListIn)
+            if localOnly != 1:
+               exitError('The entry for GPUMachineList must be 1 to use just the ' +\
+                         'local GPU')
+            totalGPU = 1
+            gpuMachines = ['1']
+            gpuNumArr.append([])
+         except ValueError:
+
+            # Otherwise process the list as names, leave array empty if no numbers
+            gsplit = gpuListIn.split(',')
+            for mach in gsplit:
+               msplit = mach.split(':')
+               num = max(1, len(msplit) - 1)
+               gpuMachines.append(msplit[0])
+               gpuNums = []
+               if len(msplit) > 1:
+                  for one in msplit[1:]:
+                     gpuNums.append(convertToInteger(one, 'GPU number in GPUMachineList'))
+               gpuNumArr.append(gpuNums)
+               totalGPU += num
+
+      if totalCPU == 1:
+         prnstr('WARNING: Only one core is provided in CPUMachineList so runs will ' +\
+                'not be in parallel')
+         numParallel = 1
+      if totalCPU < numParallel:
+         prnstr(fmtstr('WARNING: Only {} cores are provided in CPUMachineList so only' +\
+                       ' {} runs will be done in parallel', totalCPU, totalCPU))
+         numParallel = totalCPU
+      
+   # For parallel runs, make lists of resources so they can be divided up
+   if numParallel > 1:
+      cpuLists = []
+      gpuLists = []
+
+      # Initialize to make CPU lists
+      numCpuPerRun = totalCPU // numParallel
+      extraCPU = totalCPU % numParallel
+      curMachine = 0
+      curCore = 0
+
+      # Loop on runs and get number of CPUs for a run
+      for ind in range(numParallel):
+         oneList = ''
+         numCPU = numCpuPerRun
+         if ind < extraCPU:
+            numCPU += 1
+
+         # Add machines and CPUs sequentially
+         numAdded = 0
+         while numAdded < numCPU:
+            if oneList:
+               oneList += ','
+            oneList += cpuMachines[curMachine]
+            num = min(numCPU - numAdded, cpuCores[curMachine] - curCore)
+            oneList += ':' + str(num)
+            numAdded += num
+            curCore += num
+            if curCore >= cpuCores[curMachine]:
+               curCore = 0
+               curMachine += 1
+
+         cpuLists.append(oneList)
+            
+      # Now divide up the GPUs too, leaving an empty string when there is no GPU
+      if totalGPU > 0 and totalGPU < numParallel:
+         prnstr(fmtstr('WARNING: Only {} GPUs are provided in GPUMachineList so only' +\
+                       ' {} of the {} runs done in parallel will have a GPU', 
+                       totalGPU, totalGPU, numParallel))
+
+      numGpuPerRun = totalGPU // numParallel
+      extraGPU = totalGPU % numParallel
+      curMachine = 0
+      curGPU = 0
+      for ind in range(numParallel):
+         oneList = ''
+         numGPU = numGpuPerRun
+         if ind < extraGPU:
+            numGPU += 1
+         if numGPU == 0:
+            continue
+
+         # Add machines and GPUs sequentially, this time with colon-separated list of nums
+         numAdded = 0
+         while numAdded < numGPU:
+            if oneList:
+               oneList += ','
+            oneList += gpuMachines[curMachine]
+            lenArr = len(gpuNumArr[curMachine])
+            num = min(numGPU - numAdded, lenArr  - curGPU)
+            for gpInd in range(num):
+               oneList += ':' + str(gpuNumArr[curMachine][gpInd + curGPU])
+            numAdded += max(1, num)
+            curGPU += num
+            if curGPU >= lenArr:
+               curGPU = 0
+               curMachine += 1
+
+         gpuLists.append(oneList)
+      
+   else:
+      cpuLists = [cpuListIn]
+      gpuLists = [gpuListIn]
+
+   # Set up the directory to place com's and cd to for running
+   runningDir = watchDir
+   if deliverDir:
+      runningDir = deliverDir
+   currentComDir = os.path.dirname(masterCom)
+   if not currentComDir:
+      currentComDir = '.'
+   absRunningDir = imodAbsPath(runningDir)
+
+   # Transfer the remote directory to the running direction, either from the starting dir
+   # for option entry, or from the com file's location for an entry in the com file
+   if remoteStartDir or remoteComDir:
+      if remoteStartDir:
+         (remoteRunDir, errMess) = transferRemoteDirectory(remoteStartDir, currentComDir,
+                                                           runningDir)
+      else:
+         (remoteRunDir, errMess) = transferRemoteDirectory(remoteComDir, currentComDir,
+                                                           runningDir)
+      if not remoteRunDir:
+         exitError(errMess)
+
+   slotBusy = [False] * numParallel
+   stackInSlot = [''] * numParallel
+   logForSlot = [''] * numParallel
+   ebtLineForSlot = [-1] * numParallel
+   pcCheckFiles = []
+   pcOutFiles = []
+
+   # Note that [[0] * 16] * numParallel creates SHALLOW copies of the 16 0's!
+   paramArray = []
+   for ind in range(numParallel):
+      pcCheckFiles.append(fmtstr('{}/watcherbatch{}.{}.input', absRunningDir, ind, 
+                                 os.getpid()))
+      pcOutFiles.append(fmtstr('{}/prochunks{}.{}.out', absRunningDir, ind, os.getpid()))
+      paramArray.append([0] * 16)
+
+
+# Initialize the watching
+waitingList = []
+erredList = []
+doneList = []
+sleepTime = 2.
+
+# START WATCHING
+
+while True:
+   try:
+      startTime = time.time()
+
+      # Check the stacks then check the run slots
+      (numReady, readyStackInd) = checkForStacks()
+      if masterCom:
+         topQuit = ''
+         firstReadySlot = -1
+         for ind in range(numParallel):
+            if not slotBusy[ind]:
+               if firstReadySlot < 0:
+                  firstReadySlot = ind
+               continue
+               
+            (error, finished, topQuit, numDone, 
+             message) = checkProChunksLog(topCheckFile, paramArray[ind])
+            if error or finished:
+
+               # A run is done, process the result and free the slot
+               if firstReadySlot < 0:
+                  firstReadySlot = ind
+               if error:
+                  message = 'Processchunks error on ' + stackInSlot[ind] + ': ' + message
+                  prnstr(message)
+               else:
+                  cleanupFiles([pcOutFiles[ind]])
+                  mess = 'Finished processing stack ' + stackInSlot[ind]
+                  (stackRoot, ext) = os.path.splitext(stackInSlot[ind])
+                  datasetDir = stackRoot
+                  if dualAxis:
+                     datasetDir = datasetDir[:-1]
+                     if runOneAxis != 1:
+                        notify = 'Finished processing data set ' + datasetDir
+                     
+                  logLines = readTextFile(logForSlot[ind], returnOnErr = True)
+                  if isinstance(logLines, str):
+                     mess += ' with unknown result - there was an error reading the log'
+                  else:
+                     for line in logLines[max(-len(logLines) + 1, -5):]:
+                        if 'failures occurred for' in line:
+                           mess += ' with a processing error'
+                        if 'no failures occurred' in line:
+                           mess += ' with successful completion'
+                  
+                  prnstr(mess)
+                  if projectRoot and ebtLineForSlot[ind] > 0:
+                     parseBRTlogUpdateEBT(stackInSlot[ind], logLines, ebtLineForSlot[ind])
+                  
+               slotBusy[ind] = False
+               stackInSlot[ind] = ''
+               ebtLineForSlot[ind] = -1
+
+            else:
+               paramArray[ind][ElapsedPci] += sleepTime
+
+         if topQuit:
+            processCheckAction(topQuit)
+
+      # IF there is a stack ready and either not running, or a free run slot, process it
+      if readyStackInd >= 0 and (not masterCom or firstReadySlot >= 0):
+         stack = waitingList[readyStackInd][StackInd]
+         stackBase = os.path.basename(stack)
+         (stackRoot, stackExt) = os.path.splitext(stackBase)
+         setRoot = stackRoot
+         if dualAxis:
+            setRoot = setRoot[:-1]
+
+         # Deliver it if necessary and add it to either error or done list and remove from
+         # waiting list.  Whatever happens now, we don't want to see this stack again for
+         # most errors, but skipIt = 2 means retry
+         skipIt = deliverStackAndMdoc()
+         if skipIt < 2:
+            if skipIt:
+               erredList.append(stack)
+            else:
+               doneList.append(stack)
+            waitingList.pop(readyStackInd)
+
+         if not skipIt and masterCom:
+            (err, mess) = runBRTonStack()
+            if err == 2:
+               errLines = getErrStrings()
+               for line in errStrings:
+                  prnstr(line)
+            if err:
+               prnstr(mess + '; skipping stack ' + stackBase)
+
+      # Check for quit or finish
+      if masterCom:
+         action = None
+         for ind in range(numParallel):
+            if slotBusy[ind]:
+               action = checkForProChunksQuit(topCheckFile, pcCheckFiles[ind])
+               processCheckAction(action)
+
+      # Sleep, subtracting off any lost time if possible
+      time.sleep(max(0.1, sleepTime - (time.time() - startTime)))
+
+      # Adjust elapsed times now with true interval
+      if masterCom:
+         delta = time.time() - startTime
+         for ind in range(numParallel):
+            if slotBusy[ind]:
+               paramArray[ind][ElapsedPci] += delta
+
+   except KeyboardInterrupt:
+      if not masterCom or True not in slotBusy:
+         processCheckAction('Q')
+      prompt = 'Enter Q to quit all processing or F to just exit ' + progname + ': '
+      if sys.version_info[0] > 2:
+         action = input(prompt)
+      else:
+         action = raw_input(prompt)
+
+      if action == 'Q':
+         writeTextFile(topCheckFile, ['Q'], True)
+         for ind in range(numParallel):
+            if slotBusy[ind]:
+               checkForProChunksQuit(topCheckFile, pcCheckFiles[ind])
+
+      processCheckAction(action)

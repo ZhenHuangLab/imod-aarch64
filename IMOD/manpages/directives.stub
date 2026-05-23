@@ -1,0 +1,89 @@
+<HTML>
+<HEAD>
+<TITLE>Batch/Template Directives</TITLE>
+</HEAD>
+<BODY><A NAME = "TOP">
+INSERT CSV FILE
+<P>
+Notes:
+<OL>
+<LI> The type entries indicate the kind of data expected to be in the field:
+  one or two integers (separated by a comma), one or two floating point
+  numbers, a boolean value of 0 or 1, or a text string.  Text string entries
+  marked as "File" will be shown with a file chooser button in the template
+  editor in Etomo.
+<LI> Template directives must either specify absolute paths or have just a
+  filename with no path.  In the latter case, the files are sought in their
+  default locations:
+<UL>
+<LI> A scope template file is expected to be in $IMOD_CALIB_DIR/ScopeTemplate.
+<LI> For a system template, the program looks in
+  $IMOD_CALIB_DIR/SystemTemplate, and if the file is not there, it looks for it
+  in $IMOD_DIR/SystemTemplate.  Thus, a customized file placed in the
+  IMOD_CALIB_DIR location will override a file of the same name distributed
+  with IMOD.
+<LI> A user template file is expected to be in the user's selected template
+  directory, which is $HOME/.etomotemplate by default and can be changed in
+  the Settings dialog in Etomo.
+</UL>
+<LI> Template and batch directive filenames must end in the extension ".adoc".
+<LI> Rules for the treatment of directives and the format of values are
+  described in the <A HREF="man/batchruntomo.html">man page</A> for
+  Batchruntomo. Some essentials are:
+<UL>
+<LI> Directives are processed in order from scope template, system template,
+  user template, and batch directive files, and later entries override earlier
+  ones. 
+<LI> All boolean directives must have either a 0 or a 1 after the equals sign,
+  to turn the option off or on.
+<LI> For all other kinds of directives, it is possible to have no value after
+  the equals sign, which means that the parameter in question is not set, even
+  if it was set by an earlier directive.  In the case of a "comparam" directive, 
+  an empty value will cause the parameter to be removed from the command file.
+<LI> For more details on the effects and possible values of "comparam"
+  directives, consult the man page for the specific program.  For more details
+  on the operations controlled by "runtime" directives, see
+  the <A HREF="man/batchruntomo.html">man page</A> for Batchruntomo.
+</UL>
+<LI> Directives marked with <B>Y</B> in the <B>Tmplt</B> column can be
+  included in a template file.  These and all other directives
+  have an effect when the relevant step is run by
+  Batchruntomo.   The entry in the <B>Etomo</B> column determines
+  whether they have an effect when running the relevant step for the first
+  time in Etomo as well as the behavior of the directive editor.
+<LI> The entry in the <B>Etomo</B> column has these meanings:
+<UL>
+<LI> <B>SD</B>: Saved by default into a directive file by the directive
+  editor, and will have an effect when running in Etomo.
+<LI> <B>SO</B>: Optionally saved into a directive file by the directive
+  editor, and will have an effect when running in Etomo.
+<LI> <B>Blank</B>: Not saved into a directive file by a directive editor, or
+  not visible by default in a directive editor but optionally savable, and
+  will have an effect when running in Etomo.
+<LI> <B>NE</B>: Will not (yet) have any effect if running in Etomo, and either
+  not saved by a directive editor or not visible by default in a directive editor.
+<LI> <B>NES</B>: Will not (yet) have any effect if running in Etomo, but optionally
+  saved into a directive file by a directive editor.
+</UL> 
+<LI> "BRT default" refers to a default value applied by Batchruntomo.  "Etomo
+  batch default" refers to a default value that the Etomo batch interface
+  obtains from IMOD/com/batchDefaults.adoc.
+<LI> When doing dose weighting with an ".mdoc" file or an HDF file from
+  SerialEM, no entry is needed for the dose information file except in one case:
+  when processing in the old naming style with an original extension other
+  than ".mrc".  In that case, add the directive with
+  just the extension before the ".mdoc" in the name, e.g., ".st".
+<LI> Directives to run a command in place of or after a given step have these
+  rules:
+<UL>
+<LI> The command must be a non-compound command with no redirection, capable
+  of being run as a line starting with $ in a command file.
+<LI> A command to replace a step will be run unconditionally, even if
+  directives are not entered that would cause that step to run ordinarily.
+<LI> A command to run after a step will be run only if that step runs.
+<LI> The string %{setname} will be replaced with the root name of the data
+  files, including the axis letter for dual axis.
+</UL>
+</OL>
+</BODY>
+</HTML>

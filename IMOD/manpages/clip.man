@@ -1,0 +1,1239 @@
+.na
+.nh
+.TH CLIP 1 3.4.18 IMOD
+.SH NAME
+clip \- command line image processing for mrc files.
+.SH SYNOPSIS
+clip process  [options]  input_files...  [output_file]
+.SH DESCRIPTION
+The processes that clip can do are listed below. One and only one
+process must be selected on the command line.  Only the first three or
+four letters of the process name have to be entered.
+.TP
+.I add
+Add several images together.
+.TP
+.I average (avg) 
+Average several images together.
+.PD 0
+.TP
+.I brighten
+Brighten image by scaling intensities.
+.TP
+.I color
+Add false color to image.
+.TP
+.I contrast
+Adjust contrast by scaling intensities.
+.TP
+.I correlation   
+Do a auto/cross correlation.
+.TP
+.I defectmap
+Output an image showing all pixels contained in defects in a defect list.
+.TP
+.I diffusion
+Do 2d anisotropic diffusion.
+.TP
+.I divide
+Divide one image volume by another or by a single image.
+.TP
+.I edgefill
+Fill in dark edges in drift-corrected images.
+.TP
+.I gradient
+Calculate a gradient as in 3dmod image processing.
+.TP
+.I graham
+Apply Graham filter as in 3dmod image processing.
+.TP
+.I info
+Print header information to stdout.
+.TP   
+.I fft
+Calculate a FFT or inverse FFT transform.
+.TP
+.I filter
+Calculate a bandpass filter.
+.TP
+.I flip[xyz]
+Flip an image by x y or z.
+.TP
+.I histogram
+Print histogram of values or analyze for bimodal distribution.
+.TP
+.I joinrgb
+Join images from 3 byte files into one RGB file.
+.TP
+.I laplacian
+Apply Laplacian filter as in 3dmod image processing.
+.TP
+.I logarithm
+Take the logarithm of the image intensities.
+.TP
+.I median
+Apply median filter.
+.TP
+.I multiply
+Multiply one image volume by another or by a single image.
+.TP
+.I normalize
+Truncate extreme values, apply gain reference, scale by factor
+.TP
+.I prewitt
+Apply Prewitt filter as in 3dmod image processing.
+.TP
+.I quadrant
+Correct disparities between quadrants in images from 4-port readout camera.
+.TP
+.I resize
+Box out image to a new size.
+.TP
+.I rotx
+Rotate a volume by -90 degrees about X axis.
+.TP
+.I shadow
+Adjust darkness of image by scaling intensities.
+.TP
+.I sharpen
+Sharpen image as in 3dmod image processing.
+.TP
+.I smooth
+Smooth image as in 3dmod image processing.
+.TP
+.I sqroot
+Take the square root of the image intensities.
+.TP
+.I sobel
+Apply Sobel filter as in 3dmod image processing.
+.TP
+.I spectrum
+Compute a square, scaled and/or reduced power spectrum.
+.TP
+.I splitrgb
+Split an RGB file into 3 byte files.
+.TP
+.I stats
+Print min, max, mean, standard deviation, and location of min and max.
+.TP
+.I standev
+Compute the standard deviation of a set of images.
+.TP
+.I subtract
+Subtract one image volume from another.
+.TP
+.I threshold
+Make binary (black/white) image by applying a threshold.
+.TP
+.I truncate
+Limit pixel values at low or high end, or both.
+.TP
+.I unpack
+Unpack 4-bit values, with optional scaling by reference (same as normalize)
+.TP
+.I unwrap
+Undo wraparound of values in integer data.
+.TP
+.I variance
+Compute the variance of a set of images.
+.PD
+.SH PROCESSES
+
+A brief description of each process is given below.
+.TP
+.B add
+Add image volumes together.  All of the input files (there must be at least
+two) are added together slice by slice.  All input images must be the same
+size.  Standard input and output options are available.  The output values can
+be scaled with
+.B -l
+and the output mode can be changed.
+.TP
+.B average 
+(avg) Average images together.  If more than one input file is given, it adds
+all of the input files together slice by slice and then divides the sum by the
+number of input files.  All input images must be the same size.  Standard
+input and output options are available.  With one input file, it averages the
+2D slices to produce one output slice.  In this case, use the
+.B -n
+option to set a threshold such that pixels below threshold are not included in
+the average.  Standard input options are available but output cannot be
+resized.  In either case, the output values can be scaled with
+.B -l
+and the output mode can be changed.  As of IMOD 4.2.15, the distinction
+between 2D and 3D averaging is controlled by the number of input files and not
+by the 
+.B -2d
+versus
+.B -3d
+options.
+.TP
+.B brightness 
+.PD 0
+.TP
+.B contrast
+.TP 
+.B shadow
+.PD
+Increase or decrease image brightness, contrast, or darkness.
+These options scale the image intensity by the
+value entered with the
+.B -n
+option, with intensity fixed at one point.  With
+.B brightness,
+intensity is fixed at the minimum so scaling up increasing brightness.
+With
+.B contrast,
+intensity is fixed at the mean; with 
+.B shadow,
+intensity is fixed at the maximum so dark parts are scaled more.
+Scaling values less then 1 will decrease the chosen
+property, values greater then 1 increase it.  With the
+.B -2d
+option, the min, max, or mean are taken from the individual sections.
+.TP
+.B color
+Colorize a black and white image.
+Color 3d version: reads in a whole mrc file as byte data and then scales
+the image to a color ramp that starts at black and goes to
+the 
+.B -r, -g,
+and
+.B -b
+values given on the command line.
+The default color values are 1.0.  Standard options for input and output size
+are not implemented.
+.br
+Color 2d version: reads in data slice by slice without scaling it to bytes,
+the scales the image to a color ramp using the 
+.B -r, -g,
+and
+.B -b
+values.  The size of these values may need to be adjusted to get output data
+within the desired range (0-255).  Standard options are available.
+.TP
+.B correlation 
+Calculate auto or cross correlation functions.
+3d correlation takes 1 or 2 volumes and does an
+auto or cross correlation respectively.  If the volumes
+are fourier transforms, the output file will be a fourier 
+transform.  
+2d correlation takes 1 or 2 slices for input and does an
+auto or cross correlation respectively.
+Select the slices with the 
+.B -iz 
+option.  Input files in this case may
+not be fourier transforms.  All other input types are automatically
+padded, FFT transformed, correlated and inverse FFT transformed.
+One or two input files can be given
+and one output file needs to be given.
+Input is automatically padded with the mean value
+unless the
+.B -p
+option is given to change the pad value. The 
+.B -n
+option selects the type of padding: "-n 0" selects no padding; "-n 1"
+selects padding with mean value. (default)
+Float is the only output mode supported.
+Input sizes must have dimensions that fit the requirements for an FFT:
+the size in X must be a multiple of two.
+.TP
+.B defectmap
+Output an image file with pixel values of 1 for all pixels marked as
+defects in a defect list, and values of 0 elsewhere.  The defect list
+can come either from a defect file in SerialEM format entered with the 
+.B -D
+option, or from a TIFF gain reference file entered as a second input
+image file, just as when normalizing.
+The first or only input image file is used only to
+obtain its size in X and Y, which sets the size of the output file.
+When it is an EER file, the 
+.B -es
+option determines its size and thus the output size.  When the defect
+list comes from a gain reference, the 
+.B -ep
+option determines how much many physical pixels adjacent to column
+defects have their super-resolution values averaged unidirectionally (the default
+is 1).  With such padding, the \fB-s\fR option makes it put out 254 in
+the left pixel of each padding column and 255 in the bottom pixel od
+each padding row.
+Standard input and output options have no effect.
+The image size must match the camera size in the defect list within 10
+pixels.  For a defect list from a K2 camera, the image may be half as
+big as the camera size if the list has been scaled up, or it may be twice as
+big as the camera size if the list has not been scaled up.  For a list
+from a Falcon camera (i.e., directly from a gain reference or with
+FalconType set in the defect file), the image can be
+twice or 4 times the camera size, and the list will be be scaled up
+accordingly.  If images
+do not match exactly, they are assumed to be centered on the camera.
+Slightly oversized images should be handled properly.  The 
+.B -B
+option has no effect, and no binning relative to the defect list is
+allowed.  The output file will have byte mode and the data will be
+saved unsigned regardless of other options.  If the output file is a
+TIFF file, the map will be saved with ZIP compression unless the
+environment variable IMOD_TIFF_COMPRESSION is set.
+.TP
+.B diffusion
+Apply 2D anisotropic diffusion to individual slices, using the simple Perona
+and Malik diffusion technique.  The gradients in this method are simply
+pixel-to-pixel differences.  The ratio between these pixel-to-pixel
+differences and the threshold K determines how much diffusion is allowed
+between pixels.  The number of iterations is specified with the
+.B -n
+option (default 5).  The edge stopping function is selected with the
+.B -cc
+option and can be 1 for the exponential function, 2 for
+the rational function, or 3 for the Tukey biweight function (default 2).  The
+K value for controlling the edge stopping function is entered with the
+.B -k
+option.  For byte data, start with values on the order of 1; the rational edge
+function may require lower values and the Tukey biweight may require larger
+values.  The effect of the value scales proportional to the range of the data.
+The step size, lambda, is specified with the
+.B -l
+option; the default is 0.2, which should be small enough to give stable 
+results.
+These computations correspond to those done in the image processing window in
+3dmod(1), but better results will generally by obtained with
+nad_eed_3d(1).
+.TP
+.B edgefill
+Find and fill in the dark edges left by summing shifted images where
+empty areas were not filled in, as occurs for drift
+correction with a OneView camera.  Pixel values will be analyzed over
+the central 1024 pixels along each edge, or nx/4 if the image is larger than
+4096; a different length can be set with the 
+.B -l
+option.  The width of pixels analyzed will be 60 or 30 depending on
+whether nx is more or less than 3000; a different width can be set with
+the 
+.B -n
+option.  The mean and SD are measured for the difference between pixels
+in successive lines and the median and MADN are computed 
+for the ratio of the mean to the SD of this difference.  Progressing towards
+the edge, the start of the lines that need correcting is taken as the
+point where the
+number of MADNs above the median for a difference exceeds a criterion
+of 9, which can be modified with the 
+.B -h
+option.
+.TP
+.B fft
+Calculate a Fast Fourier Transform.
+fft does either a forward or inverse FFT, depending
+on the input data type.  The output for a forward 
+transformation is complex float.  
+For a forward transform, the input size in X must be a multiple of two.
+Both 2D and 3D output match the format of the FFT output
+by fftrans(1), in which no data is duplicated and the center is
+shifted to x = 0, y = ny/2.  Older FFT files produced by clip before IMOD 3.5, in
+which the data were replicated to the left of the Y axis, are no longer 
+accepted as input as of IMOD 4.6.25.  Input size and centering options can be
+used for the forward transform, and output size and mode can be set for the
+inverse transform.
+.TP
+.B filter
+High and/or low pass filtering in frequency space (2D only).
+Filters an FFT or an image using the -l and -h options.  An
+FFT and inverse FFT is automatically done if needed.  The
+units for -l and -h are cycles/pixel so they range from 0 to 0.5.
+Everything higher
+than -l and lower then -h is filtered.  The attenuation will be 0.5 at
+the given frequency; the filter factor is the product of
+1/(1+(r/l)**3) if -l is entered and 1/(1+(h/r)**3) if -h is entered,
+where r is the radius in cycles/pixel.  The input size
+in X must be a multiple of two.
+.TP
+.B flip
+The flip command is just the root of several types of
+image transformations.  The flipx and flipy 
+commands will each create a new file where each slice is the mirror
+image of the input slice around the x or y axis.  The flipz command will
+invert the order of slices (mirror around the x/y plane).
+The flipxy, flipyz, or flipzx commands will exchange x and y coordinates, y and
+z, or z and x coordinates, respectively,
+and also change the size of the
+output file to match (e.g., with flipyz, the sizes in y and z are exchanged).
+No input size or centering, or output size options will be applied.  An
+output mode can be specified except for flipyz and rotx.
+All of these options invert the handedness of the
+structures in the image file.  Use the rotx command instead of flipyz to
+reorient a volume without changing handedness.  For flipyz, if the
+output file type is HDF, the program will output in chunks if
+that makes it possible to read through the file only once.
+.TP
+.B gradient
+.PD 0
+.TP
+.B graham
+.TP
+.B prewitt
+.TP
+.B sobel
+.PD
+These options apply simple 2D filters to the input image, using the same
+method as for the respective entry in the 3dmod
+image processing dialog.  The
+.B prewitt
+and
+.B sobel
+filters seem to be the most useful.
+.TP
+.B info
+Print information about an image.
+All header information in the mrc file is printed to 
+standard output.  If the file is not an mrc file the 
+information is still printed with a warning that the
+file is not an mrc file.
+.TP
+.B histogram
+Print a histogram of pixel values from the selected region of selected
+slices, or analyze for a bimodal distribution of values (with the
+\fB-s\fR option).  The basic histogram function operates differently
+depending on the type of data. For byte, integer, or RGB data, a full
+histogram is built of all
+values.  For byte or RGB data, counts are then printed for all values between the
+min and the max values encountered.  For integer data, counts are combined
+into bins, if necessary, to give around 256 bins.  For floating point or
+complex data, values are counted directly in 256 bins between the min and max in
+the image file header, then bins are output between the min and max
+values actually encountered.  This behavior can be changed by entering a bin
+size with the
+.B -n
+option (the entry is rounded to the nearest integer for data with integer
+values).  You can also enter
+.B -l
+and
+.B -h
+with the lower and upper limits of the histogram to build (for floating point
+or complex values) or the limits of the range to output (for integer-valued
+data).  Only values within the given limits are counted in the histogram; values
+outside the range are ignored.  With integer-valued data, the last bin may
+have fewer counts because it represents a smaller range of values than the
+rest.
+.br
+   With the \fB-t\fR option, the program will compute a cumulative
+distribution and report the point by which the given fraction of values
+has occurred.
+.br
+   Two specialized analyses of the histogram can be done with the \fB-F\fR
+and \fB-E\fR
+options.  Both of these options take a fractional value representing a
+percentile point in a distribution, plus a direction
+value to indicate the direction of the analysis.
+With \fB-F\fR, the program finds the fastest falling point in the
+histogram past the indicated fraction of values, which would typically
+be a large fraction.  With a positive direction,
+the cumulative distribution is computed from low to high and the
+fastest falloff is sought when going to higher values.  With a negative
+direction, the cumulative distribution is computed in the opposite order and
+the falloff is found going to lower values.  
+.br
+   With the \fB-E\fR option,
+the program identifies extra counts on one side of the histogram and
+finds the point by which the given fraction of these counts has occurred.
+Specifically, it finds the interpolated position of the peak of the
+histogram, then subtracts from each bin above the peak (for a positive
+direction) the interpolated value of the histogram an equal distance below
+the peak.  If a positive peak appears in this difference, a cumulative
+distribution is computed out to the point past this peak where the
+difference goes negative, and the point by which the given fraction of
+extra counts have occurred is reported.  Again, a negative direction
+inverts the direction of analysis.
+.br
+   With the \fB-s\fR option, the program will instead analyze kernel (smoothed)
+histograms of a sample of the image data (up to 1,000,000 pixels),
+looking for two peaks in such a histogram.  If successful, it will
+report the intensity of the two peak values and of the lowest point (dip)
+between them, as well as the fraction of pixels below the value of the
+dip.
+The \fB-l\fR, \fB-h\fR, and \fB-n\fR have no effect and will cause an
+error if used.  With the \fB-2d\fR option, the program will analyze
+each input slice separately; otherwise it will analyze the full range
+of the input volume in one histogram.
+.TP
+.B joinrgb
+Combine 3 input files containing red, green, and blue information into one 
+RGB file.  The 3 input files must all be byte mode and their names must
+be entered in the order red, green, and blue, followed by the output file name.
+The 
+.B -r, -g,
+and
+.B -b
+options can be used to scale the components (default scaling is 1).  The 
+.B -a
+option can be used to append to an existing color file of the same size in X
+and Y.  No other options except 
+.B -v
+will work with this process.
+.TP
+.B logarithm
+Take the logarithm of the image intensities after adding an optional
+base value entered with \fB-n\fR.  The program avoids taking the log of
+negative or very small values by using a minimum value of 1.e-5
+times the data range of the input file (from the minimum and maximum
+densities in the header).  The output mode is set to float unless a different
+output mode is entered.
+.TP
+.B median
+Apply a median filter by replacing each pixel with the median of the values
+in a block of neighboring pixels.  The size of the block is given by the
+.B -n
+option; its default is 3.  The default is to do a 3D filter (thus taking the
+median in cubes of data), but the 
+.B -2d
+option can be used to apply a 2D filter that considers only the pixels in one 
+section.  Note that an even size will offset the data by half a pixel.
+.TP
+.B multiply
+.PD 0
+.TP
+.B divide
+.PD
+Multiply or divide the first input file by the second input file.  Use
+"multiply" to apply a mask to a volume, such as one produced by Imodmop(1).
+The files must be the same size in X and Y, and they must either be the same
+size in Z or the second file must be a single image.  Standard input and
+output options can be used.  The first input file may be any mode.  The second
+input file must have
+a single "data channel" (i.e., byte, integer, or float) unless either a) the first input
+file is complex, in which case the second file can be either a single-channel
+or a complex file, or b) the output mode is float, in which case the second
+input file is converted to a single channel of float data.  The 
+.B -n
+option can be used to set a factor for scaling the output, and the mode can be
+changed to preserve resulting values outside the range of the input mode.
+.TP
+.B normalize
+.PD 0
+.TP
+.B unpack
+.PD
+Either command processes movie frames acquired from a direct detector camera
+(primarily ones from the Gatan K2), optionally converting from 4-bit data, scaling,
+gain-normalizing, and truncating extreme values.  The command was
+originally called "unpack" and used exclusively to unpack 4-bit data
+that were packed into a byte mode file with half the
+actual size in X.  As of IMOD 4.8.41, files like this saved by the
+SerialEMCCD plugin from a K2 camera,
+and 4-bit files with the non-standard MRC mode 101, are recognized by the
+file-reading system and converted from 4 bits to bytes automatically.
+Clip no longer does this data conversion, and it will thus work with
+byte and integer mode files as well.  The same command thus works with the
+more general name, "normalize".  If only one input file is given, the
+data are not scaled and will have their original values.  If two input files are
+given, the second is assumed to be a file to multiply by (i.e., a gain
+reference file).  It must be mode 2 (floating point).  The
+.B -R
+option can be used to specify a rotation and flip to be applied to the
+reference, or to indicate that the rotation/flip value is to be
+obtained from the header of the first input file.  The gain reference
+size must either 
+match that of the first input file (after the rotation and flip, if
+any), or be exactly 1/4 or 1/2 of the size.  In the latter case, it will
+expanded by replicating value for each pixel to the super-resolution
+pixels within it.
+When normalizing, data are scaled by 16, by default.  The
+.B -n
+option can be used to set a different scaling factor.  Values can be truncated
+at a level entered with the
+.B -h
+option.  Values above that level will be set to the mean of up to 40
+surrounding pixels, excluding the 8 adjacent ones, or to a
+different value entered with the 
+.B -l
+option.  If normalization is being done, the truncation will be applied
+after the normalized and before the additional scaling, if any.  (The
+mean of surrounding values and truncation after normalization started 
+being used in IMOD 4.8.46.)
+The 
+.B -m
+option can be used to set a different output mode, and all input and output size and
+centering options can be used.  
+.br
+If you have a byte file with packed 4-bit data that IMOD fails to
+recognize automatically, the unpack command will no longer work on it.
+You can use the command 
+     alterheader -4bit 1 filename
+.br
+to change the file to mode 101, and then it should work correctly in
+Clip and elsewhere.  In such a file, the low-order 4 bits are assumed to
+be the first of the two pixel values, going from left to right.
+.TP
+.B quadrant
+Analyze and correct for differences between quadrants in images from
+4-port-readout cameras.  The boundary between quadrants must be in the exact
+image center in X and Y.  By default, the program analyzes and corrects each
+section separately by finding the mean in areas adjacent to the boundary that
+are 20 pixels wide and extend parallel to the boundary from the center out to
+within 5% of the image edge.  Scaling factors are computed that do the best
+job of equalizing these means across the boundaries.  There are four options
+that affect this behavior:
+.br
+1) The 
+.B -iz
+option can specify a list of sections to correct; all other sections are
+simply copied to the output file.  This option allows you to run the
+correction on subsets of the data with different parameter settings if necessary.
+.br
+2) The
+.B -n
+option sets the number of images to analyze together.  The sections are
+considered in successive groups of this size.  An overall mean is
+obtained from the average of the boundary areas, and a single scaling is
+computed and applied to all the sections in the group.  Enter any number larger
+than the number of sections in the file to have all images analyzed together.
+.br
+3) The
+.B -l
+option sets a base amount to add to the data.  By default, the program will add
+a base if necessary to avoid analyzing negative mean values from boundary
+areas, but this may not work well.  If you have data from FEI software that
+have had 32768 subtracted, you must enter "-l 32768" to have the correction
+work correctly.
+.br
+4) The
+.B -h
+option sets the width of the boundary areas.
+.br
+The output file will have the same dimensions as the input file; options for
+selecting subareas are ignored.  
+Extra header data are copied over to the output file.  The 
+.B -m
+option can be used to change the mode of the output.
+.TP
+.B resize 
+Cut out or pad an image to a new size without doing any other operations.
+Resize 3d cuts out an image of size ix, iy, iz, centered
+around cx, cy, and cz.  The output size of the file is 
+ox, oy, and oz.  The default input size is the size of the 
+input file, the default center is the center of the input 
+file and the default output size is the same as the input 
+size.  
+The default padding is the average value of the 
+input file; the padding can be changed with the -p option.
+Resize 2d cuts out a list of slices specified by the
+.B
+-iz
+option.
+.TP
+.B rotx
+Rotate an image volume by -90 degrees about the X axis.  This rotation is
+preferable to flipyz because it preserves the handedness of structures.
+The origin and tilt angles in the header will be modified to retain the
+coordinate system of the original volume, as is done by Rotatevol(1).
+If the output file type is HDF, the program will output in chunks if
+that makes it possible to read through the file only once.
+.TP
+.B sharpen
+.PD 0
+.TP
+.B smooth
+.TP
+.B laplacian
+.PD
+These options will filter images by convolving with a simple 3x3 or larger
+kernel, using
+the same method as for the respective entry in the 3dmod image processing
+dialog.  The smoothing filter is the most useful; by default, its kernel is
+.nf
+    1 2 1
+    2 4 2
+    1 2 1
+.fi
+However, a Gaussian kernel can be used for smoothing instead if a standard
+deviation (sigma) is entered with the 
+.B -l
+option.  The kernel will be 3x3 for sigma up to 1.0, 5x5
+for sigma up to 2.0, and 7x7 for higher sigma values. This kernel
+filtering of 2D slices can be iterated by entering an iteration number
+with the \fB-n\fR option.  Smoothing in 3D can be done by entering a
+negative value with the \fB-n\fR option instead.  The 3D smoothing is
+always done with a Gaussian; if no sigma is entered, the default is 0.85.
+.TP
+.B spectrum
+Compute power spectra from images.  The spectra will be square and optionally
+reduced in size and/or scaled to bytes.  The default is to produce
+spectra that are reduced to 1024x1024 if the larger image dimension
+(after padding) is
+greater than 1044, and scaled to bytes after taking the logarithm.  The
+output size can be set with \fB-ox\fR or \fB-oy\fR, which must be equal
+if both are entered.
+The scaling is controlled by two parameters: 1) a background gray
+level, the mean value at the edge of the spectrum after scaling to
+bytes; 2) the diameter of an annulus of pixels whose mean value would
+scale to 255, relative to the size of the spectrum.  The default gray
+level is 48 and it can be set with the \fB-l\fR option.  The default
+diameter is 0.02 and it can be set with the \fB-h\fR option; bigger
+numbers saturate more of the center of the spectrum.  The scaling to
+bytes can be disabled by entering "-l 0", in which case there will just
+be an initial scaling to integers ranging from 0 to 32000 and
+default output in mode 1.  Input
+options can be used to take the spectrum of a subarea or a subset of
+images.  The output mode can be set with \fB-m\fR, but this does not
+affect the scaling into bytes or short integers before output.  The
+pixel size will be changed by the amount of image reduction.
+.TP
+.B splitrgb
+Output the 3 color channels of an RGB file into three separate files, so that
+other operations can be performed on them (such as transformations).  With
+this process, the output file name will be used as a root for three filenames
+ending in .r, .g, and .b.  A subset in Z may be extracted
+from the file, where the
+.B -iz
+entry is interpreted as usual depending on whether 
+.B -2d
+is specified.  No other options except
+.B -v
+will work with this process.  
+.TP
+.B sqroot
+Take the square of the image intensities after adding an optional
+base value entered with \fB-n\fR.  Negative values after adding the base will
+be replaced by 0.
+.TP
+.B standev
+.PD 0
+.TP
+.B variance
+.PD
+Compute standard deviation or variance of a set of volumes or a set of images
+in a stack.  These operations work the same as the "average" option, so if the
+same options are given, the results should be usable together for statistical
+tests, such as with Subimstat(1).
+If more than one input file is given, it computes the statistics for each
+pixel from all of the input files and outputs a volume.  All input images must
+be the same size and mode. Standard input and output options are available in
+this case.  With one input file, it computes the
+statistics for each pixel in X/Y across the slices and produces one output slice.
+Just as with averaging, use the
+.B -n
+option to set a threshold such that pixels below threshold are not included in
+the statistic.  Standard input options are available but output cannot be
+resized in this case.  For both cases, if a scaling factor is entered with the
+.B -l
+option, then standard deviations will be scaled by this factor but variances
+will be scaled by the square of the factor.  to prevent saturation with byte
+input data, you will generally need either to scale the output appropriately
+or to change the output mode to floating point.
+
+.TP
+.B stats
+Calculate stats on a file. A table is printed with the
+minimum, maximum, mean and standard deviation.  The locations of the max and 
+min
+are also printed.  The locations are calculated by doing a
+quadratic fit around the extreme value.  If the
+.B -s
+option is given, the location of the max is adjusted by half the image
+size, which may be appropriate for a cross-correlation.  Otherwise, if
+statistics are done on a subarea, the location is adjusted to give the
+coordinates in the full image. If either the 
+.B -l
+or the
+.B -n
+option is given, min and max values will be analyzed for outliers
+by comparing the min or max value for a slice with the respective
+values for nearby slices or for all slices.  The comparison is by the ratio of the
+distance of a value from the median, to the median of such distances.  The
+criterion for this ratio is set with the
+.B -n
+option and has a default of 2.24; use higher values to have fewer slices
+marked as outliers.  The number of nearby slices used for comparison is set
+with the
+.B -l
+option; otherwise the comparison is with the values for all slices.  Each
+outlier is marked with a star, and at the end the slices with outlier values
+are listed.
+.TP
+.B subtract
+Subtract the second input file from the first one.  Both files must be the
+same size and mode, but standard input and output options are available.
+There is no provision for scaling, but the mode of the output can be 
+changed, .e.g., to preserve negative values.
+.TP
+.B supergain
+Analyze one or more EER files to compute the amount of bias in
+localizing electrons with super-resolution and output factors for
+adjusting the gain reference after expanding it to the super-resolution
+size.  The adjustment varies systematically across the camera field, so
+the analysis is done in subareas 1/4 of the image size, with
+estimates produced in subareas that overlap by half (i.e., 7 by 7
+subareas).  The default subdivision by 4 can be changed with the
+\fB-n\fR option.  Subarea input and output options are ignored, and
+none of the EER \fB-e\fR options can be entered.  All frames from all input
+files will be included.
+The output file will have the adjustment factors for each subarea.  The
+program also prints factors averaged over the whole image.  These
+overall factors will be fairly representative of the biases in subareas
+for 4x4 super-resolution, which may range up to ~8%.  They may be
+misleadingly close to 1 for 2 x 2 super-resolution where the smaller
+effect partially cancels out when averaged; e.g., bias in subareas may
+range up to ~1.7% but be only ~0.8% in the overall average.  
+.TP
+.B threshold
+Make binary image by setting pixels above a threshold entered with
+\fB-t\fR to a high value, otherwise to a low value.  The threshold must
+correspond to a value in the file, which is usually not the same as a
+threshold value visualized in 3dmod(1).  The Threshold panel in the
+image processing dialog in 3dmod(1) (opened with Edit-Image-Process)
+will show the value in the file corresponding to a particular threshold
+setting there.
+The default low and high values are 0 and 255.  If the \fB-s\fR
+option is given, the low and high values will be set to the minimum and
+maximum of the input image file.
+The low value can also be set with \fB-l\fR and the high value with \fB-h\fR.
+Standard input and output options can be used.
+.br
+   If the \fB-M\fR option is given with a minimum size and a direction,
+the thresholding will be done by a separate routine that enforces a
+minimum size for adjacent sets of points on one side of the threshold
+(above or below the threshold for a positive or negative direction,
+respectively).  Points are considered adjacent if they are next to each
+other in X, Y, or Z, but not if they are diagonal to each other.  The
+routine operates most efficiently if the regions on the selected side
+of threshold are relatively sparse and compact, and may consume much
+more time and/or memory if this is not the case.
+The image size in X and Y is limited to between 2 and 4 gigapixels.
+With the \fB-2d\fR option, sets of points are not connected between
+slices and the minimum size applies to the sets of adjacent points on
+one plane.
+.TP
+.B truncate
+Truncate pixel values at a lower or upper limit, or both.  Enter the lower
+limit with 
+.B
+-l
+and the upper limit with
+.B
+-h.
+If the 
+.B -s
+option is given, values beyond the limit will be replaced by the image mean.
+Standard input and output options can be used.
+.TP
+.B unwrap
+Add the value specified by the 
+.B -n
+option (32768 by default for signed integer data) and adjust any values that
+are now out of range for the input data mode by adding or subtracting 65536.
+This process can be used to recover data that wrapped around when they
+were saved as integers.  Two examples of wraparound are: 1) Unsigned data that
+went higher that 32767 but were saved as signed integers, in which the values
+above 32767 now appear as large negative numbers.  2) Data with negative
+values that had 32768 subtracted before saving, in which the negative values
+became large positive ones (this has been seen with FEI acquisition software).
+In case 1, the default value to add (32768) is appropriate but the data then
+need to be saved as unsigned (mode 6) or as floating point.  In case 2, the
+default value is appropriate as long as the original data did not range higher
+than 32767; if they did, then you need to determine a different value to add,
+such as a small number just sufficient to bring the originally negative numbers
+above 0.  This process will also work with unsigned input data but a
+.B -n
+entry is required.  Standard input and output options can be used.
+Extra header data are copied from the input file to the output file if
+neither the \fB-iz\fR nor the \fB-oz\fR option is entered.
+
+.SH OPTIONS
+These options are available to most processes.
+.TP
+.B \-v
+View output data file using 3dmod.
+.TP
+.B \-2d
+Use 2d instead of 3d (default) processes if a
+2d process exists. Each input file is considered
+a stack of 2D images to be processed.  For most processes, this will change
+only the way that the 
+.B -iz
+option is interpreted.
+.TP
+.B \-3d
+Use 3d process. Each input file is considered a 
+volume to be processed.
+.TP
+.B -a
+Append data to output file.  Append and overwrite are not available for
+processing modes that do not take standard input and output size and centering
+options.
+.TP
+.B -ov \fIsection\fR
+Overwrite output starting at section number
+.I section.
+Range is from 0 (first section) to z size - 1 (last section) unless the
+.B -1
+option is entered to number sections from 1.
+.TP
+.B \-p \fIvalue\fR
+Image coordinates with no image data are padded with the given 
+.I value.
+The default is the mean value of the input image.
+.TP
+.B -c[xyz] \fIvalue\fR
+Adjust the center of input image. Default is center of first input 
+file.
+The
+.B -cx 
+option will center the x coordinate on the given 
+.I value,
+the 
+.B -cy
+option will center the y coordinate on the given
+.I value and
+the
+.B -cz 
+option will center the z coordinate on the given
+.I value.
+
+.TP
+.B -ix \fIvalue\fR
+.PD 0
+.TP
+.B -iy \fIvalue\fR
+.TP
+.B -iz \fIvalue\fR
+.PD
+Sets the size of input image.  
+The default is the size of the first input file.
+The 
+.B -ix
+option sets the x input size,
+the
+.B -iy
+option sets the y input size.  The
+.B -iz
+option sets the z input size, or specifies a list of Z values if the
+.B -2d
+option is included.  In the latter case, the 
+.I value
+is interpreted as a comma-separated list of ranges. Commas indicate individual
+section numbers and dashes (or minus symbol) indicate a range of sections.
+.TP
+.B -x \fIvalue,value\fR
+.PD 0
+.TP
+.B -y \fIvalue,value\fR
+.PD
+These options are an alternative way of specifying the size and center of the 
+input image.  The two values are the starting and ending coordinates,
+numbered from 0 (i.e., the first pixel in an image is (0, 0)).  The
+.B -x
+option sets the X coordinates, and neither 
+.B -cx
+nor
+.B -ix
+may be entered with it.  The
+.B -y
+option sets the Y coordinates, and neither 
+.B -cy
+nor
+.B -iy
+may be entered with it.  These coordinates are not constrained to lie within
+the volume; regions outside the volume will be filled with the padding value.
+.TP
+.B -ox \fIvalue\fR
+.PD 0
+.TP
+.B -oy \fIvalue\fR
+.TP
+.B -oz \fIvalue\fR
+.PD
+Size of output file.  Default is same as input size, 
+options 
+.B -a 
+and 
+.B -ov 
+override these setting.
+The 
+.B -ox 
+option sets the x output size,
+the 
+.B -oy
+options sets the y output size and the
+.B -oz
+option sets the z output size.
+.TP
+.B -CX \fIvalue\fR
+.PD 0
+.TP
+.B -CY \fIvalue\fR
+.TP
+.B -CZ \fIvalue\fR
+.PD
+Sets the size of chunks for HDF file output in x, y, and z,
+respectively.  If a chunk size is not specified for an axis, it will
+be the full size on that axis, unless the chunks would be more than 4
+gigapixels, in which case the Z chunk size is reduced.  Entering any
+one of these options will set the output file type to HDF.  Chunk
+output will work for nearly all of the processing options.
+.TP
+.B -1
+Z values are numbered from 1 instead of 0, the default.  This option affects
+the interpretation of lists of Z values entered with 
+.B -iz
+when the 
+.B -2d
+option is given, and the interpretation of the Z value entered with the
+.B -oz
+and
+.B -cz
+options.  When running "clip stat", slices will be referred to as views
+instead and numbered from 1 with this option.
+.TP
+.B -es \fIvalue\fR
+Set amount of super-resolution to retain when reading from EER
+(electron event representation) files: 0 for none, 1 for 2x, or 2 for
+4x.  The super-resolution reduction occurs in the TIFF reading module
+and this entry determines what size in X and Y the EER file appears to be.  The
+default is 2 for no reduction.
+.TP
+.B -ez \fIvalue\fR
+Set number of successive frames to sum when reading from EER files.
+The Z summing occurs in the TIFF reading module
+and this entry determines what size in Z the EER file appears to be.
+When the summing value does not evenly divide 
+the total number of frames, the specified frame summing is the
+maximum summing that will occur, and the frames will be distributed as evenly
+as possible, with the summing lower by 1 at the beginning of the
+stack.  The default is no frame summing.
+.TP 
+.B -et
+Read a thumbnail image, not frames, from an EER file.
+
+.SH Selected options
+The following options are valid for selected processes:
+.TP
+.B -s
+Switch, use depends on process.
+.TP
+.B -m \fImode\fR
+Output modes: "byte", "ubyte", "sbyte", "short", "float", "complex", "ushort",
+"rgb", "4-bit", or 0-4, 6, 16, or 101.  0 = byte, 1 = short, 2 = float,
+3 = complex short, 4 = complex float, 6 = unsigned short, 16 = rgb, 101
+= 4-bit data.  "byte" will produce byte
+output that is signed or unsigned depending on the default for this version of
+IMOD and the value of the environment variable WRITE_MODE0_SIGNED.  Use
+"ubyte" or "sbyte" to force unsigned or signed byte output regardless of other
+settings.  Unsigned output is needed to work with versions of IMOD
+before IMOD 4.2.23; signed output is now the MRC standard and the default.
+Regardless of the representation in the file, bytes are read into IMOD programs as
+unsigned with a range of 0 to 255.
+.TP 
+.B -f \fIformat\fR
+Set format of output file to MRC, TIFF, HDF (if the package supports
+HDF), or JPEG (if the package supports JPEG) by entering MRC, TIF, TIFF, HDF,
+JPG, JPEG, or any lower case form of these.  Only a single image can be output
+to a JPEG file.  This entry overrides a default format set with the
+environment variable IMOD_OUTPUT_FORMAT.
+.TP
+.B -h \fIlevel\fR
+Has many uses: 1) Level for high pass filter. Range is (0.0 - 0.71 / pixel).
+The default value is 0. 2) High level for image truncation; the default is no
+truncation.  3) Width of area analyzed in quadrant correction.  4) Upper
+limit for histogram output.  5) Value assigned to pixels above
+threshold when thresholding.  6) Threshold above which values will be
+truncated with 4-bit unpacking or normalizing.  7) Relative diameter of
+ring for setting high scaling limit of power spectrum.
+.TP
+.B -k \fIvalue\fR
+K threshold value for anisotropic diffusion; the default is 2.0.
+.TP
+.B -l \fIlevel\fR
+Has multiple uses: 1) Level for low pass filter. Range is (0.0 - 0.71 / pixel).
+The default value is 1.0.  2) Sigma of Gaussian kernel for smoothing; the
+default is to use the standard kernel shown below.
+3) With diffusion, this specifies the lambda value or 
+step size; the default is 0.2. 4) With statistics, sets the number of slices
+over which to determine outliers in the min and max values. 5) When using
+"add" or taking an average, standard deviation, or variance, sets a factor for
+scaling the output values. 5) With image truncation, sets the low level for
+truncation (default is no truncation). 6) With quadrant correction, sets a
+base to be added to values for scaling.  7) Lower limit for histogram
+output.  8) When truncating values from 4-bit unpacking or normalizing,
+sets the value to assign to a pixel above the truncation threshold.  9)
+When thresholding, sets the value assigned to pixels below threshold.
+10) Background gray level for power spectrum output.
+.TP
+.B -cc \fIvalue\fR
+Specifies type of edge stopping function for diffusion: 1 for exponential
+function, 2 for rational function, 3 for Tukey biweight.  The default is 2.
+.TP
+.B -n \fIvalue\fR
+Input number. Use depends on process: threshold for averaging; scaling factor
+for brightness/contrast/shadow; base value to add when taking logarithm
+or square root; padding for correlations;
+iterations for smoothing or anisotropic diffusion, or a negative value
+to smooth in 3D; size for
+median filter, criterion for determining outliers in statistics; value to add
+when undoing wraparound; number of images to analyze together for quadrant
+correction; bin size for histogram output; scaling for multiply, divide, and 
+unpacking 4-bit values or normalizing and applying a gain reference;
+amount to subdivide area to analyze for super-resolution gain factors.
+.TP
+.B -r \fIvalue\fR
+Red value;   Range is (0.0 - 1.0) Default is 1.0.
+.TP
+.B -g \fIvalue\fR
+Green value; Range is (0.0 - 1.0) Default is 1.0.
+.TP
+.B -b \fIvalue\fR
+Blue value;  Range is (0.0 - 1.0) Default is 1.0.
+.TP
+.B -t \fIvalue\fR
+Threshold value for thresholding; or used for a histogram to report the
+threshold at which the given fraction of values occur in the cumulative
+distribution.
+.TP
+.B -D \fIfile\fR
+Name of defect list file produced by SerialEM, for correction of
+column, row, and point defects in images that have not had this
+correction applied.  Images
+containing electron counts that have not been software (post-counting)
+gain-normalized yet cannot be
+corrected validly until they had been gain normalized and scaled up or
+converted to float to represent fractional counts properly.  The
+problem is that simply rounding the mean of surrounding pixels to the
+nearest integer will almost always produce a zero when the mean
+counts of the frame are less than 0.5, so an unaligned sum of such
+frames will tend to have zero at pixels needing correction.  Although
+this problem is solved by randomly incrementing a truncated value the
+correct fraction of the time, there is still a secondary problem: that
+the mean of surrounding pixels will not be without bias unless their
+values have been gain-normalized.  This
+option is thus available with the "unpack", "normalize", and 
+"multiply" commands that are used to apply gain normalization; it
+is also available with "divide", "resize", "brightness", "contrast",
+"shadow", "threshold", "truncate", and "unwrap".
+   The defect list file has entries
+to indicate the camera size upon which the coordinates are based, and
+whether it has been scaled up by a factor of 2 to correspond to pixels
+in a super-resolution mode image.  Given these entries and the size of
+the input image, or of the gain reference image if one is being
+applied, the program decides whether to scale the coordinates up by a
+factor of 2 if the image is larger than the camera size.  It also
+deduces the effective binning of the images relative to the coordinates
+used in the file by assuming that images are not subareas of half or
+less.  These decisions on scaling and binning are usually reported by
+the program and can be overridden in rare cases by the options
+described next.  If an acquired image is a subarea of the camera area,
+then it is assumed to be centered, and correction will not work
+properly if it is not.  The \fB-ix\fR, \fB-iy\fR, \fB-cx\fR, \fB-cy\fR,
+\fB-ox\fR, and \fB-oy\fR can still be used to process subareas of the
+acquired images, and these subareas need not be centered.
+.TP
+.B -B \fIvalue\fR
+Set the assumed binning to the given value; if the defect coordinates
+have been scaled up by 2, then entries can range down to 0.5 for
+unbinned super-resolution mode.  This could be needed if the image is a
+subarea of half or less.
+.TP
+.B -S
+Scale the defect list coordinates up by a factor of 2 if the file does
+not indicate that it was already scaled up.  This could be needed at
+some time in the future if the defect list was not already scaled up
+and if the image is a subarea of half or less in super-resolution mode.
+.TP
+.B -R \fIvalue\fR
+Apply a rotation and flip specified by the given value to the gain
+reference when normalizing with the "normalize/unpack" command.  A
+rotation/flip value is the number of 90-degree rotations
+counterclockwise (i.e., 1, 2, or 3 for 90, 180, or -90 degree
+rotations), plus 4 if the image is flipped around the Y axis BEFORE
+the rotation.  An entry of -1 means that the rotation/flip value
+is to be read from a title in the image file header after the text "r/f".
+.TP
+.B -ep \fIvalue\fR
+When the gain reference provided in the normalize command is a TIFF
+file containing a defect list, column and row defects can be "padded"
+to eliminate super-resolution bias in the adjacent pixels on each side
+by averaging such pixels within each physical pixel in the direction
+perpendicular to the defect.  The default padding is 1 physical pixel,
+which handles the noticeable bias there; some bias can be seen in the next
+pixel out by averaging along the columns, but it is 10 times less.
+.TP
+.B -ed \fIfile\fR
+When the gain reference provided in the normalize command is a TIFF
+file containing a defect list, write the defect list in SerialEM's
+format to the given file.  The new list will include the value of padding
+(averaging of super-resolution pixels adjacent to defects)
+specified with the 
+.B -ep
+option.  This option lets you adjust the defect list if necessary; it
+can then be fed back in with 
+.B -D
+option here or to the \fB-defect\fR option of Alignframes(1).  It
+will supercede the defect list found in the gain reference file.
+.TP 
+.B -eg \fIfile\fR
+Name of file with adjustment factors for the super-resolution gain
+reference created from the reference for an EER file, as produced by
+the \fBsupergain\fR operation.  See the FILES section for the format of
+this file.
+.TP
+.B -P \fIfile\fR
+Name of piece list file, in order to have coordinates in statistics converted
+to position in a montage displayed with adjusted overlap.  The overlap in the
+display is assumed to be zero, unless overlap is specified with the
+.B -O
+option.
+.TP
+.B -O \fIvalue,value\fR
+Overlap values in X and Y to be used when printing coordinates corresponding
+to positions in a displayed montage.  Negative values correspond to spaces
+between the displayed pieces.
+.TP
+.B -E \fIfraction,direction\fR
+Used with \fBhistogram\fR to find the point at which the given fraction of
+extra values on one side of the histogram peak is found.
+.TP
+.B -F \fIfraction,direction\fR
+Used with \fBhistogram\fR to find the point at which the histogram falls off
+most rapidly past a certain point defined by the given \fIfraction\fR value.
+If \fIdirection\fR is positive, the fastest falling point above the given
+fraction of values is found; if it is negative, the fastest falling
+point below the fraction is found.
+.TP
+.B -M \fIsize,direction\fR
+Used with \fBthreshold\fR to mark points as above (or below) threshold
+only if they are part of a set of adjacent points at least as big as the
+given \fIsize\fR, for \fIdirection\fR positive (or negative).
+.SH FILES
+The format of a super-resolution gain factor file produced by the
+\fBsupergain\fR operation is as follows:
+.nf
+  Version number (must be 1) and super-resolution of images (can be 2 or 4)
+  # of subareas, center of first area, spacing between areas for X then Y
+  (For each subarea):
+    Factors for 4x4 super-resolution, 4 across the bottom row, 4 for the
+      second row, etc.
+    Factors for 2x2 super-resolution, 2 for the bottom row then 2 for the
+      top row
+
+.SH HISTORY
+Originally most processes loaded all data into memory unless the -2d option
+was given, and the -2d option did not provide for any output padding.
+Work in Jan 2005 fixed this so that only 3D correlation and FFTs and
+3D color load the whole volume; everything else does slice-by-slice
+processing, with proper handling of output padding and appending regardless of
+whether -2d or -3d is selected.  Rotation, translation, and zoom were not
+well-implemented and were abandoned.
+
+.SH AUTHORS
+.nf
+Jim Kremer 
+David Mastronarde
+The anisotropic diffusion is based on a program by Alejandro Cantarero 
+.fi
+
+.SH SEE ALSO
+3dmod(1), newstack(1), rotatevol(1), matchvol(1), fftrans(1), subimstat(1),
+imodmop(1)
+
+.SH BUGS
+There are not checks for the validity of all input values, and some
+nonsensical mode conversions are allowed.  The extended header is not copied
+over to the output file, except by the quadrant and unwrap processes.
+
+Email bug reports to mast@colorado.edu.

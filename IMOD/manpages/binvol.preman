@@ -1,0 +1,35 @@
+.na
+.nh
+.TH binvol 1 4.6.34 IMOD
+.SH NAME
+binvol - Reduce a 3D volume in size isotropically or anisotropically
+.SH SYNOPSIS
+binvol  [options]  input_file  output_file
+.SH DESCRIPTION
+.P
+Binvol will bin down a volume in all three dimensions, with the binning
+done isotropically or by different amounts in X, Y, and Z.  Binning means
+summing (actually averaging) all of the values in a block of voxels (e.g.,
+2x2x2 or 1x1x3) in the input volume to create one voxel in the output
+volume.  The output file will have appropriately larger pixel spacings in
+its header.  It is also possible to use antialiased image reduction instead
+of binning in Z, as well as in X and Y when the reduction is equal in X
+and Y.
+.SH OPTIONS
+Binvol uses the PIP package for input (see the manual page for pip(1)).
+The following options can be specified either as command line arguments
+(with the -) or one per line in a command file (without the -).  Options can
+be abbreviated to unique letters; the currently valid abbreviations for
+short names are shown in parentheses.
+.P
+INSERT OPTION TEXT HERE
+.TP
+.B -StandardInput
+Read parameter entries from standard input.
+.SH HISTORY
+.nf
+Written by David Mastronarde
+Converted to PIP input and added to package, 10/28/04
+.fi
+.SH BUGS
+Email bug reports to mast@colorado.edu.

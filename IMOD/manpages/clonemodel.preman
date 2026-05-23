@@ -1,0 +1,51 @@
+.na
+.nh
+.TH clonemodel 1 4.4.1 IMOD
+.SH NAME
+clonemodel \- clone copies of a model (e.g. an isosurface from a PEET average)
+back to the aligned positions and orientations.
+.SH SYNOPSIS
+clonemodel  [options]  -at csv_file  input_model  output_model
+
+.SH DESCRIPTION
+After aligning and averaging a set of subvolumes with PEET and creating an 
+isosurface model of the average, it is often useful to create 
+a new model containing multple copies of that isosurface reflecting the  
+positions and orientations of the individual aligned particles in the original 
+volume. Clonemodel performs this operation, optionally pseudo-coloring
+each copy according to the corresponding cross-correlation coefficient
+or other stored value . The \fIinput_model\fR will be 
+cloned at locations and orientations specified in summary file 
+\fIcsv_file\fR and the output written to \fIoutput_model\fR. 
+The comma-separated value summary file, \fIcsv_file\fR, will typically 
+have been created by running PEET program createAlignedModel(1). 
+The \fIoutput_model\fR will be silently overwritten if it 
+already exists. Neither \fIinput_model\fR nor \fIcsv_file\fR will be modified.
+
+The PEET alignment and average must have been created with "Align Averages 
+Vertically" disabled for proper orientations of the cloned models.
+
+While clonemodel is designed for use with a csv summary file created
+by PEET and a model containing an isosurface rendering of the PEET average,
+this is not required. Except for the first, header line, which is always
+ignored, each line in the summary file must contain 7 
+comma-separated fields representing contour number, X, Y, and Z center 
+coordinates in pixels, and Z-Y-X Slicer angles in degrees (stored in the
+order X, Y, Z), respectively, representing the rotation to be applied to 
+the input model. An optional 8th field, if present, represents a value to be
+mapped to a pseudo-color for that cloned model.  Partially missing values will 
+be treated as if they were 0. If no values are present, color will be inherited 
+from the input model.
+
+.SH OPTIONS
+Clonemodel uses the PIP package for input (see the manual page for pip(1)).
+Options can be specified either as command line arguments (with the -)
+or one per line in a command file (without the -).  Options can be abbreviated
+to unique letters; the currently valid abbreviations for short names are shown
+in parentheses.
+INSERT OPTION TEXT HERE
+
+.SH AUTHOR
+John Heumann  <heumannj@colorado.edu>
+.SH SEE ALSO
+createAlignedModel(1), clonevolume(1)

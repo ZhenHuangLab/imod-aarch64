@@ -1,0 +1,16 @@
+Version = 1.2
+
+[dialog = setup]
+bn.build-tomogram=
+set.adoc.function=copy-tomo-coms.adoc
+run.function.main =
+
+
+[function = main]
+set.file.tf.raw-image-stack=%{dataset}a.st
+cbb.system-template=plasticSection.adoc
+cbb.user-template=BB_copyTomoComsTest_userTemplate.adoc
+bn.scan-header=
+tf.fiducial-diameter=%{fiducial-diameter}
+bn.create-com-scripts=
+assert.contains.file=alignb.com|RotationAngle*-11.5

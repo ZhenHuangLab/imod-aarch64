@@ -1,0 +1,143 @@
+.na
+.nh
+.TH serieswatcher 1 4.8.46 IMOD
+.SH NAME
+serieswatcher \- watch for stacks to run with batchruntomo
+.SH SYNOPSIS
+serieswatcher  [options]
+.SH DESCRIPTION
+Serieswatcher is a Python program that can watch for tilt series stacks
+to be created in a directory, and start an automated reconstruction
+with Batchruntomo(1) after the tilt series is done.  It can handle
+single-axis and dual-axis data sets; in the latter case it can either
+wait until both axes are finished, or start the reconstruction when the
+first axis is present and do another run to complete the reconstruction
+when the second axis is finished.  The program can also be used simply
+to transfer stacks from one directory to another, with another copy of
+the program used to run the reconstructions when it sees the stacks in
+their new location.
+.P
+To start reconstructions, the program needs a batch directive file and
+a command file for running Batchruntomo(1).  Although Etomo does not
+yet have an interface for managing this program, its batch
+interface can be used to prepare both of these files even without
+adding any stacks to the table there.  If you do add a stack, it will
+be ignored, but doing so would enable you to set the two parameters that
+are specified only in the table: whether the sets are dual-axis, and
+whether gold beads are on two surfaces.  Otherwise, you would need to
+specify these parameters with the \fB-dual\fR and \fB-two\fR options.
+The directives for these parameters are located in the data set
+specific ".adoc" file, the one whose name has the form
+"batchroot_dataset.adoc".  Note that the program detects whether each
+tilt series is a montage or not and manages the montage entry in the batch
+directive file.
+.P
+When you use the \fB-project\fR option to enter the root name of the
+batch project created to specify parameters here, the program will
+access the files from this project, including the ".ebt" project file,
+and use the latter as a framework for creating a new batch project
+containing all of the data sets that were run.  You can open this
+project in Etomo and use the table on the Run tab to examine logs or
+reconstructions or open the individual data sets.  As long as
+Serieswatcher is running, the file will be named with the new batch
+root followed by ".ebt.active".  You should not open this file in Etomo,
+since both programs would then be writing to it.  Rather, make a copy
+with a different name and open that in etomo.  When Serieswatcher exits
+(including after a Ctrl-C interrupt) it will rename an existing ".ebt"
+file to ".ebt~" and rename the new file to be ".ebt".
+.P
+When processing dual axis sets, the \fB-match\fR entry of what filenames
+to match
+determines what will be done.  If there is neither an "a" nor a "b" before the
+extension, the program will watch for all matching stacks.  When it sees a
+first-axis stack it will create a data set and start a reconstruction of that
+axis only.  When the second-axis stack appears, it will start a separate run
+to reconstruct that axis and finish combining.  If the entry includes an "a" before the
+extension, then the program will watch for first-axis stacks only, and just
+start the first-axis reconstructions.
+A second run of this program would be needed to finish the
+reconstructions with the second axis.  If the entry has a "b" before the
+extension, it will watch for second-axis stacks only.
+If both stacks are present when the "b" stack is finished, it will start a
+full dual-axis reconstruction.  If the "a" stack is no longer present and the data
+set directory already exists with sizable files, then it will start a
+reconstruction of the second axis plus the combine.  Thus, the "b"
+entry would be used either for the second run of Serieswatcher after
+running it with an "a" entry, or to make it wait for the second axis
+and process both axes in one run of Batchruntomo(1).  There is an
+important restriction whichever way it is done: the first axis acquired must
+be named with "a", not "b".
+.P
+In the general case, the program decides that a stack is finished
+because it has not been modified for the amount of time specified by
+the \fB-age\fR option, then it checks its tilt range or number of
+images to see if it is above a minimum.  If not, the program will retry
+periodically to see if it either starts changing again or
+passes the tests.  This process if much more reliable if a version of
+SerialEM is used that creates a file with the stack filename plus 
+extension ".openTS" when it starts the tilt series, and deletes that
+file when the stack is closed (version 3.7.4 or higher, or 3.8.0 beta
+from April 18, 2019 or later).  Also, as of IMOD 4.10.34, Alignframes
+also creates a ".openTS" file.  With such a signal, Serieswatcher can
+safely proceed right after the ".openTS" disappears.  If you do stop a
+tilt series after a small number of tilts, close the file, and start
+a new series with the same file name, the program should be able to
+reject the first stack and start watching the new one when it sees it.
+.P
+If you press Ctrl-C while any reconstructions are running, the program
+will ask if you want to quit all processing immediately, or just exit
+the program and allow any current data sets to finish.
+.SH OPTIONS
+Serieswatcher uses the PIP package for input (see the manual page
+for pip(1)).  Options can be specified either as command line
+arguments (with the -) or one per line in a command file
+(without the -).  Options can be abbreviated to unique letters; the currently
+valid abbreviations for short names are shown in parentheses.
+INSERT OPTION TEXT HERE
+.TP
+.B -StandardInput
+Read parameter entries from standard input
+
+.SH Examples
+The following steps can be used to run this program with a minimum
+number of entries and make a new project that can be opened in Etomo:
+   1) Change directory to the location where the stacks will be
+created.
+   2) Start Etomo and open the Batch Tomograms interface.
+   3) If data sets are to be processed in subdirectories of a different
+directory, select \fBMove all stacks to dataset directories under:\fR
+and select the directory with the chooser.  Otherwise, it does not
+matter which of the other two options are selected.
+   4) Select a starting directive file and template files if desired.
+   5) Change the root name if you want to; it determines the names of
+the command and directive files that you will provide to
+Serieswatcher.  The command line below assumes the name was changed to
+"forWatcher".
+   6) If you want to add a stack in order to specify dual-axis data or
+beads on two surfaces, switch to the \fBStack\fR tab and do so.
+   7) Enter all parameters as usual on the \fBDataset Values\fR tab.
+   8) On the \fBRun\fR tab, select the CPU and GPU resources to use as
+usual.  If you plan on parallel runs, select enough to be divided
+among the runs.  You can also specify a step to end after.
+   9) Close Etomo.
+   10) Run this program with:
+
+   serieswatcher -proj forWatcher
+
+plus additional options as needed:
+   \fB-dual\fR and \fB-two\fR if appropriate and not specified in step 6.
+   \fB-match\fR if the stack extension is not ".mrc" or you want to
+specify a more restrictive filename pattern.
+   \fB-parallel\fR to run multiple reconstructions in parallel.
+   \fB-age\fR with a different time since last modication if
+appropriate (e.g., a shorter time if stacks are being moved to this
+watched directory by a Serieswatcher on the acquisition compution, or a
+longer time if you do not have ".openTS" files).
+.SH AUTHOR
+.nf
+David Mastronarde
+.fi
+.SH SEE ALSO
+batchruntomo(1), processchunks(1)
+.P
+Email bug reports to mast@colorado.edu.

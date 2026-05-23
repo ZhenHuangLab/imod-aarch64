@@ -1,0 +1,375 @@
+Version = 1.0
+Pip = 1
+
+[Field = InputFile]
+short = input
+type = FN
+usage = Input image file
+tooltip = Input image file.
+manpage = Input image file.  This may also be entered after all arguments
+on the command line. 
+
+[Field = OutputFile]
+short = output
+type = FN
+usage = Output image file
+tooltip = Output image file.  If no output file is specified and the program is
+not run in trial mode, pixels will be replaced in the input file.  USE
+REPLACEMENT OPTION WITH CAUTION.
+manpage = Output image file.  This may also be entered after an input file
+name on the command line.  If no output file is specified and the program
+is not run in trial mode, pixels will be replaced in the input file.
+USE REPLACEMENT OPTION WITH CAUTION.
+
+[Field = PieceListFile]
+short = piece
+type = FN
+usage = File with piece coordinates for a montaged image file
+tooltip = Input image file.
+manpage = File with piece coordinates for a montaged image file.  With this
+entry, the program will assume that an input model was drawn on a display of
+the montage with overlaps adjusted to be either 0,0 or the amount indicated by
+the -overlaps option.  The output model file with points found will also be
+formatted to fit on such a display.
+
+[Field = OverlapsForModel]
+short = overlaps
+type = IP
+usage = Overlaps in X and Y at which montaged image is being viewed (default 0,0)
+tooltip = 
+manpage = Overlaps in X and Y at which a montaged image is being viewed both when
+producing an input model and viewing the output model of pixels being
+replaced.  The same values should be used as are provided to the -o option of
+3dmod.  The default is 0,0, which represents no overlap between images.
+
+[Field = FindPeaks]
+short = find
+type = B
+usage = Find peaks a criterion # of SDs above or below background
+tooltip = Find and erase peaks a criterion # of SDs above or below background.
+ This option must be included for automatic removal of X-rays.
+manpage = Find and erase peaks a criterion # of SDs above or below
+background.  This option must be included for automatic removal of X-rays.
+
+[Field = PeakCriterion]
+short = peak
+type = F
+default = 10
+usage = Criterion # of SDs above local mean for erasing peak
+tooltip = Criterion # of SDs above local mean for erasing peak based on
+intensity (the default is %{default} SDs).
+manpage = Criterion # of SDs above local mean for erasing peak based on
+intensity (the default is %{default} SDs).
+
+[Field = DiffCriterion]
+short = diff
+type = F
+default = 10
+usage = Criterion # of SDs above mean pixel-to-pixel difference
+tooltip = Criterion # of SDs above mean pixel-to-pixel difference for erasing a
+peak based on differences (the default is %{default} SDs).
+manpage = Criterion # of SDs above mean pixel-to-pixel difference for
+erasing a peak based on differences (the default is %{default} SDs)
+
+[Field = GrowCriterion]
+short = grow
+type = F
+default = 4
+usage = Criterion # of SDs above mean for adding points to peak
+tooltip = Criterion # of SDs above mean for adding points to peak (the default
+is %{default} SDs).
+manpage = Criterion # of SDs above mean for adding points to peak (the
+default is %{default} SDs).
+
+[Field = ScanCriterion]
+short = scan
+type = F
+default = 3
+usage = Criterion # of SDs for picking peaks in initial scan
+tooltip = Criterion # of SDs of mean of scan area for picking peaks in initial
+scan (the default is 3 SDs).
+manpage = Criterion # of SDs of mean of scan area for picking peaks in
+initial scan (the default is %{default} SDs).
+
+[Field = MaximumRadius]
+short = radius
+type = F
+default = 2.1
+usage = Maximum radius of peak area to erase
+tooltip = Maximum radius of peak area to erase (the default is 2.1 pixels).
+manpage = Maximum radius of peak area to erase (the default is %{default} pixels). 
+
+[Field = GiantCriterion]
+short = giant
+type = F
+default = 12
+usage = Criterion # of SDs above local mean for erasing extra-large peak
+tooltip = Criterion # of SDs above local mean for erasing extra-large peak
+based on intensity (the default is 12 SDs).
+manpage = Criterion # of SDs above local mean for erasing extra-large peak
+based on intensity (the default is %{default} SDs).  Enter 0 to disable this second
+stage of peak removal.
+
+[Field = ExtraLargeRadius]
+short = large
+type = F
+default = 8
+usage = Maximum radius of extra-large peak area to erase (default %{default})
+tooltip = Maximum radius of extra-large peak area to erase (the default is
+8 pixels).
+manpage = Maximum radius of extra-large peak area to erase (the default is 
+%{default} pixels). 
+
+[Field = BigDiffCriterion]
+short = big
+type = F
+default = 19
+usage = Criterion for whether extra-large peak has big enough interpixel
+differences
+tooltip = Criterion for whether an extra-large peak has big enough interpixel
+differences to qualify for removal (the default is 19 SDs).
+manpage = An extra-large peak will be erased only if the value for 
+the maximum difference between adjacent pixels, averaged over the most
+extreme one-fourth of the pixels in the patch, exceeds this criterion,
+evaluated as the number of SDs above the mean absolute difference
+between adjacent pixels in the scan area.  The default is %{default}.  This high a
+value is needed to prevent gold erasure on low-noise data sets with small gold
+particles, and a lower value may be needed to make extra-large peak removal
+useful.
+
+[Field = MaxPixelsInDiffPatch]
+short = maxdiff
+type = I
+default = 2
+usage = Maximum number of pixels in a patch that exceeds the difference 
+criterion
+tooltip = Maximum number of pixels in a patch that exceeds the difference 
+criterion.  Larger patches will not be replaced.  The default is 2. 
+manpage = Maximum number of pixels in a patch that exceeds the difference 
+criterion.  If the number of pixels that satisfy the criteria exceed this 
+limit, none of the pixels in the patch will be replaced.  The default is %{default}.
+
+[Field = OuterRadius]
+short = outer
+type = F
+usage = Outer radius of annulus to calculate local mean and SD in
+tooltip = 
+manpage = Outer radius of annulus around a peak in which to calculate local
+mean and SD (the default is 4.1 pixels).
+This option and -width are mutually exclusive.
+
+[Field = AnnulusWidth]
+short = width
+type = F
+default = 2.0
+usage = Width (outer - inner radius) of annulus to calculate local mean and 
+SD in
+tooltip = Width of the annulus around a peak in which to calculate local mean
+and SD (the default is 2.0 pixels).
+manpage = Difference between outer and inner radius of the annulus around a 
+peak in which to calculate local mean and SD (the default is %{default} pixels).
+This option and -radius are mutually exclusive.
+
+[Field = XYScanSize]
+short = xyscan
+type = I
+default = 100
+usage = Size of regions to compute mean and SD in for initial scans
+tooltip = Size of regions to compute mean and SD in for initial scans (the
+default is 100 pixels).
+manpage = Size of regions to compute mean and SD in for initial scans (the
+default is %{default} pixels).
+
+[Field = EdgeExclusionWidth]
+short = edge
+type = I
+default = 0
+usage = Width of area to exclude on all edges of image
+tooltip = Width of area to exclude on all edges of image in pixels (default 0).
+manpage = Width of area to exclude on all edges of image in pixels (default
+%{default}). 
+
+[Field = SearchIterations]
+short = iterations
+type = I
+default = 3
+usage = Number of times to iterate search for peaks
+tooltip = Number of times to iterate search for peaks (default 3).
+manpage = Number of times to iterate search for peaks.  For a given section,
+the iterations will be terminated after an iteration with no changes.
+Moreover, the program will keep
+track of which scan regions have changes on each iteration and stop redoing
+regions that have had no changes. The default is %{default}.
+
+[Field = PointModel]
+short = points
+type = FN
+usage = Output model file with points replaced in peak search
+tooltip = 
+manpage = Output model file with points replaced in peak search.  Each
+patch of points will be in a separate contour.  Patches are sorted into
+separate objects based on how much the peak exceeds a criterion.
+
+
+[Field = ModelFile]
+short = model
+type = FN
+usage = Model file with points or lines to be erased
+tooltip = 
+manpage = Input model file specifying points or lines to be erased. 
+
+[Field = LineObjects]
+short = lines
+type = LI
+usage = Objects that define lines to be replaced
+tooltip = List of objects that define lines to be replaced.  Ranges can be 
+entered, and / to specify all objects.
+manpage = List of objects that define lines to be replaced.  Ranges can be
+entered, and / to specify all objects.
+
+[Field = BoundaryObjects]
+short = boundary
+type = LI
+usage = Objects that contain boundary contours around points to be replaced
+tooltip = 
+manpage = List of objects that contain boundary contours around pixels to be
+replaced.  Ranges can be entered, and / to specify all objects.  Boundary
+contours can be arbitrarily large.  When a contour encloses more than 1000
+pixels, a different procedure is use to erase the points, and intensities are
+tapered down over 8 pixels on the inside of the patch from the value of the
+nearest pixel just outside the patch to the mean of the surrounding pixels.
+ 
+[Field = AllSectionObjects]
+short = allsec
+type = LI
+usage = Objects with points to be replaced on all sections
+tooltip = List of objects with points to be replaced on all sections. 
+Ranges can be entered, and / to specify all objects.
+manpage = List of objects with points to be replaced on all sections.
+Ranges can be entered, and / to specify all objects.
+
+[Field = CircleObjects]
+short = circle
+type = LI
+usage = Objects with scattered points for replacing pixels within a circle
+tooltip = 
+manpage = List of objects that contain scattered points for replacing pixels
+within a circle around each point.  The sphere radius, which can be an
+individual value for each point, is used to indicate the size of circle to
+replace.  Ranges can be entered, and / to specify all objects.
+
+[Field = BetterRadius]
+short = better
+type = FA
+usage = Radii to use in place of defaults for points with no individual size
+tooltip = 
+manpage = For circle objects, this entry specifies a radius to use for points
+without an individual point size instead of the
+object's default sphere radius.  This entry is floating point and can be used
+to overcome the limitations of having an integer default sphere radius.  If
+there are multiple circle objects, enter one value to apply to all objects or
+a value for each object.
+
+[Field = ExpandCircleIterations]
+short = expand
+type = I
+usage = Number of iterations for expanding patches around circles
+tooltip = 
+manpage = Number of iterations of a procedure that expands the area erased
+around the points of a circle object.  This procedure analyzes the intensity
+of pixels adjacent to the patch being erased and adds pixels in the
+appropriate tail of the intensity distribution to the patch.  Iterating simply
+repeats the procedure.  If edges of gold particles are left because points are
+not very well centered, try this option instead of just increasing the radius,
+as it will tend to erase just the remaining points on the edge instead of a
+whole ring of points.
+
+[Field = MergePatches]
+short = merge
+type = B
+usage = Merge patches in model that touch each other
+tooltip = Merge patches in the model that touch each other, if the
+resulting patch is less than the maximum radius
+manpage = Merge patches in the model if they touch each other, as long as the
+resulting patch is still within the maximum radius.  Patches from objects with 
+points to be replaced on all sections are ignored.  This option should be used
+if an output model from automatic peak finding is modified and used as an 
+input model.
+
+[Field = SkipTurnedOffPoints]
+short = skip
+type = B
+usage = Skip points with values below threshold if they are turned off
+tooltip =
+manpage = Skip points in the model with contour values below threshold
+if they are not visible in 3dmod, namely if "Turn off below threshold" is set
+in the Bead Fixer, or "Turn off Low" is set in the Values panel of the Model
+View Object Edit dialog.
+
+[Field = BorderSize]
+short = border
+type = I
+default = 2
+usage = Size of border around points in patch (default %{default})
+tooltip = Size of border around points in patch, which contains the points which
+will be fit to (the default is 2 pixels).
+manpage = Size of border around points in patch, which contains the points
+which will be fit to (the default is %{default} pixels)
+
+[Field = PolynomialOrder]
+short = order
+type = I
+usage = Order of polynomial to fit to border points (default %{default})
+default = 2
+tooltip = Order of polynomial to fit to border points (the default is 2, which
+includes terms in x, y, x**2, y**2 and x*y).
+manpage = Order of polynomial to fit to border points.  The default is %{default},
+which includes terms in x, y, x**2, y**2 and x*y.  The order can be between -1
+and 3, where 0 will simply replace the pixels with the mean of the border
+points instead of fitting to them, and -1 will fill the area with noise
+matching the standard deviation in surrounding pixels.
+ 
+[Field = ExcludeAdjacent]
+short = exclude
+type = B
+usage = Exclude points adjacent to patch points from the fit
+tooltip = 
+manpage = Exclude points adjacent to patch points from the fit; in other
+words, compute the polynomial fit to points that do not touch the ones
+being replaced.
+
+[Field = TrialMode]
+short = trial
+type = B
+usage = Analyze without writing output file
+tooltip = Run ccderaser in trial mode creating a x-ray model which can be viewed
+in 3dmod.  This will not create an output stack.
+manpage = Analyze for replacement points without writing output image file. 
+
+[Field = Verbose]
+short = verbose
+type = B
+usage = Print details on patches being replaced
+tooltip = 
+manpage =
+
+[Field = ProcessID]
+short = PID
+type = B
+usage = Output process ID
+tooltip = 
+manpage =
+
+[Field = ParameterFile]
+short = param
+type = PF
+usage = Read parameter entries from file
+tooltip = 
+manpage = Read parameter entries as keyword-value pairs from a parameter file.
+
+[Field = usage]
+short = help
+type = B
+usage = Print help output
+tooltip = 
+manpage = 

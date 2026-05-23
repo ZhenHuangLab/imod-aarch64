@@ -1,0 +1,38 @@
+.na
+.nh
+.TH adocxmlconv 1 4.61 IMOD
+.SH NAME
+adocxmlconv \- Convert autodoc to XML file or vice versa
+.SH SYNOPSIS
+adocxmlconv  [-r rootname]  inputFile outputFile
+.SH DESCRIPTION
+adocxmlconv will convert file in the IMOD autodoc format to an XML
+file, or a simple enough XML file into an autodoc.
+When converting from autyodoc to XML, each section is written as a
+top-level child of the root element in this form: <typeName
+name="value">, although the global section is written as <PreData>
+without a name.  Key-value pairs 
+within a section are all written as children of the top-level child with the
+form <key>value</key>.  Empty values are allowed and written as <key />.  Any
+XML file that conforms to this structure can be converted to autodoc; namely, each
+top-level child must have a name attribute except "PreData", and children of
+those nodes must be simple key-value pairs with no attributes or children.
+The latter will simply be lost.  If a top-level child has attributes
+other than "name", they will be turned into key-value pairs in that
+section of the autodoc.  Other than this, when converting from XML to autodoc,
+the program will report the number of occurrences of various
+nonconforming features.
+.SH OPTIONS
+.TP
+.B -r  \fIname\fR
+Set the name of the root element when converting to XML; by default, it
+will be "autodoc".
+.SH FILES
+If the output file already exists, it will be made a backup file by adding ~
+to its name.
+.SH AUTHORS
+David Mastronarde
+.SH BUGS
+Email bug reports to mast@colorado.edu.
+
+

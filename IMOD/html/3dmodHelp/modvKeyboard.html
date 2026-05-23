@@ -1,0 +1,126 @@
+<HEAD>
+<TITLE>Model View Keyboard Commands</TITLE>
+</HEAD>
+<A NAME = "TOP"><H2>Model View Keyboard Commands</H2></A>
+<P>
+Many of these hot keys are available in the HotKey menu, which gives you
+another way to look up the keys or execute the operations.
+<TABLE BORDER COLS=2>
+<COLGROUP SPAN=1 WIDTH="*0">
+<THEAD>
+<TR><TH>Keys<TH>Command
+</THEAD>
+<TBODY>
+<TR><TD><TD><B>Model Positioning and Rotation</B>
+<TR><TD>Arrows<TD>Translate model in X and Y, or translate clipping plane with
+Ctrl held down, or translate current point with Ctrl and Shift held down, if
+it is a scattered point.
+<TR><TD>PageUp/PageDown<TD>Translate model in Z, or translate clipping plane with
+Ctrl held down, or translate current point with Ctrl and Shift held down, if
+it is a scattered point.
+<TR><TD><B>Keypad</B><TD>Rotates model in X, Y and Z, or rotates clipping plane with
+Ctrl held down
+<TR><TD>Keypad-2/8<TD>Rotate around X viewing axis
+<TR><TD>Keypad-4/6<TD>Rotate around Y viewing axis
+<TR><TD>Keypad-3/9<TD>Rotate around Z viewing axis
+<TR><TD>Keypad-Enter<TD>Toggle continuous rotation on and off (Keypad-5 may
+also do this)
+<TR><TD><B>Substitute Keypad</B><TD>The key cluster centered on U can also be used
+    for rotating the model or clipping plane (the Rotation tool provides
+    another substitute to the keypad)
+<TR><TD>7/J<TD>Rotate around X viewing axis
+<TR><TD>Y/I<TD>Rotate around Y viewing axis: but Ctrl+U, not Ctrl+Y,
+    rotates clipping plane
+<TR><TD>6/H<TD>Rotate around Z viewing axis
+<TR><TD>U<TD>Toggle continuous rotation on and off (follow with mouse action or
+    keyboard entry that rotates model)
+<TR><TD>T<TD>Show top of model
+<TR><TD>B<TD>Show bottom of model
+<TR><TD>L<TD>Show left side of model
+<TR><TD>R<TD>Show right side of model
+<TR><TD>F<TD>Show front of model
+<TR><TD>K<TD>Show back of model
+<TR><TD><TD><B>Drawing Type and Clipping Plane Operations (with Object Edit
+      window open</B>
+<TR><TD>F1<TD>Switch to drawing Contours - Lines (can modify multiple objects/models)
+<TR><TD>F2<TD>Switch to drawing Mesh - Fill (can modify multiple objects/models)
+<TR><TD>F3<TD>Switch to drawing Mesh - Lines (can modify multiple objects/models)
+<TR><TD>F4<TD>Cycle between Contours - Lines, Mesh - Fill, and Mesh - Lines
+    (can modify multiple objects/models)
+<TR><TD>Ctrl+M<TD>Mesh current object
+<TR><TD>C<TD>Output current clipping plane information
+<TR><TD>Ctrl+C<TD>Toggle current clipping plane on and off
+<TR><TD>Ctrl+V<TD>Toggle drawing of current clipping plane on and off (works
+    wih Object Edit closed)
+<TR><TD>Ctrl+1<TD>Toggle current object clipping plane 1 on and off
+<TR><TD>Ctrl+2<TD>Toggle current object clipping plane 2 on and off
+<TR><TD>Ctrl+3<TD>Toggle global clipping plane 1 on and off
+<TR><TD>Ctrl+4<TD>Toggle global clipping plane 2 on and off
+
+<TR><TD><TD><B>Dialog Opening Keys</B>
+<TR><TD>M<TD>Open movie control window
+<TR><TD>Shift+N<TD>Open Movie Sequences window
+<TR><TD>Shift+O<TD>Open Object Edit window
+<TR><TD>Shift+C<TD>Open controls window
+<TR><TD>Shift+R<TD>Open Rotation tool with buttons for rotating model or clipping plane
+<TR><TD>Shift+B<TD>Open background color window
+<TR><TD>Shift+L<TD>Open Object List window
+<TR><TD>Shift+M<TD>Open model selection window
+<TR><TD>Shift+V<TD>Open view editing window
+<TR><TD>Shift+I<TD>Open image overlay control window (only when run from 3dmod)
+<TR><TD>Shift+U<TD>Open isosurface display control window (only when run from
+    3dmod)
+
+<TR><TD><TD><B>Display Control Operations</B>
+<TR><TD>-/=<TD>Decrease/Increase zoom by small steps
+<TR><TD>Keypad +<TD>Increase zoom by small steps
+<TR><TD>_/+<TD>Decrease/Increase zoom by big steps
+<TR><TD>Shift+X<TD>Toggle display of X image planes (only when run from 3dmod)
+<TR><TD>Shift+Y<TD>Toggle display of Y image planes (only when run from 3dmod)
+<TR><TD>Z<TD>Toggle display of Z image planes (only when run from 3dmod)
+<TR><TD>Ctrl+R<TD>Toggle low resolution drawing of mesh and spheres
+<TR><TD>P<TD>Toggle display of current point (only when run from 3dmod)
+<TR><TD>G/Shift+G<TD>Increase/Decrease the quality of sphere drawing
+<TR><TD>F11 or &amp;<TD>Switch threshold for isosurface to other side of distribution
+<TR><TD>S<TD>Toggle stereo mode
+<TR><TD>[/]<TD>Adjust parallax for stereo viewing
+<TR><TD>A<TD>Invert the parallax angle
+<TR><TD>,/.<TD>Decrease/Increase rotation increment and speed
+<TR><TD>1/2<TD>Decrease/Increase time for 4D models
+<TR><TD>8<TD>Toggle displaying all models or one model
+<TR><TD>9/0<TD>Previous/Next model
+<TR><TD><TD><B>Model Editing Operations</B>
+<TR><TD>Ctrl+Shift+Delete<TD>Delete the current point if it is in a scattered point
+    object and 3dmod is in model mode.
+<TR><TD>Ctrl+A<TD>Select all visible contours in current object
+<TR><TD>Shift+D<TD>Delete selected contour(s) if picked in model view
+<TR><TD>Ctrl+Shift+O<TD>Change both current model object and selected object
+    for editing in Object Editing dialog to previous object.  If they are not
+    synchronized, both selections will still change by 1.
+<TR><TD>Ctrl+Shift+P<TD>Change both current model object and selected object
+    for editing in Object Editing dialog to next object
+<TR><TD>Ctrl+Shift+X<TD>Previous contour in scattered point object
+<TR><TD>Ctrl+Shift+C<TD>Previous contour in scattered point object
+<TR><TD>Ctrl+{ or [ or 9 or (<TD>Previous point in scattered point object
+<TR><TD>Ctrl+} or ] or 0<TD>Next point in scattered point object
+<TR><TD>Ctrl+F<TD>Apply last change applied in the Fine Grain dialog to the
+    currently selected item, if the <B>Last</B> button for that change is
+    enabled in that dialog.
+<TR><TD>Ctrl+Z<TD>Undo the last change to model.  Undo/redo does work when the
+program is run as 3dmodv, but the list of actions that can be undone is
+cleared if you switch between models.
+<TR><TD>Ctrl+Y<TD>Redo the last undone change to model
+<TR><TD><TD><B>Other Operations</B>
+<TR><TD>Shift+S<TD>Snapshot image as a non-TIFF file to modvnnnn.xxx
+<TR><TD>Ctrl+S<TD>Snapshot image as a TIFF file to modvnnnn.tif
+<TR><TD>Ctrl+Shift+S<TD>Snapshot image in second non-TIFF format to
+modvnnnn.xxx
+<TR><TD>D<TD>Toggle double buffering
+<TR><TD>Ctrl+Shift+V<TD>Toggle use of vertex buffer objects
+<TR><TD>O<TD>Output transformation information and movie frames/sec
+<TR><TD>Esc/Q<TD>Close Model View or Quit 3dmodv
+</TBODY>
+</TABLE>
+<P>
+<A HREF="index.html#TOP">Help Index<A>
+</FONT>

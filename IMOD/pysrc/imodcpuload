@@ -1,0 +1,38 @@
+#!/usr/bin/env python
+# program to run imodwincpu on Windows; elsewhere run "uptime" and
+# compute sum of %cpu outputs from ps
+#
+# Author: David Mastronarde
+#
+# $Id$
+
+# load System Libraries
+import os, sys
+
+#
+# Setup runtime environment
+if os.getenv('IMOD_DIR') != None:
+   sys.path.insert(0, os.path.join(os.environ['IMOD_DIR'], 'pylib'))
+   from imodpy import *
+   addIMODbinIgnoreSIGHUP()
+else:
+   sys.stdout.write("ERROR: imodcpuload - IMOD_DIR is not defined!\n")
+   sys.exit(1)
+
+try:
+   if sys.platform == 'win32' or sys.platform == 'cygwin':
+      runcmd('imodwincpu', None, 'stdout')
+
+   else:
+      runcmd('uptime', None, 'stdout')
+      psout = runcmd('ps -eo %cpu')
+      sum = 0.
+      if len(psout) > 1:
+         for i in range(1, len(psout)):
+            sum += float(psout[i].rstrip('\r\n'))
+      prnstr(fmtstr('Total CPU usage: {:.2f}', sum / 100.))
+
+except ImodpyError:
+   exitFromImodError('imodcpuload')
+            
+sys.exit(0)

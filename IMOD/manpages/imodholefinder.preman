@@ -1,0 +1,129 @@
+.na
+.nh
+.TH imodholefinder 1 2.50 IMOD
+.SH NAME
+imodholefinder \- Find regularly spaces holes in carbon film
+.SH SYNOPSIS
+imodholefinder  options  input_image  output_model
+.SH DESCRIPTION
+Imodholefinder finds regular spaced holes in a carbon in order to
+locate target positions for cryoEM data acquisition.  It is principally
+designed as a test harness for the Holefinder module shared with
+SerialEM, but may also be useful for offline analysis of target
+positions.
+.P
+
+The main output is an IMOD model file in which the first object
+contains points for the set of holes found on each section, the second
+object contains positions located within the regular pattern for which a
+point was not found with sufficiently low error, and the third object
+contains points that were found close to some of those missing
+positions.  Each point is in a separate contour, and one general value
+is stored for each contour.  This value will be the relative
+correlation peak strength by default, but with the \fBintensity\fR
+option, the value can instead be the mean or standard
+deviation of pixels within the hole, or the fraction of dark
+pixels that appear to be outliers.  Points below a threshold value can
+be turned off and deleted using the Bead Fixer module in 3dmod(1), and
+points above a value can also be turned off with the Values panel of
+the Edit-Objects dialog of the Model View window.  However, there is
+currently no way to delete the points above that threshold in 3dmod(1).
+.P
+A text file with information about each located point, including all
+four of those value metrics, can be
+output with the \fB-summary\fR option.  See its description below.
+.P
+When the input images are based on a montage, the raw montage file can
+also be provided in order to improve the result and overcome
+bad alignments between overlapping pieces.  In this case, the summary
+output file will also contain the coordinates within a piece for each
+point, probably the best form for importing these positions into
+SerialEM.
+.P
+The program locates holes in images that are scaled down if necessary so that the holes
+are no bigger than 50 pixels.  It starts with a standard method:
+filtering to reduce noise, application of a Sobel filter and a Canny
+edge detector, and then a Hough transform of this edge image to find
+circular features.  Filter can be done with either Gaussian smoothing
+with a specified sigma value, by median filtering with a given number
+of iterations.  The Hough transform is implemented by
+cross-correlation of the edge image with a circular template
+via Fourier transforms, which is essentially equivalent to but much
+faster than direct summation and allows further efficiencies when
+transforms are cached for reuse.  To overcome uncertainty in the actual
+hole diameter and variability in the appearance of hole edges, the
+program does a series of scans with circles of given thickness.  By
+default, it
+starts with a fairly thick circle and a potentially wide-ranging scan to find the best
+diameter; it then refines the diameter with three steps using a circle of
+medium thickness, and finally repeats the process with a thinner circle
+at the refined size.  To improve the result, an average is generated
+from the edge
+image at the half of the locations with the strongest correlations, and
+this edge average is correlated with the edge image to get a new set of
+positions.
+.P
+The positions obtained from searching for peaks in these
+cross-correlations are constrained to be separated by at least 3/4 of the
+nominal spacing between holes, which greatly reduces the number of
+false correlation peaks being considered.  The next stage is to analyze
+these position to determine the orientation and spacing of the regular
+grid and eliminate points that do not fall near positions of that
+grid.  In addition, a robust fit to the positions of up to a 5 by 5
+array of points is used to generate a predicted position for each
+location on the grid if possible, and a point is eliminated if it is
+not close enough to its respective predicted position.  Now that most points
+can confidently be considered actual holes, an alternative analysis is
+done if possible by averaging from the 90% of the positions with top
+correlation scores after removing bright outliers, which should
+correspond to empty holes.  In this case the actual image is averaged,
+and the average template is correlated with that image.  The detected
+points are subjected to the same analysis to determine which ones fall on
+a regular grid.  Results from these two different average template
+correlations are then merged and analyzed again to find the best of both
+sets of positions.  
+.P
+All of the above depends on two critical parameters at the start of the
+process: the initial filtering and the threshold for the Canny edge
+detector.  The best results are obtained by a brute force method of
+doing the entire analysis with a range of values for each parameter and
+picking the values that give the most points.  Once the final set of
+points is obtained, bright outliers are removed, and dark outliers are
+also removed with a very conservative outlier criterion.
+.P
+When the input file contains montages images and a raw montage file is
+also supplied, the program follows the above with a simplified analysis
+of each montage piece.  It applies the filter and edge detector with
+the final parameters used for the full image, then
+correlates the existing edge average template with the edge image and
+the existing image average template with the actual piece image.  These
+correlations are separate analyzed for points being on a regular grid,
+results are merged thet same way as for the full image, and the grid
+analysis is repeated on the merged points.  Outlying bright and dark
+holes are removed with the same intensity criteria detreimined in the
+outlier removal for the full image.  After all pieces are analyzed, the
+positions in the pieces are considered in conjunction with those from
+the full image.  Positions within the overlap zones between pieces are
+substituted from the appropriate piece if possible to correct for any
+distortions of the hole image in those locations of the full image.
+Points found in the piece analysis but not in the full image analysis
+are added to the collection.
+.SH OPTIONS
+Imodholefinder uses the PIP package for input (see the manual page
+for pip(1)).  Options can be specified either as command line
+arguments (with the -) or one per line in a command file
+(without the -).  Options can be abbreviated to unique letters; the currently
+valid abbreviations for short names are shown in parentheses.
+INSERT OPTION TEXT HERE
+.TP
+.B -StandardInput
+Read parameter entries from standard input
+
+.SH AUTHOR
+.nf
+David Mastronarde
+.fi
+.SH SEE ALSO
+blendmont(1), reducemont(1)
+.SH BUGS
+Email bug reports to mast@colorado.edu.

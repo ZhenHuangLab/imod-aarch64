@@ -1,0 +1,633 @@
+#!/usr/bin/env python
+# excludeviews - script to remove views from tilt series reversibly
+#
+# Author: David Mastronarde
+#
+# $Id$
+#
+
+progname = 'excludeviews'
+prefix = 'ERROR: ' + progname + ' - '
+
+fileWithErr = ''
+
+# Converts a list to a series of ranges, using range output even for adjacent values
+# Handles positive and negative directions just as parselist does
+def listToRanges(vals):
+   def addRangeToLine(line, vals, indStart, indEnd):
+      if line:
+         line += ','
+      if indEnd > indStart:
+         return line + str(vals[indStart]) + '-' + str(vals[indEnd])
+      else:
+         return line + str(vals[indStart])
+      
+   indStart = 0
+   line = ''
+   direc = 0
+   for ind in range(1, len(vals)):
+      if (direc >= 0 and vals[ind] == vals[ind - 1] + 1) or \
+             (direc <= 0 and vals[ind] == vals[ind - 1] - 1):
+         direc = vals[ind] - vals[ind - 1]
+      else:
+         line = addRangeToLine(line, vals, indStart, ind - 1)
+         indStart = ind
+         direc = 0
+
+   return addRangeToLine(line, vals, indStart, len(vals) - 1)
+   
+
+# Functions to remove or rename a file, with a message, and saving file being acted on
+def removeFile(name):
+   global fileWithErr
+   fileWithErr = name
+   prnstr('    ' + name)
+   os.remove(name)
+
+def renameFile(fromName, toName, backup = False):
+   global fileWithErr
+   fileWithErr = fromName
+   prnstr(fmtstr('    {}  ->  {}', fromName, toName))
+
+   # Windows python cannot rename to an existing file, so we need to back it up or delete
+   # it explicitly
+   if backup:
+      makeBackupFile(toName)
+   elif os.path.exists(toName):
+      os.remove(toName)
+   os.rename(fromName, toName)
+                       
+
+# Check if file exists and exit with message if not
+def checkExists(name, descrip):
+   if not os.path.exists(name):
+      exitError(descrip + ', ' + name + ', does not exist')
+
+
+# Move all the files back that were saved
+def revertRenames():
+   global logOut
+   err = 0
+   prnstr('Trying to revert files to original state')
+   for files in renamesDone:
+      try:
+         renameFile(files[1], files[0])
+      except OSError:
+         allExists = os.path.exists(files[1])
+         if allExists and os.path.exists(files[0]):
+            prnstr(fmtstr('ERROR: Could not remove new {} ({}) so could not rename {} ' +\
+                             'back to {}', files[0], str(sys.exc_info()[1]), files[1],
+                          files[0]))
+            logOut.append('You need to remove the new ' + files[0])
+            logOut.append(fmtstr('You need to rename {} to {}', files[1], files[0]))
+            err = 1
+         elif allExists:
+            prnstr(fmtstr('ERROR: Could not rename {} back to {} ({})', files[1],
+                          files[0], str(sys.exc_info()[1])))
+            logOut.append(fmtstr('You need to rename {} to {}', files[1], files[0]))
+            err = 1
+
+         # Figure there is no problem if it somehow succeeded
+
+   return err
+
+      
+# Do a rename of original file as safely as possible, reverting everything upon a failure
+# and giving error message for what was not done correctly in reversion
+def manageRename(mainName, allName, keptName, renameToAll, renameKept):
+   global renamesDone
+
+   # First rename existing file to all          
+   if renameToAll:
+      try:
+         renameFile(mainName, allName)
+         renamesDone.append((mainName, allName))
+      except OSError:
+         prnstr(fmtstr('ERROR: Could not rename {} to {} ({})', mainName, allName,
+                      str(sys.exc_info()[1])))
+         return 1 + revertRenames()
+
+   # Then renaming the new file to the main name, trying to restore the old if it fails
+   if renameKept:
+      try:
+         renameFile(keptName, mainName)
+      except OSError:
+         prnstr(fmtstr('ERROR: Could not rename {} to {} ({})', keptName,
+                       mainName, str(sys.exc_info()[1])))
+         return 1 + revertRenames()
+
+   return 0
+
+
+# Remove a file with a warning and explanation if it fails
+def removeAllFile(mainName, allName):
+   try:
+      prnstr('Removing ' + allName)
+      os.remove(allName)
+   except OSError:
+      prnstr(fmtstr('WARNING: could not remove {}, which is the original {} ({})',
+                    allName, mainName, str(sys.exc_info()[1])))
+      return 1
+
+   return 0
+
+
+# Read either exposure dose or prior record dose from the mdoc file and return the
+# number of entries; for exposure dose return 0 if any entry is 0
+def checkOneDoseType(filename, keyEntry):
+   numExpDoses = 0
+   doseName = filename + '.dosetemp12345'
+   try:
+      runcmd('extracttilts ' + keyEntry + ' -mdoc "' + filename + '" "' + \
+             doseName + '"')
+      expLines = readTextFile(doseName, returnOnErr = True)
+      if not isinstance(expLines, str):
+         numExpDoses = len(expLines)
+         for line in expLines:
+            dose = float(line)
+            if keyEntry == '-exp' and dose == 0:
+               numExpDoses = 0
+               break
+
+   except Exception:
+      numExpDoses = 0
+      pass
+
+   cleanupFiles([doseName])
+   return numExpDoses
+
+
+# Check whether there are doses but no prior record dose entries, in which case dose
+# weighting can get screwed up
+def checkDoseInfoInMdoc(filename):
+   numExpDoses = checkOneDoseType(filename, '-exp')
+   numPriorDoses = checkOneDoseType(filename, '-key PriorRecordDose')
+   if numExpDoses > 0 and numPriorDoses != numExpDoses:
+      prnstr('WARNING: Prior Record dose values are missing or incomplete ' + \
+             'in metadata; the new file should not be used for dose weighting')
+      
+   
+#### MAIN PROGRAM  ####
+#
+# load System Libraries
+import os, sys, glob, shutil
+
+#
+# Setup runtime environment
+if os.getenv('IMOD_DIR') != None:
+   sys.path.insert(0, os.path.join(os.environ['IMOD_DIR'], 'pylib'))
+   from imodpy import *
+   addIMODbinIgnoreSIGHUP()
+else:
+   sys.stdout.write(prefix + " IMOD_DIR is not defined!\n")
+   sys.exit(1)
+
+#
+# load IMOD Libraries
+from pip import *
+
+# Fallbacks from ../manpages/autodoc2man 3 1 excludeviews
+options = ["stack:StackName:FN:", "views:ViewsToExclude:LI:",
+           "montage:MontagedImages:B:", "delete:DeleteOldFiles:B:",
+           "restore:RestoreFullStack:B:", "orig:OriginalStack:B:", ":PID:B:"]
+
+(opts, nonopts) = PipReadOrParseOptions(sys.argv, options, progname, 1, 0, 1)
+
+doPID = PipGetBoolean('PID', 0)
+printPID(doPID)
+
+stackName = PipGetInOutFile('StackName', 0)
+if not stackName:
+   exitError('The name of the image stack must be entered')
+excludeStr = PipGetString('ViewsToExclude', '')
+deleteOld = PipGetBoolean('DeleteOldFiles', 0)
+keepOld = 1 - deleteOld
+restore = PipGetBoolean('RestoreFullStack', 0)
+useOrig = PipGetBoolean('OriginalStack', 0)
+montage = PipGetBoolean('MontagedImages', 0)
+montEntered = 1 - PipGetErrNo()
+command = 'newstack'
+imageStr = ''
+
+# Split up name and figure out what iteration number to use for files
+(rootname, stackExt) = os.path.splitext(stackName)
+tiltExt = '.rawtlt'
+cutRoot = rootname + '_cutviews'
+infoList = glob.glob(cutRoot + '[1-9][0-9].info')
+infoList.sort()
+iterNum = '0'
+if infoList:
+   iterNum = infoList[-1][-7:-5]
+   if not restore:
+      if iterNum == '99':
+         exitError("This operation cannot be done more than 100 times in succession")
+      iterNum = str(int(iterNum) + 1)
+else:
+   infoList = glob.glob(cutRoot + '[0-9].info')
+   infoList.sort()
+   if infoList:
+      iterNum = infoList[-1][-6]
+      if not restore:
+         iterNum = str(int(iterNum) + 1)
+
+
+# make up lots of names
+cutRoot += iterNum
+allRoot = rootname + '_allviews' + iterNum
+keptRoot = rootname + '_keptviews' + iterNum
+infoName = cutRoot + '.info'
+allStack = allRoot + stackExt
+cutStack = cutRoot + stackExt
+keptStack = keptRoot + stackExt
+allTilt = allRoot + tiltExt
+cutTilt = cutRoot + tiltExt
+keptTilt = keptRoot + tiltExt
+rawTilt = rootname + tiltExt
+allPclist = allRoot + '.pl'
+cutPclist = cutRoot + '.pl'
+keptPclist = keptRoot + '.pl'
+pieceList = rootname + '.pl'
+formatsForExt = {'MRC' : 'MRC', 'HDF' : 'HDF', 'TIF' : 'TIF', 'TIFF' : 'TIF'}
+
+doMdoc = 0
+doRawtlt = 0
+doPclist = 0
+useStackName = stackName
+if restore and useOrig:
+   useStackName = rootname + '_orig' + stackExt
+
+# If montage flag not entered, autodetect montage from header or mdoc, not pl
+if not montEntered:
+   try:
+      (nx, ny, nz) = getMontageSize(useStackName)
+      montage = 1
+   except ImodpyError:
+      pass
+
+# Get the exclude list and do common checks on it
+if excludeStr:
+   excludeList = parselist(excludeStr)
+   excludeList.sort()
+   excSortStr = listToRanges(excludeList)
+   for iz in excludeList:
+      if excludeList.count(iz) > 1:
+         exitError('View number ' + str(iz) + ' occurs more than once in the list')
+
+# Set output format if current file type matches its extension
+extFormat = stackExt[1:].upper()
+if extFormat in formatsForExt:
+   try:
+      curFormat = getImageFormat(stackName)
+      if curFormat in formatsForExt and \
+         formatsForExt[curFormat] == formatsForExt[extFormat]:
+         os.environ['IMOD_OUTPUT_FORMAT'] = formatsForExt[curFormat]
+   except ImodpyError:
+      pass
+   
+if not restore:
+
+   if not excludeStr:
+      exitError('The list of views to exclude must be entered when not restoring files')
+   if useOrig:
+      exitError('The -orig option is not used except when restoring the full stack')
+
+   checkExists(stackName, 'The stack file')
+
+   if os.path.exists(rawTilt):
+      doRawtlt = 1
+
+   if montage and os.path.exists(pieceList):
+      doPclist = 1
+
+   try:
+      hdfInput = getImageFormat(stackName) == 'HDF'
+      if os.path.exists(stackName + '.mdoc') or hdfInput:
+         doMdoc = 1
+         if not hdfInput:
+            checkDoseInfoInMdoc(stackName)
+      if montage:
+         imageStr = 'Image'
+         command = 'edmont'
+         (nx, ny, nz) = getMontageSize(stackName, pieceList)
+      else:
+         (nx, ny, nz) = getmrcsize(stackName)
+         
+      includeList = []
+      for iz in range(1, nz + 1):
+         if iz not in excludeList:
+            includeList.append(iz)
+
+      # Do further checks on the list
+      for iz in excludeList:
+         if iz < 1 or iz > nz:
+            exitError('View number ' + str(iz) + ' is out of range for stack')
+         if len(excludeList) == nz:
+            exitError('The exclude list contains all views')
+
+      # Sort the tilt angles into the two sets if doing them
+      if doRawtlt:
+         rawTiltList = readTextFile(rawTilt)
+         numTilts = 0
+         cutTiltList = []
+         keptTiltList = []
+         for line in rawTiltList:
+            if line.strip() != '':
+               numTilts += 1
+               if numTilts in excludeList:
+                  cutTiltList.append(line)
+               else:
+                  keptTiltList.append(line)
+         if numTilts != nz:
+            exitError('There is not a line in ' + rawTilt + ' for each view')
+
+         makeBackupFile(cutTilt)
+         writeTextFile(cutTilt, cutTiltList)
+         makeBackupFile(keptTilt)
+         writeTextFile(keptTilt, keptTiltList)
+
+      # Copy the retained and excluded views
+      excSortStr = listToRanges(excludeList)
+      includeStr = listToRanges(includeList)
+      common = [imageStr + 'InputFile ' + stackName,
+                'NumberedFromOne']
+      if montage:
+         common.append('RenumberZFromZero 1')
+         if doPclist:
+            common.append('PieceListInput ' + pieceList)
+      if doMdoc:
+         common.append('UseMdocFiles')
+      input = common + ['SectionsToRead ' + includeStr,
+                        imageStr + 'OutputFile ' + keptStack]
+      if doPclist:
+         input.append('PieceListOutput ' + keptPclist)
+      prnstr('Copying retained views to ' + keptStack)
+      runcmd(command + ' -StandardInput', input)
+
+      input = common + ['SectionsToRead ' + excSortStr,
+                        imageStr + 'OutputFile ' + cutStack]
+      if doPclist:
+         input.append('PieceListOutput ' + cutPclist)
+      prnstr('Copying excluded views to ' + cutStack)
+      runcmd(command + ' -StandardInput', input)
+      keptHDF = getImageFormat(keptStack) == 'HDF'
+
+   except ImodpyError:
+      prnstr('Operation failed; leaving original files as they were')
+      exitFromImodError(progname)
+
+   # Do all the renames/removals
+   logOut = []
+   renamesDone = []
+   mdocFile = stackName + '.mdoc'
+   keptMdoc = keptStack + '.mdoc'
+   moveMdoc = not hdfInput and os.path.exists(mdocFile)
+   error = 0
+   prnstr('Renaming files:')
+   error = manageRename(stackName, allStack, keptStack, True, True)
+   if doRawtlt and not error:
+      error = manageRename(rawTilt, allTilt, keptTilt, True, True)
+   if doMdoc and not error:
+      error = manageRename(mdocFile, allStack + '.mdoc', keptMdoc, moveMdoc,
+                                   (not keptHDF) and os.path.exists(keptMdoc))
+   if doPclist and not error:
+      error = manageRename(pieceList, allPclist, keptPclist, True, True)
+   if error > 1:
+      prnstr('LOG: You need to do these actions to make this dataset usable again:')
+      for line in logOut:
+         prnstr(line)
+
+      prnstr(' ')
+      exitError('YOU CANNOT PROCEED WITH THIS DATASET WITHOUT TAKING THE ACTIONS IN ' +\
+                   'THE LOG MESSAGES')
+
+   if error:
+      exitError('Operation failed; no views were removed and original files were ' +\
+                   'restored')
+
+   if not keepOld:
+      removeAllFile(stackName, allStack)
+      if doRawtlt:
+         removeAllFile(rawTilt, allTilt)
+      if doMdoc and moveMdoc:
+         removeAllFile(mdocFile, allStack + '.mdoc')
+      if doPclist:
+         removeAllFile(pieceList, allPclist);
+
+   writeTextFile(infoName, [fmtstr('{} {} {} {}', nz, doRawtlt, doMdoc, montage),
+                            excSortStr])
+   prnstr('LOG:')
+   prnstr('Operations successfully completed.  To restore full stack, enter:')
+   prnstr('   ' + progname + ' -restore ' + stackName)
+   sys.exit(0)
+
+# RESTORING A FULL STACK
+
+# First check if appropriate files exist
+checkExists(cutStack, 'Stack with removed views')
+checkExists(useStackName, 'Stack with retained views')
+
+try:
+   keptHDF = getImageFormat(useStackName) == 'HDF'
+   cutHDF = getImageFormat(cutStack) == 'HDF'
+   keptMdoc = os.path.exists(stackName + '.mdoc')
+   cutMdoc = os.path.exists(cutStack + '.mdoc')
+   keptPL = os.path.exists(pieceList)
+   cutPL = os.path.exists(cutPclist)
+   nzInfo = -1
+
+   # If the list was entered, try to figure out everything from it
+   if excludeStr:
+      doRawtlt = os.path.exists(rawTilt) and os.path.exists(cutTilt)
+      doMdoc = (keptHDF or keptMdoc) and (cutHDF or cutMdoc)
+      if not doMdoc and (keptMdoc or cutMdoc):
+         prnstr('WARNING: An .mdoc file exists for one of the two files being ' +\
+                   'combined, not both')
+
+   # Otherwise get info from the file and make sure it makes sense
+   elif os.path.exists(infoName):
+      infoLines = readTextFile(infoName)
+      if len(infoLines) < 2:
+         exitError('The info file, ' + infoName + ', has fewer than two lines')
+      excSortStr = infoLines[1]
+      excludeList = parselist(excSortStr)
+      lsplit = infoLines[0].split()
+      if len(lsplit) < 4:
+         exitError('The first line of the info file, ' + infoName + \
+                      ', has fewer than 4 numbers')
+      descrip = 'value on first line of info file'
+      nzInfo = convertToInteger(lsplit[0], descrip)
+      doRawtlt = convertToInteger(lsplit[1], descrip)
+      doMdoc = convertToInteger(lsplit[2], descrip)
+      montage = convertToInteger(lsplit[3], descrip)
+      if doRawtlt and (not os.path.exists(rawTilt) or not os.path.exists(cutTilt)):
+         exitError('The info file shows that .rawtlt files were operated on, but a ' +\
+                      '.rawtlt exists for only one  of the two files being combined')
+      if doMdoc and not ((keptHDF or keptMdoc) and (cutHDF or cutMdoc)):
+         exitError('The info file shows that metadata was operated on, but ' +\
+                      'metadata exists for only one of the two files being combined')
+
+   else:
+      exitError('There is no info file from the original run of ' + progname + \
+                   '; try running with an excluded view list')
+
+   doPclist = montage and keptPL and cutPL
+   if montage and not doPclist and (keptPL or cutPL):
+      prnstr('WARNING: A piece list file exists for only one of the two stacks ' +\
+             'being combined; cannot make combined piece list file')
+
+   # Get sizes, set strings for montage
+   if montage:
+      imageStr = 'Image'
+      command = 'edmont'
+      (nx, ny, nzCut) = getMontageSize(cutStack, cutPclist)
+      (nx, ny, nzKept) = getMontageSize(useStackName, pieceList)
+   else:
+      (nx, ny, nzCut) = getmrcsize(cutStack)
+      (nx, ny, nzKept) = getmrcsize(useStackName)
+
+   nzAll = nzCut + nzKept
+   if nzInfo >= 0 and nzInfo != nzAll:
+      exitError(fmtstr('The # of views listed in the info file ({}) does not match ' +\
+                       'the total of excluded and retained views ({} + {} = {})',
+                       nzInfo, nzCut, nzKept, nzAll))
+   
+   # Final checks of the exclude list
+   for iz in excludeList:
+      if iz < 1 or iz > nzAll:
+         exitError('View number ' + str(iz) + ' is out of range for combined stack')
+   if len(excludeList) != nzCut:
+      exitError(fmtstr('The # of views in the exclude list, {}, does not match the # ' +\
+                          'in the stack of cut views, {}', len(excludeList), nzCut))
+
+   if doRawtlt:
+      keptLines = readTextFile(rawTilt)
+      cutLines = readTextFile(cutTilt)
+      keptTiltList = []
+      cutTiltList = []
+      allTiltList = []
+      for line in keptLines:
+         if line:
+            keptTiltList.append(line)
+      for line in cutLines:
+         if line:
+            cutTiltList.append(line)
+      if len(keptTiltList) != nzKept:
+         exitError(fmtstr('The # of lines in {} ({}) does not match the # of' +\
+                             ' retained views ({})', rawTilt, len(keptTiltList), nzKept))
+      if len(cutTiltList) != nzCut:
+         exitError(fmtstr('The # of lines in {} ({}) does not match the # of' +\
+                             ' excluded views ({})', cutTilt, len(cutTiltList), nzCut))
+
+   if doMdoc and keptMdoc and (not keptHDF) and useOrig:
+      try:
+         shutil.copyfile(stackName + '.mdoc', useStackName + '.mdoc')
+      except Exception:
+         exitError('Copying .mdoc file to use with _orig stack')
+         
+   keptInd = 0
+   cutInd = 0
+   lastExcluded = 0
+   excSplit = excSortStr.split(',')
+   cutOldViews = []
+   input = [imageStr + 'OutputFile ' + allStack]
+   if doMdoc:
+      input.append('UseMdocFiles')
+   if montage:
+       input.append('RenumberZFromZero 1')
+       if doPclist:
+          input.append('PieceListOutput ' + allPclist)
+
+   for exc in excSplit:
+      cutOldViews.append(parselist(exc))
+
+   # Loop on the excluded groups and fill in kept views before each one
+   numExcGroups = len(cutOldViews)
+   for groupInd in range(numExcGroups + 1):
+      nextExcluded = nzAll + 1
+      if groupInd < numExcGroups:
+         nextExcluded = cutOldViews[groupInd][0]
+      numKept = nextExcluded - (lastExcluded + 1)
+      if numKept:
+         input += [imageStr + 'InputFile ' + useStackName,
+                   'SectionsToRead ' + str(keptInd)]
+         if numKept > 1:
+            input[-1] += '-' + str(keptInd + numKept - 1)
+         if doPclist:
+             input.append('PieceListInput ' + pieceList)
+         if doRawtlt:
+            allTiltList += keptTiltList[keptInd : keptInd + numKept]
+         keptInd += numKept
+
+      # Then add the excluded views in that group
+      if groupInd < numExcGroups:
+         numCut = len(cutOldViews[groupInd])
+         input += [imageStr + 'InputFile ' + cutStack,
+                   'SectionsToRead ' + str(cutInd)]
+         if numCut > 1:
+            input[-1] += '-' + str(cutInd + numCut - 1)
+         if doPclist:
+             input.append('PieceListInput ' + cutPclist)
+         if doRawtlt:
+            allTiltList += cutTiltList[cutInd : cutInd + numCut]
+         cutInd += numCut
+         lastExcluded = cutOldViews[groupInd][-1]
+
+   if doRawtlt:
+      writeTextFile(allTilt, allTiltList)
+   prnstr('Recombining the stack into ' + allStack + '...')
+   runcmd(command + ' -StandardInput', input)
+   allHDF = getImageFormat(allStack) == 'HDF'
+
+except ImodpyError:
+   prnstr('Operation failed; leaving original files as they were')
+   exitFromImodError(progname)
+
+try:
+   # Do all the renames/removals
+   mdocFile = stackName + '.mdoc'
+   if not keepOld:
+      action = 'Removing '
+      prnstr('Removing files for retained and excluded views...')
+      removeFile(cutStack)
+      if doRawtlt:
+         removeFile(cutTilt)
+      if doMdoc and not cutHDF:
+         removeFile(cutStack + '.mdoc')
+      if doMdoc and keptMdoc and (not keptHDF):
+         removeFile(mdocFile)
+      if doPclist:
+         removeFile(cutPclist)
+      if montage and (not doPclist) and keptPL:
+         removeFile(pieceList)
+
+   if doMdoc and keptMdoc and (not keptHDF) and useOrig:
+      if keepOld:
+         prnstr('Removing temporary mdoc file')
+      removeFile(useStackName + '.mdoc')
+      
+   action = 'Renaming '
+   prnstr('Renaming files...')
+   if keepOld:
+      renameFile(stackName, keptStack)
+      if useOrig:
+         renameFile(useStackName, rootname + '_orig_keptviews' + stackExt)
+      if doRawtlt:
+         renameFile(rawTilt, keptTilt)
+      if doMdoc and keptMdoc and (not keptHDF):
+         renameFile(mdocFile, keptStack + '.mdoc')
+      if doPclist:
+         renameFile(pieceList, keptPclist)
+
+   renameFile(allStack, useStackName)
+   if doRawtlt:
+      renameFile(allTilt, rawTilt)
+   if doMdoc and not allHDF and os.path.exists(allStack + '.mdoc'):
+      renameFile(allStack + '.mdoc', mdocFile)
+   if doPclist:
+      renameFile(allPclist, pieceList)
+   renameFile(infoName, cutRoot + '_old.info')
+
+except OSError:
+   exitError(action + fileWithErr + ': ' + str(sys.exc_info()[1]))
+
+sys.exit(0)

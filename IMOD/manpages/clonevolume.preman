@@ -1,0 +1,46 @@
+.na
+.nh
+.TH clonevolume 1 4.4.1 IMOD
+.SH NAME
+clonevolume \- clone copies of a volume (typically a PEET averaged
+subvolume) back to the aligned positions and orientations in a starting 
+volume.
+.SH SYNOPSIS
+clonevolume  [options]  -at csv_file  -into into_vol  inVol  outVol
+
+.SH DESCRIPTION
+After aligning and averaging a set of subvolumes with PEET, it is often 
+useful to copy the averaged subvolume back into a copy of an input volume 
+at the positions and orientations of the individual aligned particles. 
+Clonevolume performs this operation. The \fIin_vol\fR will be cloned
+into \fIinto_vol\fR at locations and orientations specified by \fIcsv_file\fR,
+and the output written to \fIout_vol\fR. The comma-separated value 
+location/orientation file \fIcsv_file\fR will typically have been created by
+PEET program createAlignedModel(1). The \fIout_vol\fR will be silently 
+overwritten if it already exists. Neither \fIin_vol\fR, \fIinto_vol\fR
+nor \fIcsv_file\fR will be modified.
+
+The PEET alignment and corresponding average must have beem created
+with "Align Averages Vertically" disabled for proper orientations of the
+cloned subvolumes.
+
+While clonevolume is designed for use with a csv location file and an 
+input volume created by PEET, this is not required. Except for the first, 
+header line, which is always ignored, each line in the location file 
+must contain 7 comma-separated fields representing contour number, 
+X, Y, and Z center coordinates in pixels, and Z-Y-X Slicer angles in degrees,
+(stored in the order X, Y, Z), respectively, representing the rotation
+to be applied to the input volume.
+
+.SH OPTIONS
+Clonevolume uses the PIP package for input (see the manual page for pip(1)).
+Options can be specified either as command line arguments (with the -)
+or one per line in a command file (without the -).  Options can be abbreviated
+to unique letters; the currently valid abbreviations for short names are shown
+in parentheses.
+INSERT OPTION TEXT HERE
+
+.SH AUTHOR
+John Heumann  <heumannj@colorado.edu>
+.SH SEE ALSO
+createAlignedModel(1), clonemodel(1)

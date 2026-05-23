@@ -1,0 +1,416 @@
+.TH cpuadoc 1 3.7.0 IMOD
+.na
+.nh
+
+.SH NAME
+cpu.adoc \- Description of computers for parallel processing in Etomo
+
+.SH SYNOPSIS
+.nf
+.B /usr/local/ImodCalib/cpu.adoc
+.fi
+
+.SH DESCRIPTION
+The cpu.adoc file contains descriptions of the computers you wish to use when
+running parallel processes through Etomo with processchunks(1).  
+It is used by Etomo to build the parallel
+processing table and to run processchunks.  If you are just using a single
+computer with multiple processors, there are two simple alternatives to using
+the cpu.adoc file: 1) enable parallel processing and enter the number of
+processors in the Settings dialog opened from the Etomo Options menu; or 2)
+define the environment variable IMOD_PROCESSORS to be the number of processors
+(see imodenv(1)).  This file also describes the GPUs available for
+processing in parallel with multiple graphics cards.  If you have
+a single computer with multiple GPUs, you need to use a cpu.adoc; see
+EXAMPLES below.
+
+The cpu.adoc file
+must be placed in the IMOD calibration directory.  The location of 
+this directory is defined by the environment variable IMOD_CALIB_DIR, which
+has a default value of /usr/local/ImodCalib with a default installation of
+IMOD.  You will probably need to create this directory.  Then, prepare a
+cpu.adoc file and place it there.  There is an example cpu.adoc file in the
+autodoc directory of the IMOD distribution; you should be able to use this as
+a starting point.
+
+.SS Computer Sections and Attributes
+
+.TP
+.B [Computer = \fIcomputer_name\fB]
+Each section describes one computer.  \fIComputer_name\fR will be used by Etomo
+and IMOD to contact the computer via
+ssh.  As an alternative to listing an actual computer name, the name can simply
+be "localhost", in which case programs will be run directly rather through
+ssh.  A computer should be listed only once; do not have one section with an
+actual name and one section with "localhost".
+
+Computer attributes are name/value pairs found under a computer section, they
+have the following syntax: 
+.br
+.B name = \fIvalue\fR
+.br
+The order of the attributes
+is not important.  All attributes are optional; some are entered in order to
+change the default value of an attribute, while others are purely descriptive.
+For the descriptive
+attributes, you can put anything in them that you want.
+However, any attribute you do not use will be omitted from the table, so not
+using attributes can save screen space in Etomo.  If all of the users are
+familiar with the attributes of the computers or you are planning to use all
+of the computers every time you run a parallel process, then you do not
+need to use anything but the number attribute.  
+
+.TP
+.B number = \fInumber_of_CPUs
+The number attribute is necessary if you have a computer with multiple
+processors.  If you do not enter this attribute, a single processor is assumed.
+
+.TP
+.B gpu\fR[\fB.local\fR]\fB = 1
+This attribute means that the GPU (graphics processing unit) of a video card installed in
+this computer is available for running compatible IMOD processes.  In
+fact, any value besides 1 also indicates that there is a GPU, so the
+entry needs to be commented out or removed to make a GPU unavailable.  If the \fBlocal\fR
+modifier is used, then the GPU is only available to an Etomo that is being run on this
+computer.  Only video cards with CUDA can be used in this way.  
+
+.TP
+.B gpu.device = \fIGPU#\fR[\fB,\fIGPU#\fR...]
+Use this attribute instead of \fBgpu = 1\fR when multiple GPUs are available.
+GPUs will be added to the processchunks call in the same order as they are
+listed in this attribute.  GPUs are numbered from one in this entry,
+as in the entries to various programs, because "0" refers to the best
+available GPU rather than a specific one.  This differs from the
+numbering (from 0) in the output from nvidia-smi.
+
+.TP
+.B type = \fICPU_type
+This attribute goes into the table under the heading \fBCPU Type\fR and can
+contain a description of the computer's processor.
+
+.TP
+.B exclude-interface = batchRunTomo\fR|\fBjoin\fR|\fBpeet\fR|\fBpp\fR|\fBrecon\fR|\fBserialSections\fR|\fBtools
+Excludes a computer from the Parallel Processing table depending on the
+interface in use.  Only one interface can be excluded per computer.
+"\fBbatchRunTomo\fR" refers to the Batch Tomograms interface.
+"\fBpp\fR" refers to the Nonlinear Anisotropic Diffusion interface, and the Generic Parallel Process interface.
+"\fBrecon\fR" refers to the Build Tomogram interface.
+"\fBtools\fR" refers to the Flatten Value interface, and the Test GPU interface.
+
+.TP
+.B users = \fIuser_name\fR[\fB,\fIuser_name\fR...]
+A list of the users who have login priviledges on the computer.  If a user is
+not on this list, the computer will be excluded from the Parallel Processing
+table when the user runs Etomo.  This attribute is optional.  If it is omitted,
+the computer will not be excluded based on user name.
+
+.TP
+.B speed = \fICPU_speed
+This attribute goes into the table under the heading \fBSpeed\fR and can
+contain the speed of the computer.  If you want to put units for this
+attribute in the column header, see the Global Attributes section below.
+
+.TP
+.B memory = \fIamount_of_RAM
+This attribute goes into the table under the heading \fBRAM\fR and can contain
+the amount of memory the computer has.  If you want to put units for this
+attribute in the column header, see the Global Attributes section below.
+
+.TP
+.B os = \fIoperating_system
+This attribute goes into the table under the heading \fBOS\fR and can contain a
+description of the operating system the computer is running.
+
+.TP
+.B gpu.type = \fIGPU_model
+This attribute goes into the GPU table under the heading \fBType\fR and
+can contain a model number for the graphics card.
+
+.TP
+.B gpu.ncores = \fINumber_of_GPU_cores
+This attribute goes into the GPU table under the heading \fBCores\fR and
+can contain the number of CUDA cores.
+
+.TP
+.B gpu.speed = \fIGPU_clock_rate
+This attribute goes into the GPU table under the heading \fBSpeed\fR and can
+contain the clock rate of the GPU.  If you want to put units for this
+attribute in the column header, see the Global Attributes section below.
+
+.TP
+.B gpu.memory = \fIamount_of_GPU_RAM
+This attribute goes into the GPU table under the heading \fBRAM\fR and can contain
+the amount of memory the graphics card has.  If you want to put units for this
+attribute in the column header, see the Global Attributes section below.
+
+.TP
+.B mountname = \fIname_for_mounting_this_computers_directories_remotely
+This attribute specifies the name substituted for \fB%mountname\fR
+in a mount rule (see below) when running on this current computer as the
+.br
+.B mountrule.#.local = \fIlocal_directory_path\fR
+.br
+.B mountrule.#.local = \fIremote_directory_path\fR
+.br
+See the section below on Mount Rules.  Mount rules can be entered as
+computer attributes in order to specify a rule that applies only for a 
+specific machine or to override a global mount rule.
+
+.SS Queue Sections and Attributes
+
+.TP
+.B [Queue = \fIqueue_name\fB]
+Each section describes one queue in a cluster.  \fIQueue_name\fR will be
+displayed in the parallel processing table and sent to
+processchunks with the -Q option, but it does not need to match the actual
+name of a queue.  \fBComputer\fR section attributes are all valid in
+the \fBQueue\fR sections.
+
+.TP
+.B command = \fIcommand_to_run_queuechunk\fR
+Required.  \fBQueuechunk\fR is a script in IMOD that allows Etomo to work
+with specific types of cluster software, but can be modified or replaced to
+work with any cluster software.  See the man page for Queuechunk(1) for the 
+list of supported cluster types and the specifications that a modified
+script must meet.  If the version in IMOD is modified or replaced, it
+should be given a different name, and placed
+somewhere on the IMOD user's path other than IMOD/bin.  That name would be
+used in place of "queuechunk" in the command defined in this section.
+
+A PBS example where there is only one queue:
+.br
+.B command = \fRqueuechunk -t pbs
+
+A PBS example where there are multiple queues:
+.br
+.B command = \fRqueuechunk -t pbs -q \fIqueue_name
+
+This command will be passed in quotes to processchunks.  It will also be used
+to get the load from the queue.
+
+.TP
+.B initialize = \fIcommand_to_send_queuechuck_at_start\fR
+Required for a slurm queue set up in exclusive allocation mode.
+Queuechunk(1) will run this command on the cluster machine at the
+beginning of a Processchunks(1) run.  For a slurm queue, this is needed
+to allocate the desired number of nodes.  To use the script
+slurmInit.sh distributed with IMOD, enter:
+.br
+.B initialize = \fRslurmInit.sh %{nodes} \fIQOS
+
+where QOS is the quality of service, which is used like a queue
+name in slurm.
+
+.TP
+.B deinitialize = \fIcommand_to_send_queuechuck_at_end\fR
+Required for a slurm queue set up in exclusive allocation mode.
+Queuechunk(1) will run this command on the cluster machine at the
+end of a Processchunks(1) run.  For a slurm queue, this is needed to
+release the allocation.  To use the script
+slurmCleanup.sh distributed with IMOD, enter:
+.br
+.B initialize = \fRslurmCleanup.sh
+
+.TP
+.B coresPerNode = \fInumber_of_cores_per_allocated_unit\fR
+This entry is used to compute the number of nodes to request in the
+initialization command for a slurm queue from the number of cores that
+the user requests.  The computed number is substituted for the %{nodes}
+variable.
+
+.SS Global Attributes
+
+Global attributes are name/value pairs found at the top of the file, before
+any computer sections.  They
+typically have the following syntax: 
+.br
+.I nameA.nameB = value
+.br
+The order of the attributes is not important.
+
+.TP
+.B Version = 1.2
+The Version attribute is usually required.  It refers to the syntax used 
+in .adoc files and should be set to 1.2.
+
+.TP
+.B units.speed = \fIunits_for_the_speed_attributes
+The value appears in sub-heading row in the Etomo parallel processing table
+under the heading \fBSpeed\fR.
+
+.TP
+.B units.memory = \fIunits_for_the_memory_attributes
+The value appears in sub-heading row in the Etomo parallel processing table
+under the heading \fBRAM\fR.
+
+.TP
+.B units.gpu.speed = \fIunits_for_the_GPU_speed_attributes
+The value appears in sub-heading row in the Etomo GPU parallel processing table
+under the heading \fBSpeed\fR.
+
+.TP
+.B units.gpu.memory = \fIunits_for_the_GPU_memory_attributes
+The value appears in sub-heading row in the Etomo GPU parallel processing table
+under the heading \fBRAM\fR.
+
+.TP
+.B units.load = \fIqueue_load_header\fR[\fB,\fIqueue_load_header\fR...]
+Shows how many comma-separated values will be returned by \fBqueuechunk\fR when
+it returns a queue's load and provides header(s) for them in the Etomo parallel
+processing table.  The default is "Load".
+
+.TP
+.B max.tilt = \fImaximum_number_of_CPUs_users_should_use_for_tilt
+When this attribute is in use, a reminder not to use too many CPUs will appear
+next to the tilt parallel processing checkbox.  This number must be a whole
+number.  The purpose of this attribute is to discourage users from using too
+many CPUs and from experiencing diminishing returns because
+of bottlenecks.  We are currently setting \fBmax.tilt\fR to 12, but your mileage
+will vary.
+
+.TP
+.B max.volcombine = \fImaximum_number_of_CPUs_users_should_use_for_volcombine
+Similarly to \fBmax.tilt\fR, this attribute will cause a recommendation on the
+maximum number of CPUs to appear next to the volcombine parallel processing
+checkbox.  This step is much more susceptible than tomogram generation 
+to diminishing returns from I/O bottlenecks.  We are currently setting 
+\fBmax.volcombine\fR to 8.
+
+.TP
+.B separate-chunks = \fIvalue
+This attribute can be used to force programs to write chunks into separate
+files that will be reassembled at the end of processing.  Without this
+setting, different instances of the Tilt program will all write to one output
+file simultaneously, which has given problems in one Mac installation.  Any
+value other than 0 activates the feature.
+
+.TP
+.B min.nice = \fIminimum_nice_value
+The minimum value of the Nice spinner.  The default is 0.
+
+.TP
+.B users-column = \fR[\fB0\fR|\fB1\fR]
+When this attribute is present and not set to 0, the Users column will be
+included in the Parallel Processing table.
+
+.TP
+.B mountrule.#.local = \fIlocal_directory_path\fR|\fIremote_directory_path
+See the section below on Mount Rules.
+
+.SS Mount Rules for Local to Remote Path Translations
+In order to use parallel processing in IMOD, all computers must be able to 
+access the directory where the data and command files are located.  However,
+it is not necessary that the directory be referred to by the same name on
+the different computers.  When these names differ, you must provide Etomo
+with information about how to translate the current working directory path on
+the local computer into a path that can be used to access the directory on the
+remote computers.  This gets tricky because the true path of a directory, as
+revealed by a \fBpwd\fR command, may not be the same as the path that the user
+enters to get there.  Thus, in setting up path translations, you need to
+change to a typical directory and then use \fBpwd\fR to find out what the
+official path to the directory is.  This is the path that Etomo will see on
+the local machine, so you need to work out how this needs to be translated
+so that it can be accessed on the remote machines.
+
+As a simple example, each Linux machine in our laboratory used to have a directory
+named \fB/localscratch\fR which was accessed from any machine as
+\fB/scratch/\fIcomputer_name\fR (where \fIcomputer_name\fR is the name of a
+machine, without any domain).  The required mount rules were entered as:
+
+.B mountrule.1.local = \fB/localscratch
+.br
+.B mountrule.1.remote = \fB/scratch/%mountname
+
+Where \fB%mountname\fR is entered exactly as written and will be substituted
+for the appropriate mount name.  In our example, the mount name is just the
+computer name, but a mount name different from the computer name can be 
+entered for an individual computer using the \fBmountname\fR attribute.
+
+For a complicated example, we had a Macintosh running OSX 10.4, and it mounted
+our Linux home directories (\fB/home\fR, \fB/home1\fR, \fB/home2\fR) under the
+same names.  It mounted the Linux machine scratch directories under
+\fB/scratch/\fIcomputer_name\fR.  However, when we were running on the Mac and
+\fBcd'd\fR to a user's home directory and entered \fBpwd\fR, we got, e.g.,
+\fB/private/var/automount/home1/\fIusername\fR.  When we \fBcd'd\fR to a Linux
+scratch directory and entered \fBpwd\fR, we got
+\fB/private/var/automount/\fIcomputer_name\fR.
+
+.br
+The correct translations can be accomplished with:
+
+.ft B
+.nf
+mountrule.2.local = /private/var/automount/home
+mountrule.2.remote = /home
+mountrule.3.local = /private/var/automount
+mountrule.3.remote = /scratch
+.ft R
+.fi
+
+The numbers specify the order in which the rules are applied.  Note that it is
+important to apply the rule for home first to avoid having
+\fB/private/var/automount/home\fR get translated to \fB /scratch/home\fR.  Also
+note that this one rule works for \fB/home\fR, \fB/home1\fR, and \fB/home2\fR.
+The automount names no longer do this on OSX 10.5 and higher, but the example
+is still good for illustrating how to deal with complex situations.
+
+Our Linux machines also used to access the home directories under \fB/Users\fR on
+the Mac, by mounting these directories as
+\fB/\fIcomputer_name\fB/\fIusername\fR.  So we had another mount rule:
+
+.B mountrule.4.local = /Users
+.br
+.B mountrule.4.remote = /%mountname
+
+All of the rules in our two examples are compatible, so they could all be
+listed as global mountrules in the same cpu.adoc.  If this were not the case,
+we could still maintain one file by listing some rules as local rules,
+inside the section for a particular computer.
+
+Here are some other facts about mount rules.  The current directory is
+checked for substitution against one rule at a time, and if it matches a
+rule then the substitution is made and no other rule is checked.  Local rules
+for the current host machine, if any, are checked before the global rules.
+
+It is required to have a local rule and a remote rule with the same number
+and in the same area (global attributes area or \fBComputer\fR section).  Each
+mount rule attribute must have a value.
+
+When \fB%mountname\fR is used, then a \fBComputer\fR section for the current
+host computer must exist, or there must be a \fBComputer\fR section called
+\fBlocalhost\fR.  In the latter case, a \fBmountname\fR attribute is required for
+that section.
+
+.SH EXAMPLES
+
+A \fBcpu.adoc\fR for a standalone four-core system would be just:
+.nf
+Version = 1.2
+[Computer = localhost]
+number = 4
+.fi
+
+A \fBcpu.adoc\fR for a standalone 16-core system with 4 equivalent GPUs would be:
+.nf
+Version = 1.2
+[Computer = localhost]
+number = 16
+gpu.device=1,2,3,4
+.fi
+
+.P
+
+See \fB$IMOD_DIR/autodoc/cpu.adoc\fR for further examples.
+
+.SH LIMITATIONS
+
+Windows computers may not be placed in the same cpu.adoc parallel processing
+table as Linux and Macintosh computers.
+
+All computers in the cpu.adoc will be loaded into a scrollable table in Etomo
+and ssh connections will be opened to each one to monitor its load.
+A \fBcpu.adoc\fR with many tens of computers may slow down Etomo too much.
+
+.SH SEE ALSO
+
+\fBqueuechunk\fR(1)

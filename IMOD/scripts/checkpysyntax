@@ -1,0 +1,24 @@
+#!/bin/sh
+# Simple script to check syntax of python scripts during install
+
+altPython=/usr/local/python3/bin/python3
+if [ ! -z $ALT_PYTHON ] ; then altPython=$ALT_PYTHON ; fi
+for i in $* ; do
+    python -m py_compile $i
+    if [ $? -ne 0 ] ; then
+        echo "Syntax error in $i"
+        exit 1
+    fi
+    if [ -e $altPython ] ; then
+        $altPython -m py_compile $i
+        if [ $? -ne 0 ] ; then
+            echo "Syntax error in $i"
+            exit 1
+        fi
+    fi
+    if [ -e ${i}c ] ; then rm -f ${i}c ; fi
+done
+
+if [ -e __pycache__ ] ; then rm -r __pycache__ ; fi
+
+    

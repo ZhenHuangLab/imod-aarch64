@@ -1,0 +1,57 @@
+#!/bin/csh -f
+# Script to copy .cmd wrappers to install directory
+# First argument is install directory, second is directory of wrappers,
+# then script names
+#
+#  $Id$
+#
+
+set cshwrapper = tcshwrapper.cmd
+set tcshwrapper = tcshwrapper.cmd
+set bashwrapper = bashwrapper.cmd
+set shwrapper = bashwrapper.cmd
+set pywrapper = pywrapper.cmd
+
+if ($#argv < 3) then
+    echo "copywrappers: Too few arguments"
+    exit 1
+endif
+
+set instdir = $argv[1]
+set srcdir = $argv[2]
+shift ; shift
+set numarg = $#argv
+while ($#argv > 0)
+    if ((-x $argv[1] || $numarg == 1) && ($argv[1] != "settmpdir")) then
+        set comsh = `head -n 1 $argv[1] | sed -e '/^.*bin\//s///' -e '/ .*$/s///' -e '/[[:cntrl:]]/s///g'`
+        switch ("$comsh")
+          case sh:
+            set wrapper = $shwrapper
+            breaksw
+          case bash:
+            set wrapper = $bashwrapper
+            breaksw
+          case csh:
+            set wrapper = $cshwrapper
+            breaksw
+          case tcsh:
+            set wrapper = $tcshwrapper
+            breaksw
+          case env:
+          case python:
+            set wrapper = $pywrapper
+            sed 's/\/usr\/bin\/env python/\/usr\/bin\/python -u/' $argv[1] >! $instdir/$argv[1]
+            chmod a+rx $instdir/$argv[1]
+            breaksw
+          default:
+            echo "copywrappers: No command shell found in first line of $argv[1]"
+            exit 1
+        endsw
+
+        set name = $argv[1]:t
+        sed -e "/%0/s//$name/" $srcdir/$wrapper >! $instdir/$name.cmd
+        chmod a+rx $instdir/$name.cmd
+    endif
+    shift
+end
+exit 0

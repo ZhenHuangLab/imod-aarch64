@@ -1,0 +1,472 @@
+<html><head> <title>IMOD Tomography Guide - Advanced Topics</title> </head>
+<body>
+<A NAME = "TOP"></A>
+<H2 ALIGN=center>Tomography Guide Advanced Topics for IMOD 4.11<BR>
+</H2>
+<H3 ALIGN=center>University of Colorado, Boulder</H3>
+<HR>
+<H3>Table of Contents</H3>
+<UL>
+</UL>
+<BR><A HREF = "#Command Files">1.0. Command Files</A>
+<BR><A HREF = "#Entries to Programs">2.0. Entries to Programs</A>
+<BR><A HREF = "#Fiducialless Tomogram">3.0. Making a Tomogram with Correlation Alignment.</A>
+<BR><A HREF = "#Fiducialless Combine">4.0. Combining Tomograms with Few or No
+  Fiducials Using Matching Models</A>
+<BR><A HREF = "#ImportingDual">5.0. Importing Two Tomograms into Tomogram Combination</A>
+<BR><A HREF = "#CombineOversized">6.0. Combining with Over-sized Reconstructions</A>
+<BR><A HREF = "#ErasingTracking"> 7.0. Tracking Additional Gold for Erasing from a Tomogram</A>
+<HR>
+
+<H4><A NAME = "Command Files"></A>
+1.0. Command Files
+</H4>
+Nearly all of the processing for tomography is done by running command
+files.  The format of these files was originally based on the batch files used
+in VMS.  In our command files, every line that runs a command or program must
+start with "$"; comments can be inserted anywhere in the file on lines
+that start with "#".  To skip over part of a command file, you can
+insert the lines:
+<PRE>
+  $goto label             ("label" can be any label you choose)
+  ...
+  $label:                 (This must be on a line by itself)
+</PRE>
+You can run a command file with "subm", which is an alias defined in the
+IMOD startup files; for example, for tcsh users it is:
+<BR><CODE>     alias subm 'submfg \!* &'
+<BR></CODE>
+(An equivalent function is provided for bash users, and a script is provided
+for Windows users without Cygwin to run submfg in the background.)  
+<A HREF = "man/subm.html">Submfg</A> is a script
+that will run one or more command
+files in sequence, creating a log file for each and reporting on their
+success or failure.  It uses the script <A HREF = "man/vmstopy.html">Vmstopy</A> to
+convert a command file to a Python script.
+With this alias, you can enter, e.g., "subm track", and a file named
+track.com will be executed in the background, with a log file created
+called track.log.  The bell will ring and a message will be printed 
+when the command file is completed.
+You can also enter "subm track." or "subm xcorr.com prenewst".  You can
+actually define variables and include Python statements in a command file; see
+the <A HREF = "man/vmstopy.html">Vmstopy man page</A>.
+<P>
+     If you need to interrupt a command file after you have started it,
+one way is to use the "imodkillgroup" command with the process ID (PID) that was
+printed out
+when you entered the "subm" command.  For example, if the PID was 1234, enter
+"imodkillgroup 1234".  Another way (except on Windows without Cygwin) is to
+bring the process to
+the foreground with "fg", then used CTRL-C to interrupt it.  If there is
+more than one process in the background, in tcsh you can give the command
+"jobs" first to determine which one is the process in question, then use,
+for example, "fg %2" to bring job 2 to the foreground.
+
+<H4><A NAME = "Entries to Programs"></A>
+2.0. Entries to Programs
+</H4>
+The programs that you will run have many parameters or options to control
+their behavior.  There are three basic ways that options and
+parameters
+can be entered: as arguments
+on the command line after the program name, interactively in response to
+queries from the program after it starts, or as a set of lines
+containing keyword and values.  The first way follows the
+conventions that are common for Unix commands, the most typical form being
+<BR><CODE>    command [options] input_file output_file
+<BR></CODE>
+ The [ ] around "options" signifies that this is an optional entry; this is a
+common convention when summarizing how to invoke a program.  Optional
+arguments are usually single letters or abbreviations starting with a dash
+(-).  Some options must be followed by another entry, which could be a
+filename, a single number, or a list of numbers.  Other options stand on their
+own, without an additional entry.  Command line entries are finicky in that
+they require spaces separating all of the elements, including a space between
+an option and its value, and no embedded spaces in the entries.  For example:
+<BR><CODE>     newstack -sec 0-7,13-21 -xf images.xg images.st images.ali
+<BR></CODE>
+ Here the -sec option is followed by a list of section numbers (with no
+embedded spaces), the -xf option is followed by the name of file with
+transformations in it, and the last two arguments are the names of the input
+and output files.
+<P>
+A program that takes command line arguments will almost always print a
+summary of its usage when you type in the program name with no
+arguments, or with the argument -h.
+<P>
+Programs that take entries interactively print out a query for an entry,
+accept a line of input, then go on to the next entry.  In the command files
+used to run the tomography software, the answer to each query will appear on a
+separate line after the line on which such a program is invoked.  When you
+look at the log file produced by running a command file, you will see all of
+the queries but none of the entries, because the entries are not echoed into
+the log file.
+<P>
+Because there are several disadvantages to the latter approach, a new
+input method was devised called <A HREF = "man/pip.html">PIP</A>,
+which stands for "parse input
+parameters".  A program that uses <A HREF = "man/pip.html">PIP</A>
+can take parameters either as
+command line arguments or as a set of lines of input, with each line
+containing the keyword for an option and its value.  Typically each option
+has a short name and a long name defined for it.  The short names are meant
+to be used on the command line, while the long names are more explanatory
+and are suitable for command files.  Option names can be abbreviated to
+a unique set of characters, which makes command line use even more
+convenient, although it is better not to abbreviate options in command files.
+In fact, the command files used for standard processing in IMOD all have full
+option names, and many Python scripts that need to edit these files assume
+that the full names are present.
+All text starting with a '#' is treated as a comment and ignored.
+
+<P>
+It may help to be aware of the underlying structure of the programs in
+the IMOD package.  Other than Etomo, they are written primarily in three 
+languages: C, Fortran, and Python.  (There are still a few specialized scripts
+in shell
+script language.)  The C programs take command line arguments; only a few of
+the older ones 
+have been converted to use <A HREF = "man/pip.html">PIP</A> for input but
+a number of newer ones do use it.  The Python and
+shell scripts also take command line arguments, and almost all Python programs
+use <A HREF = "man/pip.html">PIP</A>.
+The Fortran programs, which are the predominant programs used for tomography,
+originally all took inputs interactively.  
+Fortran programs used for tomography
+have almost all been converted to use <A HREF = "man/pip.html">PIP</A> for
+input.
+<P>
+Fortran programs have several conventions for numeric interactive input,
+and <A HREF = "man/pip.html">PIP</A> follows essentially the same conventions
+when used from a Fortran program:
+<OL>
+<LI>When several numbers are expected in response to a query, they can be
+separated by commas or spaces.  In addition, they can be entered on more than
+one line.  However, in command files processed by Etomo, numbers should be
+separated only by commas and should not continue on more than one line.
+<LI>A slash (/) at the beginning of an entry will accept the default values
+for all of the entries expected on that line.
+<LI>When several numbers are being entered, specific values can be entered
+for some of the numbers, followed by a slash to accept the defaults for the
+rest of the entries (e.g., if 6 numbers are expected, 128,384/ will enter two
+and accept the defaults for the other four).
+<LI>Entering a comma without a number will accept the default for the
+number expected before that comma (e.g., ,,,,128,384 will accept the defaults
+for the first four numbers and enter values for the last two).
+<LI>Once the program has received all the numbers that it is expecting, it
+ignores the text on the rest of the line, as long as it is appropriately
+separated from the last numeric entry (by a tab or space).  Command files
+can take
+advantage of this feature by having comments after numeric entries.
+However, when Etomo processes command files, it places such comments on
+a separate line before the entry.
+</OL>
+<P>
+Filename or other text entries do not follow these conventions for
+numeric input, and cannot be followed by comments on the same line in the
+command file.
+<P>
+Some programs accept lists of numbers for specific entries.
+Lists are comma-separated ranges of numbers, such as 1,3,6-9,12-10, which
+would enter the numbers 1,3,6,7,8,9,12,11,10.  Lists follow slightly different
+conventions:
+<OL>
+<LI>A list must be confined to a single line (which can be 10240 characters
+long).
+<LI>A slash (/) at the beginning of the entry will accept the default
+values for the list (or leave a previous entry unmodified), but there is no
+way to enter defaults for only some of the numbers in the list.
+<LI>A character other than space, minus, comma, or a digit will terminate
+the list; text after that character will be ignored, thus allowing comments
+after lists.
+</OL>
+
+<H4><A NAME = "Fiducialless Tomogram"></A>
+3.0. Making a Tomogram with Correlation Alignment.
+</H4>
+This section describes in detail the steps involved if you need to make as
+good a tomogram as possible with the cross-correlation alignment.  It was
+written before patch tracking was available; that is generally a better option
+for trying to improve on what comes out with coarse alignment only.
+<UL>
+<LI><B>Options in the cross-correlation.</B>  In Advanced mode you will see
+several options that may help to optimize the alignment.  The only way to
+assess the affect of these options may be to build a series of trial
+tomograms, which you could do on a subset of slices.  The <B>Cumulative
+correlation</B> option makes the reference for alignment at each step be a
+sum of the lower-tilt views that have already been aligned.  This may give
+a more globally correct alignment.  If you experiment with this, try it
+with <B>Absolute Cosine Stretch</B> both checked and unchecked, because we
+have not seen one consistently give a better result.
+If features of interest are located in a
+subset of the area, you might also experiment with defining the area of
+correlation.  The area can be made smaller, but still symmetric around the
+center, with the <B>Pixels to trim (x,y)</B> entry.  It can be offset from
+the center by specifying X or Y axis min and max values.
+
+<LI><B>Positioning.</B>  When you think that you have the best 
+alignment for the final tomogram, 
+go to the <B>Tomogram Positioning</B> page.
+You have the same two choices as when
+there are fiducials: generating 3 small samples or generating a whole
+tomogram (presumably binned down) to draw boundary lines in.  After you run
+<B>Compute Z Shift & Pitch Angles</B>, your positioning parameters will appear
+on the screen just as they do with a fiducial alignment.  However, the 
+<B>Tilt angle offset</B> and <B>Z-shift</B> shown here will be input to the
+tomogram generation program, not the alignment program.  They are the same
+parameters visible in Advanced mode on the <B>Tomogram Generation</B>.
+These entries have the same effect as, and are additive to, the
+entries that appear on the <B>Tomogram Positioning</B> page when
+<A HREF = "man/tiltalign.html">Tiltalign</A> is being run.
+As of IMOD 3.8.26, both sets of parameters can be present and will be properly
+taken into account when <A HREF = "man/solvematch.html">Solvematch</A>
+uses the fiducial coordinates to obtain the initial
+transformation between dual-axis tomograms.
+
+<LI><B>Final Aligned Stack.</B> There is one parameter that can be adjusted to
+affect the results at this stage, the angle of the tilt axis.  A possible
+strategy is to examine the aligned stack and see what rotation angle is needed
+to keep features as close as possible to the same horizontal line through the
+whole series.  Once you have a reconstruction, the X/Z slices of the tomogram
+will probably give the best indications of deficiencies in the alignment.
+
+<LI><B>Suggested Sequence.</B>  A possible sequence of iterative operations
+would be:
+<OL>
+<LI>Compute the cross-correlation.  Check <B>Fiducialless alignment</B> and
+press <B>Done</B> (remember, there is no need to generate the coarse aligned
+stack).
+<LI>Go to <B>Tomogram Positioning</B> and determine the positioning
+parameters.
+<LI>Go to <B>Final Aligned Stack</B> and generate and view an aligned stack. 
+If features are not staying in one horizontal line,
+adjust the <B>Tilt axis rotation</B> and make a new aligned stack to try to
+improve this. 
+<LI>Go to <B>Tomogram Generation</B> and specify a subset of slices and
+possibly a reduced width.  Specify a trial tomogram name and compute the trial
+tomogram.
+<LI>Go back to <B>Coarse Alignment</B> and try different parameters (e.g.,
+cumulative correlation or a subset area).
+<LI>Go to <B>Final Aligned Stack</B> and make a new aligned stack and then
+go to <B>Tomogram Generation</B> and make a new trial tomogram.
+<LI>Repeat the last two steps until optimal parameters are determined then
+compute the correlation again, if necessary.
+<LI>Go to <B>Final Aligned Stack</B>, generate
+the aligned stack.  Apply 2D filtering if needed.  Go to <B>Tomogram
+Generation</B>, reset the slice limits and 
+width, and make the final tomogram.
+</OL>
+</UL>
+<H4><A NAME = "Fiducialless Combine"></A>
+4.0. Combining Tomograms with Few or No Fiducials Using Matching Models
+</H4>
+This section describes how to use models of corresponding points to get
+the initial match between two tomograms when there are too few, or no,
+fiducials and the automated volume matching by image correlations has failed.
+To get an adequate solution for the initial transformation, there should be at
+least 6 well-distributed corresponding points, preferably 8-10. 
+To make matching models, 
+do this:
+<OL>
+<LI> Select the  <B>Use matching models only</B> button on the 
+<B>Tomogram Combination Setup</B> page.
+<LI>If your tomograms are too large for both to fit into memory, select
+<B>Load binned by 2</B>, which will reduce memory requirements 8-fold.
+<LI>Press 
+<B>Create Matching Models in 3dmod</B> to load both tomograms with
+appropriate filenames set up.  Change the object type to "Scattered points"
+and set a useful symbol or sphere size so that you can see the points.  It
+will be easy to see corresponding points if you open a Slicer window for one
+tomogram and rotate by 90 degrees in Z until you see an image whose
+orientation matches that of the other tomogram.  You can model in
+this Slicer windows just as easily as in the Zap window.
+Model 8-10 well-distributed corresponding points.
+Be sure to have points distributed in Z
+as well as in X and Y.  See the man page for
+<A HREF = "man/solvematch.html">Solvematch</A> for more details on choosing
+points.  If you are
+marking gold particles, put the model point on the section with the strongest
+white side bands around the black bead.  Save the models.
+<LI>Make sure that you have corresponding fiducial point numbers entered if
+you do have some fiducials.
+<LI>Start the combine operation. 
+</OL>
+
+<H4><A NAME = "ImportingDual"></A>
+5.0. Importing Two Tomograms into Tomogram Combination
+</H4>
+<P>
+This section describes how you can use Etomo to combine tomograms from tilt
+series taken around two axes and reconstructed in other software.
+The instructions assume that you are starting with tomograms 
+that are oriented so that the Z slices in the file correspond to 
+X/Y planes through the specimen, as in IMOD after post-processing.
+<ol>
+<LI> Make sure that 
+the tilt axis is along the Y axis for each tomogram, and that
+the X and Y dimensions of the A tomogram match the Y and X dimensions of
+the B tomogram, respectively.  For example, suppose the tilt axis is at
+70 degrees counterclockwise from the Y axis, and that the A tomogram is
+1950 by 2048 pixels while the B tomogram is 2048 by 2000 pixels.  
+You need to rotate both by -70
+degrees.  Minimally, you would rotate them as follows: 
+<PRE>    newstack -size 2048,1950 -rot -70 original-a setnamea.rot
+    newstack -size 1950,2048 -rot -70 original-b setnameb.rot </PRE>
+Here, "original-a" and "original-b" refer to your original volumes.
+However, if you want to preserve all the data in the original tomograms, you
+could make the rotated volumes larger.  The data loss from rotation becomes
+increasingly important the farther the rotation is from 0 or +/- 90 degrees;
+to prevent it completely, one would need to increase the size of the area by
+the sine of the rotation angle.  For
+example, these sizes would completely preserve the data:
+<PRE>   newstack -size 2700,2600 -rot -70 original-a setnamea.rot
+   newstack -size 2600,2700 -rot -70 original-b setnameb.rot </PRE>
+
+<LI> To process in IMOD, you need 
+to have the tomograms in the orientation produced by Tilt, in which
+the tilt axis is along the Z dimension of the file and the Y dimension is
+depth (i.e., Z slices in the file correspond to X/Z planes through the
+specimen).  Rotate the volumes with:
+<PRE>   clip rotx original-a setnamea_rec.mrc </PRE>
+or
+<PRE>   clip rotx setnamea.rot setnamea_rec.mrc </PRE>
+depending on whether you rotated the volumes or not, and similarly for B.
+
+<LI> You need text files "setnamea.tlt" and "setnameb.tlt" with either the 
+full list of tilt angles for each data set, or simply with two lines in each,
+listing the starting and ending angles of that tilt series.
+<LI> To get through the setup process, you need to have some kind of files or 
+links usable as raw stacks, such as "setnamea.st" and
+"setnameb.st".  Except on Windows,
+  the simplest thing to do is to create links: 
+<PRE>    ln -s setnamea_rec.mrc setnamea.st
+    ln -s setnameb_rec.mrc setnameb.st </PRE>
+Alternatively, you can rename either "original-a" or "setnamea.rot" to be
+"setnamea.st", as in:
+<PRE>    mv setnamea.rot setnamea.st </PRE>
+or 
+<PRE>    mv original-a setnamea.st </PRE>
+and similarly for B.
+
+<LI> Start Etomo.  On the Setup page, use the A stack, "setnamea.st", 
+to define the data set.
+Make sure <B>Dual axis</B> is selected.  Fill in the pixel size, fiducial
+size,  and rotation with 1, 10, and 0.  Check <B>Specify the starting angle
+and step</B> for each axis.  Press <B>Create Com Scripts</b>.
+
+<LI> Go directly to the <B>Tomogram Combination</B> panel.  Proceed to make
+matching models as described in <A HREF = "#Fiducialless Combine">
+Combining Tomograms with Few or No Fiducials</A>.  
+<LI> If you made the volumes bigger to preserve
+data after rotation,
+you should draw a patch region model enclosing the original data.  You only
+need to draw one contour.  To avoid spurious correlations from the border
+between actual data and filled regions, you may need to place this contour
+inside the border of the original data by as much as half the X/Y size of the 
+patches used for patch correlations.
+<LI> Set other parameters as usual and start the combine operation.
+</ol>
+</P>
+<H4><A NAME = "CombineOversized"></A>
+6.0. Combining Over-sized Reconstructions
+</H4>
+When you make over-sized reconstructions, there will be substantial regions
+near the edges that have inadequate or no backprojected information; these
+regions need to be excluded from patch correlation when combining.  When you
+use a patch region model to define the area with good reconstruction in the A
+tomogram, <A HREF = "man/corrsearch3d.html#TOP">Corrsearch3d</A> assumes that
+everything from the B tomogram that matches into that area is suitable for
+correlation, unless it is within 36 pixels of the edge in X or Y.  Indeed,
+the material in such regions would be suitable, but the reconstruction of it
+may not.  Thus, you may need to define a region model for the second axis.
+Specifically, this would be the case when the two tomograms are not nearly the
+same size in X and Y after rotating one by 90 degrees, or when there is a
+substantial shift between their centers.
+The steps for this would be:
+<OL>
+<LI>Open the volume being transformed in 3dmod.  Draw a contour around the
+  region with good reconstruction.  In the X dimension, keep the borders to
+  within the original field of view of the camera to avoid data that may be
+  smeared out in Z.  Save the model as "matched_region.mod".
+<LI>After pressing <B>Create Combine Scripts</B>, press <B>Postpone</B>.
+<LI>Edit patchcorr.com and insert the line
+<PRE>    BRegionModel  matched_region.mod </PRE>
+among the other parameter inputs.
+<LI>Reopen the Combine page and press <B>Start Combine</B>
+</OL>
+<P>
+In the final step of combining, <A HREF = "man/filltomo.html#TOP">Filltomo</A>
+is used to fill the combined tomogram with data from A in areas where the the
+B tomogram does not have good data.  The program is given information
+about the size of the original tilt series and the transformations that were
+applied in reconstructing and combining the B axis.   This information should
+allow the program to fill in data appropriately when combining 
+</P>
+<H4><A NAME = "ErasingTracking"></A>
+7.0. Tracking Additional Gold for Erasing from a Tomogram
+</H4>
+<P>
+If you want to erase gold that was not modeled as fiducials, then you need to
+make a more complete model than the fiducial model.  This section describes
+the steps for
+adding seeds to the fiducial model and tracking it to get a more complete
+model.
+<P>
+You make your complete model on
+the coarse aligned stack.  It will be named "setname.fid", and you will be
+able to use
+the gold-erasing interface in Etomo to transform the model and apply it to the
+aligned stack.  However, before you start, you should copy your existing 
+fiducial model to another filename in case you need to reuse it for aligning
+at some point.
+<PRE>    cp setname.fid setname_real.fid </PRE>
+Also save the original seed model if it has not
+been saved previously; i.e., if "setname_orig.seed" does not exist, then
+<PRE>    cp setname.seed setname_orig.seed </PRE>
+<P>
+One option with this method is to add seed points by hand.  The easiest way to
+do this is to rename the fiducial file as a seed file:
+<PRE>    mv setname.fid setname.seed </PRE>
+then use <B>View Seed Model</B> to open the model with the Bead Fixer in
+seeding mode.  Add seed points and proceed to track and refine as needed.
+<P>
+A second option, particularly useful if you have many unmarked beads, is to use 
+<A HREF = "man/imodfindbeads.html">Imodfindbeads</A> to find the gold.  The
+command for doing that is:
+<PRE>    imodfindbeads -size diameter -sp 0.9 -add setname.fid \
+                -sec section setname_preali.mrc setname.seed </PRE>
+Here "diameter" is the diameter of the beads in pixels, "section" is the
+section number, numbered from 0, to analyze, and the "-sp 0.9" allows beads
+to be spaced apart by at least 0.9 times their diameter.  A spacing down to
+0.8 may be useful for getting more overlapping beads.
+<P>
+Run this way, the program will analyze the correlation strengths of beads
+(referred to as relative peak strengths) and
+try to determine a threshold between true beads and spurious correlations.
+It will store the positions of what it thinks are the true beads and up to the
+same number of points with peak strengths below the threshold.  It is
+important that you remove the points below threshold before proceeding.
+To do this, close the Bead Fixer if it is open, then use <B>View Seed
+Model</B> to reload the model and reopen the Bead Fixer.  Now it will show a
+set of controls for
+dealing with contours that have values.  Use the slider to 
+adjust the threshold to the best value if necessary, the checkbox for seeing
+all the points below threshold as well, and the button for deleting all of the
+points below your chosen threshold.  If you find this step unnecessary with
+your data, you can avoid it by adding the
+<A HREF = "man/imodfindbeads.html">Imodfindbeads</A> option "-store -1" to get
+only points above threshold stored in the model.
+<P>
+There are more options to try if <A HREF =
+"man/imodfindbeads.html">Imodfindbeads</A> has trouble finding the threshold
+peak strength.  You can use "-guess" to provide a value for the minimum
+number of beads present, or enter a higher fraction than the default (0.05) for
+the "-peakmin" option to reduce the large number of spurious peaks included in
+the analysis.  You can bypass the automatic threshold finding by entering 
+a positive value (either a relative peak strength or a number of peaks) for the
+"-threshold" and "-store" options.  See the man page for more guidance.
+<P>
+Once you are satisfied with the seed model, proceed to track and refine as
+usual.  When the model is complete, return to the <B>Final Aligned Stack</B>
+panel, transform the model, and use it to erase the gold.
+</P>

@@ -1,0 +1,69 @@
+Version = 1.0
+Pip = 1
+
+[Field = Directory]
+short = dir
+type = FNM
+usage = Name of directory in which to clean up files (. for current directory)
+tooltip = 
+manpage = Name of directory in which to clean up files (. for current directory). 
+At least one directory must be entered either with this option or as a
+non-option argument.
+
+[Field = KeepAlignedStack]
+short = aligned
+type = B
+usage = Keep the final aligned stack file (after all modifications)
+tooltip = 
+manpage =
+
+[Field = KeepUntrimmedRec]
+short = untrimmed
+type = B
+usage = Keep an untrimmed reconstruction even though a trimmed one exists
+tooltip = 
+manpage = Keep an untrimmed reconstruction ("_full" file for single axis,
+"sum" file for dual axis); the default is to remove this if the final Output
+from Trimvol(1) exists.
+
+[Field = KeepAxisRecs]
+short = axis
+type = B
+usage = Keep the single axis reconstructions of a dual-axis data set
+tooltip = 
+manpage = Keep the single axis reconstructions of a dual-axis data set; the
+default is to remove these if the combined file or final trimmed
+reconstruction exists.
+
+[Field = KeepSIRTRecs]
+short = sirt
+type = B
+usage = Keep SIRT reconstructions or ones built with SIRT-like filter
+tooltip = 
+manpage = Keep SIRT reconstructions or ones built with SIRT-like filter; the
+default is to remove these.
+
+[Field = KeepFilterTrials]
+short = filter
+type = B
+usage = Keep filter trials output from Multifiltsetup
+tooltip = 
+manpage = 
+
+[Field = TrialRun]
+short = trial
+type = I
+usage = List files to be deleted but do not remove them; 2 to list "~" files also
+tooltip = 
+manpage = List files to be deleted but do not remove them. Enter 1 to have
+back files ending in "~" summarized on one line, or 2 to have them listed
+individually.  In the latter case, and if there is only one directory entered,
+the program will output only filenames that can be used directly.
+
+[Field = usage]
+short = help
+type = B
+usage = Print help output
+tooltip = 
+manpage = 
+

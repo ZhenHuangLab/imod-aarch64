@@ -1,0 +1,123 @@
+#!/usr/bin/env python
+# imoduntar - Utility to list or extract all files from a tar file
+#
+# Author: David Mastronarde
+#
+# $Id$
+
+def urlHook(numBlocksDone, blockSize, totSize):
+   global nextNum
+   nextFrac = 1. - nextNum / 10.
+   if float(numBlocksDone * blockSize) / totSize > nextFrac:
+      sys.stdout.write(str(nextNum))
+      sys.stdout.flush()
+      nextNum -= 1
+
+
+tutorials = ['cryoExampleData.tar.bz', 'cryosectionData.tar.bz', 'cryoSubvol.tar.bz',
+             'CTF-SIRT-Data.tar.bz2', 'K2-CTF-Data.tar.bz2', 'joinTutorialData.tar.gz',
+             'ivemcut.tar.bz2', 'tutorialData-1K.tar.gz', 'tutorialData.tar.gz',
+             'DE-CTF-Data.tar.bz2',]
+
+def printHelp():
+   sys.stdout.write("""Usage: imoduntar [-t | -k | -d] filename OR URL OR tutorial set
+   imoduntar [-t] filename : extracts all files from a tar file created with
+      gzip, bzip2, or no compression, or lists all files with the -t option
+   imoduntar [-k] URL : Given a URL starting with ftp:// or http://, it will
+      download the file, try to extract from it or list it, and remove it when
+      done unless -k is entered
+   imoduntar -d [-k]  tutorial set : With the -d option and the beginning of
+      the name of a tutorial data set (case insensitive), it will download the
+      data set and unpack it, keeping the file if -k is entered.  Files are:\n""")
+   for name in tutorials:
+      sys.stdout.write('         ' + name + '\n')
+   
+      
+import sys, os, tarfile, urllib
+
+dolist = False
+numStart = 1
+keepFile = 0
+errval = 0
+nextNum = 9
+getTutorial = 0
+tutorialURL = 'http://bio3d.colorado.edu/imod/files/'
+
+while len(sys.argv) > numStart and sys.argv[numStart].startswith('-'):
+   if sys.argv[numStart] == '-t':
+      dolist = True
+   elif sys.argv[numStart] == '-k':
+      keepFile = 1
+   elif sys.argv[numStart] == '-d':
+      getTutorial = 1
+   elif sys.argv[numStart] == '-h':
+      printHelp()
+      sys.exit(0)
+   else:
+      sys.stdout.write('ERROR: ' + sys.argv[numStart] + ' is not a recognized option\n')
+      sys.exit(1)
+   numStart += 1
+      
+if len(sys.argv) < numStart + 1:
+   printHelp()
+   sys.exit(0)
+
+trueFile = None
+fname = sys.argv[numStart]
+pyVersion = 100 * sys.version_info[0] + 10 * sys.version_info[1]
+
+# For a tutorial, find the full name and add the URL
+if getTutorial:
+   for name in tutorials:
+      if name.upper().startswith(fname.upper()):
+         fname = tutorialURL + name
+         break
+   else:    # ELSE ON FOR
+      sys.stdout.write('ERROR: ' + fname + ' does not match a tutorial data set name\n')
+      sys.exit(1)
+      
+      
+try:
+
+   # Download file if it is a URL
+   # it is tempting, but getting a file object with urlopen and opening the tar object
+   # with it did not work: "addinfourl instance has no attribute 'tell'"
+   if fname.startswith('http://') or fname.startswith('ftp://'):
+      trueFile = os.path.basename(fname)
+      mess = 'retrieving ' + fname
+      sys.stdout.write('Downloading ' + trueFile + ': ')
+      sys.stdout.flush()
+      urllib.urlretrieve(fname, trueFile, urlHook)
+      sys.stdout.write('\n')
+      sys.stdout.flush()
+      fname = trueFile
+
+   # Open the file and list or extract it
+   mess = 'opening ' + fname + ' as a tar file'
+   tf = tarfile.open(fname, 'r')
+   if dolist:
+      mess = 'listing the files in ' + fname
+      tf.list()
+   else:
+      mess = 'extracting the files from ' + fname
+      sys.stdout.write('Extracting files...')
+      sys.stdout.flush()
+      if pyVersion >= 250:
+         tf.extractall()
+      else:
+         for tfi in tf:
+            tf.extract(tfi)
+      sys.stdout.write('\nAll files extracted from ' + fname + '\n')
+
+except Exception:
+   sys.stdout.write('An error occurred ' + mess + ' (' + str(sys.exc_info()[1]) + ')\n')
+   errval = 1
+
+if trueFile and not keepFile:
+   try:
+      os.remove(fname)
+   except Exception:
+      sys.stdout.write('Warning: Could not remove ' + fname + '\n')
+   
+sys.exit(errval)
+   

@@ -1,0 +1,344 @@
+Version = 1.0
+Pip = 1
+
+[Field = RootName]
+short = name
+type = FN
+usage = Root name of data set (omit a or b for dual-axis set)
+tooltip = 
+manpage = 
+
+[Field = StackExtension]
+short = stackext
+type = CH
+usage = Extension of raw stack excluding period (optional)
+tooltip = 
+manpage = Extension of raw stack excluding the period.  If this is not
+specified, the program will assume the extension ".st" unless the \fB-style\fR
+option is entered.  With a \fB-style\fR option and no specified stack
+extension, it will look for ".st", ".mrc", ".hdf", ".tif", and ".tiff" and
+require that only one of those types is present.  With this entry, which could
+in principle be arbitrary, it will not care if files with other extensions are
+present.
+
+[Field = DualAxis]
+short = dual
+type = B
+usage = Dual-axis data set
+tooltip = 
+manpage = 
+
+[Field = MontagedImages]
+short = montage
+type = B
+usage = Data are montaged
+tooltip = 
+manpage = 
+
+[Field = BackupDirectory]
+short = backup
+type = FN
+usage = Directory for backing up small files
+tooltip = 
+manpage = Directory for backing up small files.  Commands to save such files
+are placed ina script named "savework", which is run at end of every command
+file.  The directory need not exist yet.
+
+[Field = PixelSize]
+short = pixel
+type = F
+usage = Pixel size of images in nanometers (required)
+tooltip = 
+manpage = Pixel size of images in nanometers.  This entry is required.
+
+[Field = GoldBeadSize]
+short = gold
+type = F
+usage = Size of gold beads in nanometers (required)
+tooltip = 
+manpage = Size of gold beads in nanometers.  This entry is required.  Enter 0
+if you are not going to track fiducials.
+
+[Field = RotationAngle]
+short = rotation
+type = F
+usage = Angle from the vertical to the tilt axis in raw images (required)
+tooltip = 
+manpage = Angle from the vertical to the tilt axis in raw images for the A
+axis or only axis.  This entry is required.
+
+[Field = BRotationAngle]
+short = brotation
+type = F
+usage = Angle from the vertical to the tilt axis for B axis
+tooltip = 
+manpage = Angle from the vertical to the tilt axis for B axis.  The default
+for a dual-axis set is the angle entered for A.
+
+[Field = FirstAndIncAngle]
+short = firstinc
+type = FP
+usage = First tilt angle and tilt angle increment
+tooltip = 
+manpage = First tilt angle and tilt angle increment for the A axis or only
+axis.
+
+[Field = BFirstAndIncAngle]
+short = bfirstinc
+type = FP
+usage = First tilt angle and tilt angle increment for B axis
+tooltip = 
+manpage = 
+
+[Field = UseRawtltFile]
+short = userawtlt
+type = B
+usage = Take tilt angle from a .rawtlt file for A or only axis
+tooltip = 
+manpage = Take tilt angle from a .rawtlt file for the A axis or only axis.
+
+[Field = BUseRawtltFile]
+short = buserawtlt
+type = B
+usage = Take tilt angle from a .rawtlt file for B axis
+tooltip = 
+manpage = 
+
+[Field = ExtractAngles]
+short = extract
+type = B
+usage = Extract tilt angles from data file for A or only axis
+tooltip = 
+manpage = Extract tilt angles from data file for the A axis or only axis.
+This entry implies -userawtlt.
+
+[Field = BExtractAngles]
+short = bextract
+type = B
+usage = Extract tilt angles from data file for B axis
+tooltip = 
+manpage = 
+
+[Field = TiltAngles]
+short = angles
+type = LI
+usage = Complete list of tilt angles, on one line with no spaces
+tooltip = 
+manpage = Complete list of tilt angles for the A or only axis, on one line
+with no spaces.
+
+[Field = BTiltAngles]
+short = bangles
+type = LI
+usage = Complete list of tilt angles for the B axis
+tooltip = 
+manpage = 
+
+[Field = TwoDirectionsAngle]
+short = twodir
+type = F
+usage = Tilt series was bi-directional from given starting angle
+tooltip = 
+manpage = The tilt series was taken in two directions starting at the given
+angle.  The first half of the series will be defined as a separate view group
+for Tiltalign(1) and Beadtrack(1), from the first view through the first
+occurrence of the given angle.
+
+[Field = BTwoDirectionsAngle]
+short = btwodir
+type = F
+usage = Tilt series for B axis was bi-directional from given starting angle
+tooltip = 
+manpage = 
+
+[Field = ReversedBidirectional]
+short = reversed
+type = B
+usage = First acquired part of tilt series is second part of stack
+tooltip = 
+manpage = The part of the tilt series acquired first is the second part of the
+tilt series stack.  Without this option, the program assumes that the tilt
+series is in the same order as the file produced by automated acquisition
+software, in which the part acquired first is inverted in order and placed in
+the beginning of the stack.
+
+[Field = BReversedBidirectional]
+short = breversed
+type = B
+usage = First acquired part of B axis tilt series is second part of stack
+tooltip = 
+manpage = 
+
+[Field = ViewsToSkip]
+short = skip
+type = LI
+usage = List of views to exclude from processing for A or only axis
+tooltip = 
+manpage = List of views to exclude from processing for A or only axis.  This
+entry and the next are fed into view exclusion lists in track*.com,
+align*.com, and tilt*.com.
+
+[Field = BViewsToSkip]
+short = bskip
+type = LI
+usage = List of views to exclude from processing for B axis
+tooltip = 
+manpage = 
+
+[Field = DistortionField]
+short = distort
+type = FN
+usage = Correct image distortion with the given .idf file
+tooltip = 
+manpage = Correct image distortion with the given .idf file.  The file will be
+copied to the current directory.
+
+[Field = BinningOfImages]
+short = binning
+type = F
+usage = Binning of raw images (needed to undistort if ambiguous)
+tooltip = 
+manpage = Binning of the raw images; this entry is needed for distortion
+correction unless there is no ambiguity about whether they are binned; i.e.,
+unless the images are not binned and are too large to be considered
+binned.
+
+[Field = GradientTable]
+short = gradient
+type = FN
+usage = Correct for magnification gradients using the given .mgt file
+tooltip = 
+manpage = Correct for magnification gradients using the given .mgt file.
+Extractmagrad(1) will be run to extract mag gradient files for each axis.
+
+[Field = FocusWasAdjusted]
+short = focus
+type = B
+usage = Focus was adjusted between frames when acquiring montage
+tooltip = 
+manpage = Focus was adjusted between frames when acquiring montage for the A
+axis or the only axis
+
+[Field = BFocusWasAdjusted]
+short = bfocus
+type = B
+usage = Focus was adjusted between montage frames for the B axis
+tooltip = 
+manpage = 
+
+[Field = VoltageInKV]
+short = voltage
+type = I
+usage = Microscope voltage in kV
+tooltip = 
+manpage = 
+
+[Field = SphericalAberration]
+short = Cs
+type = F
+usage = Spherical aberration
+tooltip = 
+manpage = 
+
+[Field = NoiseConfigFile]
+short = ctfnoise
+type = FN
+usage = Configuration file listing noise files for ctfplotter
+tooltip = 
+manpage = 
+
+[Field = Defocus]
+short = defocus
+type = F
+usage = Defocus in nanometers, with underfocus positive
+tooltip = 
+manpage = 
+
+[Field = CopyCTFfiles]
+short = CTFfiles
+type = I
+usage = Just copy files for CTF plotting and correction (1: plotting, 2:
+correction, 3: both)
+ tooltip = 
+manpage = Just copy files for CTF plotting and correction (1 for plotting, 2
+for correction, 3 for both) 
+
+[Field = SetFEIPixelSize]
+short = fei
+type = B
+usage = Set standard pixel spacing in image file(s) from FEI software
+tooltip = 
+manpage = Set the standard pixel spacing in the header of each image file if
+it comes from FEI software.  The pixel size from the extended header will be
+multiplied by the binning of the images, if any, and placed in the standard
+header location, so that it will propagate through the processing.  If there
+is already a standard pixel spacing not equal to 1, 2, 3, or 4, it will not be
+modified.
+
+[Field = ChangeParametersFile]
+short = change
+type = FNM
+usage = Name of file with directives for changing parameters
+tooltip = 
+manpage = 'Name of file with directives for changing parameters.  A directive
+has the form "comparam.comfile.process.option=value" where "comparam" is a required
+prefix for directives to be processed by Copytomocoms, "comfile" is the root
+name of the command file with optional "a" or "b", "process" is the name of a
+program being run on a line starting with "$", "option" is an option to add
+or modify, and "value" is its value.  An example is
+"comparam.xcorra.tiltxcorr.FilterSigma1=0.02".  Files are processed in order, and
+a duplicate entry for an option generally overrides an earlier one.  However,
+for a dual-axis data set, a directive specific to a particular axis, such as
+that example, will always be preferred over a generic directive with no "a" or
+"b" on the command file name.  For a single-axis data set, directives
+with a "b" are ignored and ones with an "a" or with no "a" or "b" are treated
+equivalently, such that later ones override earlier ones.
+
+[Field = OneParameterChange]
+short = one
+type = CHM
+usage = One directive for changing parameters
+tooltip = 
+manpage = One directive for changing parameters, in the format just described.
+Entries with this option are processed after, and can override, ones entered
+from files, and later ones override earlier ones.
+
+[Field = NamingStyle]
+short = style
+type = I
+usage = 0, 1 or 2 for descriptive, mrc, or hdf extensions on image file names
+tooltip = 
+manpage = 0 for output image files to have descriptive extensions like
+".preali", 1 for extension ".mrc", or 2 for extension ".hdf".  In the latter
+two cases the usual descriptive text is put before the extension, and command
+files will contain an environment variable setting to make programs generate
+files of the corresponding type.
+
+[Field = MakeComExtensionPcm]
+short = pcm
+type = I
+usage = 0 or 1 to name output command files with extension ".com" or ".pcm"
+tooltip =
+manpage = 0 or 1 to name output command files with extension ".com" or
+".pcm".  The latter is not yet supported by Etomo.
+
+[Field = XImageSize]
+short = xsize
+type = I
+usage = X size of image data (needed if data file not present)
+tooltip = 
+manpage = 
+
+[Field = YImageSize]
+short = ysize
+type = I
+usage = Y size of image data (needed if data file not present)
+tooltip = 
+manpage = 
+
+[Field = usage]
+short = help
+type = B
+usage = Print help output
+tooltip = 
+manpage = 

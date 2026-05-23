@@ -1,0 +1,121 @@
+Version = 1.0
+Pip = 1
+
+[Field = CommandFile]
+short = com
+type = FN
+usage = Command file for reconstruction (with or without extension)
+tooltip =
+manpage = Command file for reconstruction, which can be entered with or
+without its extension of ".com".  If this option is not entered, a non-option
+argument is used for the command file.
+
+[Field = FakeSIRTiterations]
+short = fake
+type = LI
+usage = List of iteration numbers for runs with SIRT-like filtering
+tooltip = 
+manpage = List of iteration numbers for runs with SIRT-like filtering.
+Ranges are allowed.  An entry for "ExactFilterSize" will be removed from the
+command file and the high-frequency filtering option will be retained.
+
+[Field = ExactObjectSizes]
+short = exact
+type = LI
+usage = List of "object sizes" for runs with "exact filters"
+tooltip =
+manpage = List of "object sizes" for runs with "exact filters".  Ranges are
+allowed.  An entry for "FakeSIRTiterations" will be will be removed from the
+command file and the high-frequency filtering option will be retained.
+
+[Field = HammingLikeStarts]
+short = hamming 
+type = FA
+usage = Set of frequencies (1/pixel) for start of Hamming-like filter
+tooltip =
+manpage = Set of starting frequencies, in reciprocal pixels (0 - 0.5) for a
+Hamming-like filter.  An entry for "RADIAL" will be removed from the
+command file and any options about the initial form of the filter will be
+retained.
+
+[Field = GaussianCutoffs]
+short = cutoffs
+type = FA
+usage = Set of frequencies (1/pixel) for cutoff of Gaussian filter
+tooltip =
+manpage = Set of frequencies for the cutoff of the standard Gaussian filter,
+in reciprocal pixels (0 - 0.5).  See the rules above for how the cutoff and
+falloff vary when this option does not have the same number of entries as the
+\fB-falloff\fR option.
+
+[Field = GaussianFalloffs]
+short = falloffs
+type = FA
+usage = Set of frequencies (1/pixel) for falloff of Gaussian filter
+tooltip =
+manpage = Set of frequencies for the falloff of the standard Gaussian filter,
+in reciprocal pixels (0 - 0.5).
+
+[Field = WidthInX]
+short = width
+type = I
+usage = Width of tomograms to build, in unbinned pixels
+tooltip =
+manpage = Width of tomograms to build, in unbinned pixels.  The default is to
+do the whole extent in X.  An existing 
+"WIDTH" entry in the command file will be replaced or removed.
+
+[Field = SizeInY]
+short = ysize
+type = I
+usage = Size in Y of tomograms to build, in unbinned pixels
+tooltip =
+manpage = Size in Y (the Y dimension of the aligned stack) of tomograms to
+build,  in unbinned pixels.  The default is to do the whole extent in Y.  An
+existing "SLICE" entry in the command file will be replaced or removed.
+
+
+[Field = ThicknessInZ]
+short = thick
+type = I
+usage = Thickness of tomograms to make, in unbinned pixels
+tooltip =
+manpage = Thickness of tomograms to make, in unbinned pixels.  The default is
+to use the "THICKNESS" entry in the command file.
+
+[Field = ShiftInX]
+short = xshift
+type = F
+usage = Shift of tomograms in X, in unbinned pixels
+tooltip =
+manpage = Shift of tomograms in X, in unbinned pixels.  For this and the other
+shift entries, a positive shift will bring an area at negative offset to the
+center.  The default is 0
+shift; an existing "SHIFT" entry in the command file will be replaced or
+removed.
+
+[Field = ShiftInY]
+short = yshift
+type = I
+usage = Shift of tomograms in Y, in unbinned pixels
+tooltip =
+manpage = Shift of tomograms in Y (the Y dimension of the aligned stack), in
+unbinned pixels. The default is 0 shift.
+
+[Field = ShiftInDepth]
+short = zshift
+type = F
+usage = Shift of tomograms in Z (the depth dimension), in unbinned pixels
+tooltip =
+manpage = Shift of tomograms in Z (the depth dimension), in unbinned pixels.
+The default is to use the Z shift value from the "SHIFT" entry in the command
+file, if any.
+
+[Field = usage]
+short = help
+type = B
+usage = Print help output
+tooltip = 
+manpage = 
+
+

@@ -1,0 +1,258 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+  <head>
+    <title>Patch Tracking Example Data Set</title>
+    <META HTTP-EQUIV="Content-Type" Content="text/html;
+                                             charset=Windows-1252">
+      <style type="text/css"> <!-- BODY { font-family:"Arial" }
+        TD { font-size:16 }
+        -->
+        p.style1
+        {margin-bottom:.3em;
+        margin-top: 0em;
+        }
+        
+      </style>
+    </head>
+    <body BGCOLOR="#ffffff" TEXT="#000000">
+      <basefont size="2">
+        <p class="style1" align=center><b><font size="5" 
+            style="text-align: center">Reconstructing
+          a Cryo-Sample with Patch Tracking</font></b></p>
+      <p class="style1" align=center>(IMOD 4.11)</p>
+      <p class="style1" align=center style="font-weight: bold">University of Colorado, 
+        Boulder</p>
+  <p class="style1">
+    <o:p>&nbsp;</o:p></p>
+  <p class="style1">
+    This tutorial will guide you through processing a cryo tilt series without 
+    fiducials, using the patch tracking method of alignment.&nbsp; The tilt series 
+    is from a vitrified section and was acquired by Cedric Bouchet-Marquis.&nbsp; It 
+    is recommended that you do the <a href="cryoExample.html#TOP">basic cryo 
+    tutorial</a> before this one.</p>
+      <p class="style1">
+    &nbsp; </p>
+  <p class="style1" style="text-decoration: underline">
+    Getting started:</p>
+      <ul>
+        <LI><a href="http://bio3d.colorado.edu/imod/files/cryosectionData.tar.bz">Download</a> the sample data set from our web site.</li>
+        <LI>Move the data set file &quot;cryosectionData.tar.bz&quot; to the directory where you want to 
+        work on it.&nbsp; Its contents will unpack into a subdirectory named &quot;cryosection&quot;.</li>
+        <LI>cd to the directory with the file</li>
+        <LI>Enter the command:<br />
+&nbsp;&nbsp;&nbsp; imoduntar cryosectionData.tar.bz<br />
+          or, anywhere except on Windows without Cygwin, you can use<br />
+&nbsp;&nbsp;&nbsp; tar -xjf cryosectionData.tar.bz</li>
+        <LI>Enter the dataset directory with:<br />
+          &nbsp;&nbsp;&nbsp; cd cryosection</li>
+        <LI>Start Etomo by entering
+          <br />
+&nbsp;&nbsp;&nbsp; etomo<br />
+          and press <b>Build Tomogram</b>.</li>
+      </ul>
+  <p class="style1">
+    <u>Tomogram setup:</u></p>
+  <ul>
+  <li>
+    Press the file chooser icon on the <b>Datatset name</b> line and select the stack file.</li>
+  <li>
+    For <b>SystemTemplate</b>, select
+    <i>cryoSample.adoc</i>. </li>
+  <li>
+    Press <b>Scan Header</b> </li>
+  <li>
+    Enter <i>0</i> for <b>Fiducial diameter</b>. Some parameters for X-ray removal 
+    are set based on the fiducial size to avoid erasing fiducials, so it is 
+    important to enter 0 rather than an arbitrary size when there are no fiducials. </li>
+    <li>
+      Select <b>Parallel Processing</b> to use multiple CPUs to compute the reconstruction, 
+      or select <b>Graphics card processing</b>to use the GPU of an Nvidia card.</li>
+  <li>
+    In the <b>Axis A</b> group box, select <b>Series was bidirectional from</b> and set the 
+    angle to <i>0</i>.</li>
+    <li>Press <b>Create Com Scripts</b></li>
+  </ul>
+  <p class="style1">
+    <u>Pre-processing:</u></p>
+  <ul>
+  <li>
+    Press <b>Create Fixed Stack</b>.</li>
+  <li>
+    Press <b>Show Min/Max for Fixed Stack</b>.&nbsp; 
+    There are no extreme values any more.</li>
+  <li>
+    If you still see some extreme values in a data set, you should lower the
+    two criterion entries a little and run again.  Ccderaser has already
+    iterated the process three times, so iterating with the current criteria
+    (by pressing <b>Use Fixed Stack</b> then <b>Create Fixed Stack</b>) will
+    not remove more extreme values.</li>
+  <li>
+    Press <b>Use Fixed Stack</b>.</li>
+  </ul>
+  <p class="style1">
+    <u>Coarse Alignment</u></p>
+  <ul>
+  <li>
+    Press <b>Calculate Cross-Correlation</b></li>
+  <li>
+    When done, press <b>Generate Coarse Aligned Stack</b></li>
+  </ul>
+  <p class="style1">
+    <u>Fiducial Model Generation:</u></p>
+      <p class="style1">
+        In this step, patches of image will be tracked from one view to the next, and 
+        the center positions of the patches will be placed into a model file. This model 
+        can be used to solve for the tilt series alignment, much as a model of true 
+        fiducial markers can. </p>
+  <ul>
+  <li>
+    Select <b>Use patch tracking to make fiducial model</b>.&nbsp; </li>
+    <li>
+      Change the <b>Size of patches(X, Y)</b> to <i>680,680</i> (if it is not already 
+      set to that); this will give 4x4 
+      patches.</li>
+    <li>
+      Press the <b>Advanced</b> button at the bottom and change the <b>High frequency 
+      cutoff radius</b> to <i>0.125</i> (if it is not already set to that).&nbsp; The 
+      parameters for patch tracking are mostly based on the ones for coarse alignment 
+      since the same program is being run.&nbsp; However, the correlations for coarse alignment 
+      are done on almost the full image and are generally binned down, so the high 
+      frequency filter cutoff of 0.25 is adequate for filtering out noise.&nbsp; The patches being correlated 
+      are smaller and will not be binned, so stronger filtering is needed.&nbsp; Press
+      <b>Basic</b> to make it easier to see the basic controls.</li>
+    <li>Press <b>Track Patches</b>. </li>
+    <li>When done, press <b>Open Tracked Patches</b> to see the tracked locations on 
+      the image and in Model View.&nbsp; No specific feature has been tracked, just 
+      the whole patch area.&nbsp; Notice that there are just 16 contours going all the 
+      way through the tilt series. </li>
+      </ul>
+      <p class="style1">
+        <u>Fine Alignment:</u></p>
+      <p class="style1">
+        For this data set, the fine alignment process will involve cycling back to the 
+        patch tracking page.</p>
+      <ul>
+      <li>
+        Press <b>Compute Alignment</b>.&nbsp; The mean residual is fairly high, 1.5 
+        pixels.&nbsp; Such a high residual occurs because some of the positions tracked 
+        through the patches do not correspond to projections from single points in 3D.&nbsp; 
+        A better fit to the points can be gotten by breaking the contours into pieces.</li>
+        <li>
+          Return to the <b>Fiducial Model Generation</b> page and select <b>Break contours 
+          into pieces</b>.</li>
+        <li>
+          Press <b>Recut or Restore Contours</b>.</li>
+        <li>
+          Return to the <b>Fine Alignment</b> page and press <b>Compute Alignment</b>.&nbsp; 
+          The mean residual is much lower because much smaller errors build up over the 
+          shorter tilt ranges in each contour.</li>
+        <li>
+          Press <b>View/Edit Fiducial Model</b>.&nbsp; In the Model View window, rotate 
+          the model so that you can see all the tracks well by pressing the middle mouse 
+          button and moving the mouse at a steep diagonal.&nbsp; Each track consists of 7 
+          overlapping segments, which you can see by right-clicking near a track to select 
+          a contour; only a small segment is highlighted. </li>
+        <li>
+          Bring up the align log file and switch to the <b>Coordinates</b> tab.&nbsp; The 
+          &quot;mean resid&quot; column shows the mean residual in each contour or segment of the 
+          track.&nbsp; The range is large, from 0.2 to 1.2.&nbsp; When patch tracking was 
+          first developed, the approach 
+          was simply to delete the contours with the highest residuals, and the Bead Fixer 
+          has a <b>Look at contours</b> mode to assist this process. Not only is this somewhat 
+          arbitrary, but it would lead to trouble in this case, since 10 of the highest 11 
+          residuals occur for contours passing through zero degrees.&nbsp; The robust 
+          fitting that is now available is a better approach.</li>
+        <li>
+          Turn on <b>Do robust fitting with tuning factor</b> and then turn on <b>Find 
+          weights for contours, not points</b>.&nbsp; Press <b>Compute Alignment</b>.</li>
+        <li>
+          Open the align log again.&nbsp; Each contour has been given a weight between 0 
+          and 1, where a weight of 0 means that the points in the contour are ignored in 
+          the fitting.&nbsp; On the <b>Robust</b> tab, a summary line indicates 7 contours have 
+          weights under 0.5.&nbsp; On the Coordinates tab, there is a new column with 
+          the weights.&nbsp; The contours that have small weights are ones that have large 
+          residuals relative to other comparable contours (i.e., ones at similar tilt 
+          angles).</li>
+        <li>
+          For your own data sets with patch tracking, you will probably want to select the 
+          robust fitting whenever you break contours into pieces.&nbsp; If contours are 
+          not broken into pieces, there are usually too few contours to allow robust 
+          fitting. </li>
+      </ul>
+      <p class="style1">
+        <u>Tomogram Positioning</u></p>
+      <p class="style1">
+        This sample can be positioned by viewing X/Z slices in the binned-down tomogram.</p>
+      <ul>
+      <li>
+        Set <b>Sample tomogram thickness</b> to 8<i>00</i>.</li>
+      <li>
+        Press <b>Create Whole Tomogram</b> to build a whole, binned-down tomogram.</li>
+      <li>
+        Press <b>Create Boundary Model</b> to open the tomogram</li>
+      <li>
+        Open a Slicer window with <b>Image-Slicer</b>.&nbsp; Set X-rotation to <i>90</i> 
+        and <b>Thick: Img</b> to <i>20.</i> </li>
+        <li>Draw 3 pairs of lines: in the middle of the tomogram (axis position ~380) and at axis positions near 
+          115 and 555.</li>
+        <li>Save the model with the S key.</li>
+        <li>Press <b>Compute Z Shift &amp; Pitch Angles</b>.&nbsp; Note the large angle 
+          offset, which means that the tilt angles assumed during patch tracking were 
+          significantly different from the actual angles, enough to affect the 
+          correlations.&nbsp; Do the following steps to incorporate this knowledge.</li>
+        <li>Return to the <b>Fiducial Model Generation</b> page and press <b>Advanced</b>.</li>
+        <li>Enter the angle offset from the positioning page in the <b>Tilt angle offset</b> 
+          field.</li>
+        <li>Press <b>Track Patches</b>.</li>
+        <li>Go to the <b>Fine Alignment</b> page and do <b>Compute Alignment</b>.&nbsp; Note the 
+          substantial improvement in the weighted mean residual, from ~0.41 to ~0.37. You 
+          now have a final alignment that incorporates the positioning information, so you 
+          can skip to creating the aligned stack.</li>
+      </ul>
+      <p class="style1">
+        <u>Final Aligned Stack Creation:</u></p>
+      <ul>
+      <li>
+        Press <b>Create Full Aligned Stack</b>.</li>
+      </ul>
+      <p class="style1">
+        <u>Tomogram generation:</u></p>
+        <ul>
+      <li>
+        Make sure only one of the two choices <b>Use the GPU</b> and <b>Parallel 
+        processing</b> is selected, and press <b>Generate Tomogram</b>.
+      </li>
+      <li>
+        Press <b>View Tomogram in 3dmod</b> when it is done.</li>
+      </ul>
+      <p class="style1">
+        <u>Post-processing:</u></p>
+      <ul>
+      <li>
+        Turn on the rubber band in the Zap window and select a 
+        subarea area if desired. </li>
+      <li>
+        Scroll to the first slice that you want to keep and press 
+        <b>Lo</b>, then find the last 
+        slice you want to keep and press <b>Hi</b>.&nbsp; You should be able to trim off 
+        most of the crevasses on the bottom.</li>
+      <li>
+        In Etomo, press <b>Get XYZ Volume Range from 3dmod</b> to import these limits.</li>
+      <li>
+        In the Zap window, select a narrower range of slices with <b>Lo</b> and <b>Hi</b> 
+        that will be used to determine scaling.</li>
+      <li>
+        In Etomo, press <b>Get XYZ Sub-Area from 3dmod</b> in the <b>Scaling</b> section 
+        to import these limits.</li>
+      <li>
+        Press <b>Trim Volume</b>.&nbsp; When done, press <b>3dmod Trimmed Volume</b> to 
+        see the result.</li>
+      </ul>
+      <p class="style1">
+        <u>Clean Up:</u></p>
+      <p class="style1">
+        Archive the original stack and clean up as usual.</p>
+ 
+  </basefont>
+</body>
+</html>

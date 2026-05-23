@@ -1,0 +1,298 @@
+Version = 1.0
+Pip = 1
+
+[Field = TrackedModel]
+short = tracked
+type = FNM
+usage = Name of tracked model file from one Beadtrack run
+tooltip =
+manpage = Name of tracked model file from one Beadtrack run.  This entry is
+needed for each run to be included in the analysis.
+
+[Field = SurfaceFile]
+short = surface
+type = FNM
+usage = Name of file with surface information from one Sortbeadsurfs run
+tooltip =
+manpage = Name of file with surface information from one Sortbeadsurfs run.
+There must be the same number of surface file entries as tracked models.
+
+[Field = ElongationFile]
+short = resid
+type = FNM
+usage = Name of file with residual and elongation data from one Beadtrack run
+tooltip =
+manpage = Name of file with residual and elongation data from one Beadtrack run.
+There must be the same number of elongation file entries as tracked models.
+
+[Field = OutputSeedModel]
+short = output
+type = FN
+usage = Name of final output model file
+tooltip =
+manpage = 
+
+[Field = AppendToSeedModel]
+short = append
+type = B
+usage = Read in existing output seed model and add points to it
+tooltip =
+manpage = Read in existing output seed model and add points to it.  All points
+will be retained from this model.  Candidate points that match these points
+will be accepted before phase 1, then the regular sequence of phases will be
+followed to reach the target number.
+
+[Field = BeadSize]
+short = size
+type = F
+usage = Diameter of beads in pixels in the images where beads were found
+tooltip =
+manpage = 
+
+[Field = ImageSizeXandY]
+short = image
+type = IP
+usage = X and Y dimensions of image file used for finding and tracking beads
+tooltip =
+manpage = 
+
+[Field = BordersInXandY]
+short = border
+type = IP
+usage = Number of pixels to exclude on each side in X and in Y
+tooltip = 
+manpage = 
+
+[Field = MiddleZvalue]
+short = middle
+type = I
+usage = Z value of middle section for tracking, numbered from 0
+tooltip =
+manpage = 
+
+[Field = SeedZvalue]
+short = zseed
+type = IM
+usage = Z value of seed for one Beadtrack run, numbered from 0
+tooltip =
+manpage = Z value of seed for one Beadtrack run, numbered from 0.  If this
+option is entered at all, it must be entered for each tracked models.
+
+[Field = TwoSurfaces]
+short = two
+type = B
+usage = Try to find an equal number of beads on two surfaces
+tooltip =
+manpage = Try to sort beads onto two surfaces then select a seed model that
+has equal numbers of beads on the two surfaces if possible.
+
+[Field = BoundaryModel]
+short = boundary
+type = FN
+usage = Model containing contours enclosing areas in which to use or exclude beads
+tooltip =
+manpage = Name of model file whose first object contains contours enclosing
+areas in which to use or to exclude beads, depending on whether -exclude is
+entered.  If more than one contour is drawn on a view, points inside any one
+of the contours will be considered inside the area.  This program will
+use only the contours on the view closest to the middle section for tracking.
+
+[Field = ExcludeInsideAreas]
+short = exclude
+type = B
+usage = Use the boundary model to exclude regions from analysis
+tooltip =
+manpage = Use the contours in the boundary model to define regions to exclude from
+analysis rather than regions to include.
+
+[Field = BoundaryForCounting]
+short = counting
+type = B
+usage = Use the boundary model just for counting candidates inside and outside
+tooltip =
+manpage = Use the contours in the boundary model just for counting candidates
+inside and outside the boundary when outputting a candidate model.
+
+[Field = TargetNumberOfBeads]
+short = number
+type = I
+usage = Desired total number of beads to choose for output seed model
+tooltip =
+manpage = Desired total number of beads to choose for output seed model.  If
+beads are on two surfaces, the program will seek to find half the target number
+on each surface, then pick more beads on either surface to reach the target.
+Either this option or -density must be entered.
+
+[Field = TargetDensityOfBeads]
+short = density
+type = F
+usage = Desired density of beads in final seed model per 1000 square pixels 
+tooltip =
+manpage = Desired density of beads in final seed model per 1000 square pixels
+of area, excluding the area outside boundary contours if any.  This option
+provides an alternative way of specifying the target that is independent of
+data set size.
+
+[Field = LimitMajorityToTarget]
+short = nobeef
+type = B
+usage = Accept no more than half the number of target beads on majority surface
+tooltip =
+manpage = Do not increase the number of beads on the surface with more beads
+to make up for a deficiency on the other surface.  Autofidseed(1) uses this
+option to limit the number of beads on the majority surface in response to its
+-ratio option.
+
+[Field = ElongatedPointsAllowed]
+short = elongated
+type = I
+usage = 1-3 to include elongated beads
+tooltip =
+manpage = Enter 1, 2, or 3 to include
+beads identified as elongated in up to 1/3, up to 2/3, or all of the Beadtrack
+runs, respectively.
+
+[Field = ClusteredPointsAllowed]
+short = cluster
+type = I
+usage = 1 to include beads near others, 2-4 to include elongated beads also
+tooltip =
+manpage = Enter 1 to include clustered beads. i.e, ones that appear to be
+located within 2 diameters of other beads, where foreshortening perpendicular
+to the tilt axis is taken into account in computing this separation.  Only one
+of a pair of clustered points will be accepted.  If -elongated is not entered,
+2, 3, or 4 can be entered to also include beads identified as elongated in up
+to 1/3, up to 2/3, or all of the Beadtrack runs, respectively.
+
+[Field = LowerTargetForClustered]
+short = lower
+type = F
+usage = Include clustered/elongated beads only if # is still below this target
+tooltip =
+manpage = Include clustered and elongated points as allowed by the -cluster
+and -overlap options only when the total number of beads is still below the
+reduced target given here.  The value entered should be in the same form as
+the regular target was specified, i.e, a number of beads if -number was
+entered or a bead density if -density was entered.
+
+[Field = RotationAngle]
+short = rotation
+type = F
+usage = Angle of rotation of the tilt axis in the images
+tooltip =
+manpage = Angle of rotation of the tilt axis in the images; specifically, the
+angle from the vertical to the tilt axis (counterclockwise positive).
+
+[Field = HighestTiltAngle]
+short = highest
+type = F
+usage = Absolute value of highest tilt angle
+tooltip =
+manpage = 
+
+[Field = WeightsForScore]
+short = weights
+type = FA
+usage = Alternative weights for composing a score for each candidate bead
+tooltip =
+manpage = Alternative weights for composing a score for each candidate bead.
+Enter 4 weights: for fraction of points missing in a track; for
+fraction of Beadtrack runs from which the point is missing; for mean residual
+during bead tracking; and for the mean deviation between the different tracks
+of the same bead.  The default weights are all 1.
+
+[Field = ControlValue]
+short = control
+type = FPM
+usage = Parameter number and value for setting algorithm control parameters
+tooltip =
+manpage = Parameter number and value for setting algorithm control parameters.
+Parameters and their numbers (and default values in parentheses; float
+parameters have decimal points) are:
+^ 1: Deviation between points as fraction of bead diameter for tracks to be
+close (0.5)
+^ 2: Multiple of target spacing at which to exclude points from further
+searches (0.75)
+^ 3: Width of rings for finding points when filling gaps, as fraction of
+target spacing (0.25)
+^ 4: Number of rings to search (4)
+^ 5: Maximum # of bead diameters separation for points to be considered
+clustered (2.0)
+^ 6: Fraction of points that must be close in two tracks for them to be
+considered same (0.6)
+^ 7: Scaling factor for the two elongation criteria (parameters 12 and 16),
+applied to the default or entered values (1.0).
+^ 8: Maximum fraction of target density at which to add points in initial
+phase (0.9)
+^ 9: Higher fraction of target at which to add points in more desperate
+searches (1.1)
+^ 10: Scaling from desired spacing to H for kernel density computation (1.3)
+^ 11: Scaling from desired spacing to density grid spacing (0.2)
+^ 12: Criterion for edge SD values or elongations to be considered outliers (2.24)
+^ 13: Ratio of minority to majority for using higher density factor (0.65)
+^ 14: Fraction of nominal spacing allowed for initial addition of points (0.85)
+^ 15: Fraction of spacing for adding best half of points on next phase (0.7)
+^ 16: Absolute threshold for elongation to be considered overlap (2.5)
+^ 17: Option flags: the sum of 1 for fitting elongation measures versus bead
+integral and replacing measures with the residual of the fit (which does not
+help), and 2 for analyzing the elongation measure in successive groups of at
+least 50 values, when values are arranged in order by bead integral (which
+does not help)
+^ 18: Angle to rotate plot of mean of edge SD versus SD of edge SD to obtain
+an adjusted edge SD (-59.0 degrees, the mean from 7 data sets)
+^ 19: Angle to rotate plot of mean versus SD of elongation measure to obtain
+an adjusted elongation measure (-67.0 degrees, the mean of 8 data sets)
+^ 20: Angle to rotate plot of adjusted elongation measure versus adjusted edge
+SD to obtain the final elongation measure to analyze for outliers (45.0 degrees,
+corresponds to simply averaging the two adjusted values)
+^ 21: Maximum number of MADNs above the median score allowed to accept a
+candidate point in phases 1-4 (8.0).
+^ 22: Maximum number of MADNs above the median score allowed to accept a
+clustered or elongated candidate point in phases 5-8 (12.0).
+
+[Field = PhaseOutput]
+short = phase
+type = B
+usage = Color output points by phase they were added in as well as by surface
+tooltip =
+manpage = Color output points by the phase in which they were added as well as
+by their surface.  Available colors in order are green, magenta, yellow, cyan,
+red, solid blue, orange, purple, dark blue, salmon, dark red.  One or two
+colors will be used for each phase, depending on whether beads are sorted into
+two surfaces.  If more than 10 colors are needed the 9 after green are reused.
+
+[Field = DensityOutputRootname]
+short = root
+type = CH
+usage = Root name for output of density maps in gnuplot format
+tooltip =
+manpage = 
+
+[Field = CandidateModel]
+short = candidate
+type = FN
+usage = Name of output model with all candidates sorted by cluster/elongation
+tooltip =
+manpage = Filename for an output model with all candidates beads sorted by
+clustering and elongation scores.  Points will be assigned to up to 8
+model surfaces.  Surface numbers 0 to 3 are for non-clustered points with elongation
+values of 0 to 3, and are colored dark green, magenta, bright green, and yellow,
+respectively.  Numbers 4 to 7 are for clustered points with elongation values
+of 0 to 3, and are colored mustard green, red, light blue, and orange.  Open
+the Surface/Contour/Point dialog in 3dmod (Edit-Surface-Go To) to navigate to
+contours within and between surfaces and to see labels for the surfaces.
+
+[Field = VerboseOutput]
+short = verbose
+type = I
+usage = 1 for verbose output, 2 for very verbose output
+tooltip =
+manpage = 1 for verbose output including lists of candidates and their
+properties; 2 for more verbose output from addPointsInGaps routine.
+
+[Field = usage]
+short = help
+type = B
+usage = Print help output
+tooltip = 
+manpage = 

@@ -1,0 +1,411 @@
+#!/usr/bin/env python
+# etomo - starts etomo and manages log files
+#
+# Author: David Mastronarde
+#
+# $Id$
+
+progname = 'etomo'
+prefix = 'ERROR: ' + progname + ' - '
+
+def which(prog):
+   if sys.platform.find('cygwin') >= 0 or sys.platform.find('win32') >= 0:
+      prog += '.exe'
+   for dir in os.environ["PATH"].split(os.pathsep):
+      full = os.path.join(dir, prog)
+      if os.path.exists(full) and os.access(full, os.X_OK):
+         return full
+   return None
+
+
+def rollLogs():
+   lasterr = 'etomo_err12.log'
+   for i in range(11,-1,-1):
+      thiserr = 'etomo_err' + str(i) + '.log'
+      if not i:
+         thiserr = 'etomo_err.log'
+      if os.path.exists(thiserr):
+         try:
+            if lasterr == 'etomo_err12.log':
+               os.path.remove(lasterr)
+            os.rename(thiserr, lasterr)
+         except Exception:
+            prnstr('WARNING: an error occurred renaming ' + thiserr + ' to ' + lasterr)
+      lasterr = thiserr
+
+
+# load System Libraries
+import sys, os, re, glob, datetime, fnmatch, getpass, platform
+
+#
+# Setup runtime environment - no need for nohup here
+if os.getenv('IMOD_DIR') != None:
+   IMOD_DIR = os.environ['IMOD_DIR']
+   sys.path.insert(0, os.path.join(IMOD_DIR, 'pylib'))
+   from imodpy import *
+   os.environ['PATH'] = os.path.join(cygwinPath(IMOD_DIR), 'bin') + os.pathsep + \
+                        os.environ['PATH']
+else:
+   sys.stdout.write("The IMOD_DIR environment variable has not been set\n" + \
+                       "Set it to point to the directory where IMOD is installed\n")
+   sys.exit(1)
+
+#
+# load IMOD Libraries
+from pip import setExitPrefix
+setExitPrefix(prefix)
+setLibPath()
+goodMacJavas = [('/Library/Internet Plug-Ins/JavaAppletPlugin.plugin/Contents/Home/',
+                 '/Library/Internet Plug-Ins/JavaAppletPlugin.plugin/')]
+badMacJavas = ['/System/Library/Frameworks/JavaVM.framework/Versions/', '/usr/bin/']
+
+newstuff = '--newstuff' in sys.argv
+
+ETOMO_MEM_LIM = '512m'
+if os.getenv('ETOMO_MEM_LIM') != None:
+   ETOMO_MEM_LIM = os.environ['ETOMO_MEM_LIM']
+if os.getenv('IMOD_JAVADIR') != None:
+   javaDir = cygwinPath(os.environ['IMOD_JAVADIR'])
+   os.environ['PATH'] = os.path.join(javaDir, 'bin') + os.pathsep + os.environ['PATH']
+elif 'darwin' in sys.platform:
+
+   # On Mac, if there is no IMOD_JAVADIR, first see if it just runs, and if not look
+   # for an openjdk install, add most recent one to path
+   try:
+      verslines = runcmd('java -version', None, None, 'stdout')
+      noJava = False
+   except ImodpyError:
+      noJava = True
+
+      if os.path.exists('/Library/Java/JavaVirtualMachines'):
+         jvms = glob.glob('/Library/Java/JavaVirtualMachines/*');
+         if len(jvms) > 0:
+            goodPath = ''
+            for ind in range(len(jvms)):
+               if os.path.exists(jvms[ind] + '/Contents/Home/bin/java'):
+                  testTime = os.path.getmtime(jvms[ind])
+                  if not ind or testTime > goodTime:
+                     goodTime = testTime
+                     goodPath = jvms[ind] + '/Contents/Home/bin'
+            if goodPath:
+               noJava = False
+               os.environ['PATH'] = goodPath + os.pathsep + os.environ['PATH']
+
+   # Otherwise see if there is a java in any good location from old Oracle installs
+   for goodDir in goodMacJavas:
+      if not noJava:
+         continue
+
+      goodOne = goodDir[0] + '/bin/java'
+      if os.path.exists(goodOne):
+
+         # Get its time
+         goodTime = os.path.getmtime(goodDir[1])
+         try:
+
+            # Then look for java on the path
+            pathJava = runcmd('which java', None, None, 'stdout')
+            noJava = len(pathJava) == 0 or 'not found' in pathJava[0]
+         except ImodpyError:
+            noJava = True
+
+         # If there is a good java and none on path, put good one on path
+         if noJava:
+            os.environ['PATH'] = os.path.join(goodDir[0], 'bin') + os.pathsep + \
+                                         os.environ['PATH']
+         else:
+
+            # If there is one on path, resolve the link if any and see if it is
+            # one of the bad places
+            realPathJava = os.path.realpath(pathJava[0].rstrip('\r\n'))
+            pathTime = os.path.getmtime(os.path.dirname(realPathJava))
+            for badStart in badMacJavas:
+               if realPathJava.startswith(badStart):
+
+                  # If java in a bad place is older than the good one, add to path
+                  if goodTime > pathTime:
+                     os.environ['PATH'] = os.path.join(goodDir[0], 'bin') + os.pathsep + \
+                         os.environ['PATH']
+                     break
+         break
+
+# Test for appropriate java run time
+try:
+   verslines = runcmd('java -version', None, None, 'stdout')
+except ImodpyError:
+   noJava = True
+   winNative = 'C:/Windows/Sysnative'
+   if ('cygwin' in sys.platform or 'win32' in sys.platform) and \
+          os.path.exists(winNative):
+      os.environ['PATH'] = cygwinPath(winNative) + os.pathsep + os.environ['PATH']
+      try:
+         verslines = runcmd('java -version', None, None, 'stdout')
+         noJava = False
+      except ImodpyError:
+         pass
+
+   if noJava:
+      prnstr("""ERROR: There is no java runtime in the current search path.  A Java
+runtime environment needs to be installed and the command search path may need
+to be defined or IMOD_JAVADIR set to locate the java command.""")
+   sys.exit(1)
+
+for line in verslines:
+   if line.find('GNU') >= 0:
+      errstr = """ERROR: Etomo will not work with GNU java.  You should install an
+OpenJDK version of the Java runtime environment and put it on
+your command search path"""
+      if os.getenv('IMOD_JAVADIR') != None:
+         errstr += " or make a link to it from " + os.environ['IMOD_JAVADIR']
+      prnstr(errstr)
+      sys.exit(1)
+
+   if re.search(r'ersion.*1\.[45]', line):
+      errstr = "ERROR: You are trying to run a version of Java before 1.6"
+      fulljava = which('java')
+      if fulljava:
+         errstr += ', located at ' + fulljava
+      prnstr(errstr)
+      errstr =  \
+          """Etomo will no longer work with java 1.4-1.5.  You should install an
+Oracle or OpenJDK version of the Java runtime environment, version 1.6 or higher,
+and put it on your command search path, or point IMOD_JAVADIR to it"""
+      if os.getenv('IMOD_JAVADIR') != None:
+         errstr += " or make a link to it from " + os.environ['IMOD_JAVADIR']
+      prnstr(errstr)
+      sys.exit(1)
+
+# In cygwin, put bin on front of path and make sure python is installed
+# Class path separator has to be ; in both cygwin and Windows because java is using it
+cygbin = ''
+userhome = ''
+userhomeQuoted = ''
+classPathSep = ':'
+if sys.platform.find('cygwin') >= 0:
+   os.environ['PATH'] = '/bin' + os.pathsep + os.environ['PATH']
+   cygbin = '/bin'
+   classPathSep = ';'
+
+# But in Windows, we need to find cygwin in path unless the psutil module is present
+if sys.platform.find('win32') >= 0:
+   findCyg = True
+   classPathSep = ';'
+   try:
+      import psutil
+      findCyg = False
+
+   except ImportError:
+      pass
+
+   if findCyg:
+      cygdrive = 'C'
+      for dir in os.environ["PATH"].split(os.pathsep):
+         if re.search('cygwin', dir, re.IGNORECASE):
+            cygdrive = dir[0]
+            break
+      cygtry = os.path.join(cygdrive + r':\cygwin', 'bin')
+      if os.path.exists(os.path.join(cygtry, 'python.exe')):
+         cygbin = cygtry
+         os.environ['PATH'] = cygbin + os.pathsep + os.environ['PATH']
+      else:
+         prnstr('ERROR: You must have the psutil module installed to run Etomo with ' + \
+                   'Windows Python')
+         sys.exit(1)
+
+if cygbin and not os.path.exists(os.path.join(cygbin, 'python.exe')):
+   if os.path.exists(os.path.join(cygbin, 'python')):
+      prnstr('ERROR: There must be a python.exe in the Cygwin bin in order to use Etomo')
+      pythlist = glob.glob(os.path.join(cygbin, 'python?.?.exe'))
+      if len(pythlist) > 0:
+         prnstr('You should run this command in a Cygwin terminal:')
+         prnstr('   cp ' + pythlist[0] + ' ' + cygbin + '/python.exe')
+      else:
+         prnstr('It does not work to have a Cygwin link from python to python2.x.exe')
+   else:
+      prnstr("ERROR: You must have python installed in Cygwin in order to use Etomo")
+   sys.exit(1)
+
+if cygbin:
+   try:
+      username = getpass.getuser()
+      home = 'C:\\Users\\' + username
+      if platform.release() != 'XP' and os.path.exists(home):
+         userhome = '-Duser.home=' + home
+         userhomeQuoted = '-Duser.home="' + home + '"'
+   except KeyError:
+      pass
+
+# Make sure awk doesn't produce commas (probably not needed)
+os.environ['LC_NUMERIC'] = 'C'
+os.environ['PIP_PRINT_ENTRIES'] = '1'
+
+# This variable will generate a lot of output and Etomo messes up after excludeviews
+if 'RUNCMD_VERBOSE' in os.environ:
+   del os.environ['RUNCMD_VERBOSE']
+
+# Check for help option
+# Check for foreground option - needed to run multiple etomos with automation.
+help = 0
+foreground = 0
+if '-h' in sys.argv or '--help' in sys.argv or '--h' in sys.argv or \
+   '--grabit' in sys.argv:
+   help = 1
+if '--fg' in sys.argv or '--directive' in sys.argv or '--grabit' in sys.argv:
+   foreground = 1
+
+# add plugin locations to the classpath
+pluginPaths = ''
+path = os.path.join(os.environ['IMOD_DIR'], 'Plugins')
+if os.path.exists(path):
+   pluginPaths += classPathSep + path + "/*"
+path = os.path.join(os.environ['IMOD_DIR'], 'imodplug', 'etomo')
+if os.path.exists(path):
+   pluginPaths += classPathSep + path + "/*"
+
+# Allow developer to run a specified jar
+jarDir = IMOD_DIR + '/bin/'
+if '--jardir' in sys.argv:
+   for ind in range(1, len(sys.argv) - 1):
+      if sys.argv[ind] == '--jardir':
+         jarDir = sys.argv[ind + 1]
+         break
+
+# Build the common java command
+javacom = fmtstr('java -Xmx{0} {1} -cp "{2}/etomo.jar{3}" etomo.EtomoDirector', \
+                    ETOMO_MEM_LIM, userhomeQuoted, jarDir, pluginPaths)
+comArray = ['java', '-Xmx' + ETOMO_MEM_LIM]
+if userhome:
+   comArray.append(userhome)
+comArray += ['-cp', jarDir + '/etomo.jar' + pluginPaths, 'etomo.EtomoDirector']
+skipNext = False
+for ind in range(1, len(sys.argv)):
+   if skipNext:
+      skipNext= False
+      continue
+   arg = sys.argv[ind]
+   if arg == '-h':
+      arg = '--help'
+   if arg == '--jardir':
+      skipNext = True
+      continue
+   javacom += ' "' + arg + '"'
+   comArray.append(arg)
+   if arg.startswith('-') and not arg.startswith('--'):
+      prnstr('WARNING: YOU ENTERED AN ARGUMENT WITH A SINGLE DASH: ' + arg)
+
+#prnstr(javacom)
+
+if help:
+   try:
+      helpLines = runcmd(javacom, None, None, 'pipe')
+      for l in helpLines:
+         prnstr(l.rstrip('\r\n'))
+   except ImodpyError:
+      prnstr('An error occurred running etomo for help output')
+   sys.exit(0)
+   
+# If ETOMO_LOG_DIR is defined and writable, set up log files there with 
+# date/time stamp; if not defined, put them in a hidden directory
+outlog = 'etomo_out.log'
+errlog = 'etomo_err.log'
+
+ETOMO_LOG_DIR = ''
+if os.getenv('ETOMO_LOG_DIR') != None:
+   ETOMO_LOG_DIR = os.environ['ETOMO_LOG_DIR']
+
+# Put logs in hidden directory if directory is not defined
+elif os.getenv('HOME') != None:
+   ETOMO_LOG_DIR = os.environ['HOME'] + '/.etomologs'
+   if not os.path.exists(ETOMO_LOG_DIR):
+      try:
+         os.mkdir(ETOMO_LOG_DIR)
+      except Exception:
+         prnstr('WARNING: Failed to create logs directory ' + ETOMO_LOG_DIR)
+
+if ETOMO_LOG_DIR and os.access(ETOMO_LOG_DIR, os.W_OK):
+
+   # purge the directory to 30 sessions or whatever user chooses
+   purgenum = 31
+   if os.getenv('ETOMO_LOGS_TO_RETAIN') != None:
+      purgenum = convertToInteger(os.environ['ETOMO_LOGS_TO_RETAIN'], \
+                                     'environment variable ETOMO_LOGS_TO_RETAIN')
+   d = datetime.datetime.today()
+   timestamp = d.strftime('%b-%d-%H%M%S')
+   errlog = ETOMO_LOG_DIR + '/etomo_err_' + timestamp + '.log'
+
+   # Get a sorted list by modification time (now from Python 2.3 docs!)
+   loglist = os.listdir(ETOMO_LOG_DIR)
+   tmplist = [(os.stat(os.path.join(ETOMO_LOG_DIR, x)).st_mtime, x) for x in loglist]
+   tmplist.sort()
+   loglist = [x for (key, x) in tmplist]
+
+   # Go through list from newest backwards, look for matches, and start removing
+   # after the purge number is reached
+   numMatch = 0
+   for ind in range(len(loglist) - 1, -1, -1):
+      if fnmatch.fnmatch(loglist[ind], 'etomo_*.log'):
+         numMatch += 1
+         if numMatch > purgenum:
+            try:
+               fname = os.path.join(ETOMO_LOG_DIR, loglist[ind])
+               os.remove(fname)
+               #prnstr('Purged ' + fname)
+            except Exception:
+               prnstr('WARNING: failed to remove old log ' + fname)
+               pass
+
+   # If there is an existing real log, roll it
+   errfile = None
+   if os.path.exists('etomo_err.log'):
+      try:
+         errfile = open('etomo_err.log', 'r+')
+         line = errfile.readline()
+         if line.find('Error log') < 0:
+            errfile.close()
+            errfile = None
+            rollLogs()
+      
+      except Exception:
+         prnstr('WARNING: Errors occurred managing an existing etomo_err.log')
+         errfile = None
+
+   # Append location of log to etomo_err.log here
+   try:
+      if not errfile:
+         errfile = open('etomo_err.log', 'w')
+      else:
+         errfile.seek(0, 2)
+      errfile.write(fmtstr('Error log for {} is in {}\n',
+                           d.strftime('%a %b %d %H:%M:%S %Y'), errlog))
+      errfile.close()
+
+   except Exception:
+      prnstr('WARNING: An error occurred appending to the etomo_err.log')
+
+else:
+
+   # Otherwise roll numbered logs here
+   rollLogs()
+
+# Copy the previous out log file to backup
+makeBackupFile(outlog)
+
+prnstr('starting Etomo with log in ' + errlog)
+sys.stdout.flush()
+if not foreground:
+   bkgdProcess(comArray, outlog, errlog)
+else:
+   try:
+      outfile = open(outlog, 'w')
+      errfile = open(errlog, 'w')
+   except Exception:
+      prnstr('ERROR: An error occurred opening the standard output or error output ' +\
+                'log file')
+      sys.exit(1)
+   try:
+      runcmd(javacom, None, outfile, errfile)
+   except ImodpyError:
+      prnstr('ERROR: etomo exited with an error status, check: ' + errlog)
+      sys.exit(1)
+
+sys.exit(0)

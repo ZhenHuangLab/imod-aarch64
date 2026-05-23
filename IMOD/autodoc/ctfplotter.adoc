@@ -1,0 +1,539 @@
+Version = 1.0
+Pip = 1
+
+[Field = InputStack]
+short = input
+type = FN
+usage = Input stack whose defocus will be estimated
+tooltip =
+manpage = Input stack whose defocus will be estimated.  In principle, this should be a raw
+stack, not an aligned stack, because the interpolation used to make an aligned
+stack attenuates high frequencies and the noise power spectra would no
+longer match.  Also, the usable CTF signal at high frequencies would be reduced.
+
+[Field = OffsetToAdd]
+short = offset
+type = F
+usage = Add this value to the data in the input stack
+tooltip =
+manpage = The program must analyze data values where 0 corresponds to no
+electrons recorded.  Use this option to specify a value to add to your input
+stack that will make values positive and proportional to recorded electrons.
+The value will not be added to noise files; they are required to be positive.
+The program automatically sets this value to 32768 if it recognizes a file from
+FEI data acquisition software with a minimum below 0, or if the minimum and
+mean of a non-FEI file are sufficiently negative.
+
+[Field = ConfigFile]
+short = config
+type = FN
+usage = File with a list of noise files, or stack of noise images
+tooltip = 
+manpage = If a text file is entered, this configure file specifies a set of 
+single-image noise files used to estimate the
+noise floor, one file per line.  The files can be specified with either
+absolute paths or with paths relative to the location of the configure file
+itself.  Alternatively, all noise images can be in one stack and the name of
+the stack provided here.
+
+[Field = AngleFile]
+short = angleFn
+type = FN
+usage = File containing tilt angles for the input stack
+tooltip =
+manpage = File containing tilt angles for the input stack.  Each line of this
+file is the tilt angle for a view of the input stack.  The angles are listed
+in order starting from view 1.  If no file is entered, the angles are assumed
+to be 0.  In order to make the interface usable, the views are assigned angles
+at 0.01 degree increments, but all spectrum computation uses angles of zero.
+
+[Field = InvertTiltAngles]
+short = invert
+type = B
+usage = Invert the sign of the tilt angles
+tooltip =
+manpage = Invert the sign of the tilt angles to compensate for a left-handed 
+coordinate system in the microscope.  When the sign of the tilt angles and 
+the value of the tilt axis rotation angle are such that reconstructions are
+generated with inverted handedness, then this option is needed to keep power 
+spectra for off-center tiles from being shifted in the wrong direction.  One
+way to assess this need is to examine the images in a stack aligned for
+reconstruction, with the tilt axis vertical.  At positive tilt angles, the
+right side of the images should be more underfocused than the left side; if
+not, then this option is needed.
+
+[Field = AxisAngle]
+short = aAngle
+type = F
+usage = Specifies how much the tilt axis deviates from vertical (Y axis)
+tooltip =
+manpage = Specifies how much the tilt axis deviates from vertical (Y axis). 
+This angle is in degrees.  It follows the right hand rule and 
+counter-clockwise is positive. 
+
+[Field = DefocusFile]
+short = defFn
+type = FN
+usage = File to store found defocuses
+tooltip = 
+manpage = File to store found defocuses.  Each entry in the file will consist
+of the starting and ending view number of the range of views being fit to
+(numbered from 1), the starting and ending angle of the tilt angle range being
+fit to, and the defocus value in nanometers (underfocus positive).  The full
+specification for defocus files acceptable to Ctfphaseflip(1) is given in a
+section at the end of that man page.  When Ctfplotter
+writes a new defocus file, it puts a version number (currently 2) at
+the end of the first line.  If this file already exists when the program
+starts, it will be read in and the results displayed in a table in the Angle
+Range and Tile Selection dialog. The previous version will become a backup
+file (with ~ added to its name) when new results are saved to this file. 
+^  If you supply an initial defocus file with more than line, be sure to use the
+exact angles from the tilt angle file specified with \fB-angleFn\fR; do not round to
+one decimal place.  Alternatively, add the number "2" as an extra value at the
+end of the first line of the file; this will prevent the program from thinking
+that the view numbers might be off by one.  If you use the \fB-invert\fR
+option, you must do one of two things: 1) either invert all the tilt angles
+in this file, 2) or start the file with a line to indicate
+that it is a version 3 file in which the angles need to be inverted.  That
+line starts with a sum of flags for various options, where
+16 is the flag that angles need to be inverted; if that is the only flag, then
+the line would be "16 0. 0. 0 3".  See Ctfphaseflip(1) for a description of
+all flags.
+
+[Field = PixelSize]
+short = pixelSize
+type = F
+usage = Image pixel size in nanometers
+tooltip =
+manpage = Image pixel size in nanometers.
+
+[Field = CropToPixelSize]
+short = crop
+type = F
+usage = Crop power spectrum to the given pixel size in nanometers
+tooltip =
+manpage = Crop power spectrum to the given pixel size in nanometers.  This
+option spreads out the low-frequency part of the power spectrum and throws
+away the highest frequencies; the new Nyquist frequency is 2 divided by the
+entered value.  Cropping may improve the fits to closely spaced zeros, but it
+will average less data in each frequency bin and thus make the power spectrum
+more noisy.  The entered pixel size must be larger than the actual size for
+this option to have any effect.
+
+[Field = FitZerosForPhase]
+short = fitZeros
+type = B
+usage = Find and fit to zero positions when finding phase
+tooltip =
+manpage = When finding phase, try
+to find and fit to zero positions in the spectrum instead of just fitting to
+the power spectrum.  Fitting to zero positions can prevent the first few zeros
+from dominating the fit and may improve the fit to the higher zeros, but it
+may also result in the first zero being noticeably off.
+
+[Field = Voltage]
+short = volt
+type = I
+usage = Microscope voltage in kV 
+tooltip =
+manpage = Microscope voltage in kV.
+
+[Field = SphericalAberration]
+short = cs
+type = F
+usage = Microscope spherical aberration in millimeters
+tooltip =
+manpage = Microscope spherical aberration in millimeters.  A value of 0 can be
+entered; it will be made slightly larger to prevent division by 0 in the CTF
+equations.
+
+[Field = AmplitudeContrast]
+short = ampContrast
+type = F
+usage = The fraction of amplitude contrast (default 0.07)
+tooltip =
+manpage = The fraction of amplitude contrast. For cryo-EM, 
+it should be between 0.07 and 0.14.  The default is 0.07.
+
+[Field = PhaseShiftInDegrees]
+short = degPhase
+type = F
+usage = The expected value for phase shift from a phase plate, in degrees
+tooltip =
+manpage = The expected value for the phase shift imposed by a phase plate, in
+degrees.  Equations relating the CTF and defocus will include this phase
+shift when phase is not solved for.  It can be entered with either positive or 
+negative sign; the absolute value of the entered value will be subtracted when
+computing phase within the program.
+
+[Field = PhasePlateShift]
+short = phase
+type = F
+usage = The expected value for phase shift from a phase plate, in radians
+tooltip =
+manpage = The expected value for the phase shift imposed by a phase plate, in
+radians.  See the \fB-degPhase\fR option, which should be used instead.  The
+two may not both be entered.
+
+[Field = PhaseRangeToSearch]
+short = phRange
+type = F
+usage = Total search range for phase shift, in degrees (default 120)
+tooltip =
+manpage = Total range of phase shift to search around the expected shift, in
+degrees.  The default is 120.
+
+[Field = CutOnFrequency]
+short = cuton
+type = F
+usage = A fixed value for cut-on frequency that attenuates phase at low frequency
+tooltip =
+manpage = A fixed value for cut-on frequency that attenuates phase at low
+frequency, in reciprocal nanometers.  With a cut-on frequency, the phase is
+modeled as rising exponentially from zero at zero frequency to its true value
+at high frequency.  The ratio of the first zero to the cut-on frequency is the
+rate constant of the exponential decay to the true value.  Whenever the cut-on
+frequency is non-zero, the phase shift displayed on the screen and stored in
+the defocus file is actually the phase at a fixed frequency of 0.3/nm rather
+than the shift at infinity.
+
+[Field = MaxCutOnToSearch]
+short = maxCuton
+type = F
+usage = Maximum cut-on frequency to search, in 1/nm (default is first zero)
+tooltip = 
+manpage = Maximum frequency to test when searching for cut-on frequency, in
+reciprocal nanometers.  The default is the frequency of the first zero at the
+expected defocus and phase shift.
+
+[Field = ViewsToSkip]
+short = skip
+type = LI
+usage = List of views not to analyze (numbered from 1, ranges OK)
+tooltip =
+manpage = List of views to leave out of the analysis; views are numbered from
+1 and ranges can be entered.  The program will behave as if those views do not
+exist unless the option is set for skipping only for analysis of astigmatism or
+phase shift.  If it is, defocus can be found for every view, but astigmatism
+and phase will be solved from adjacent views to ones in the skip list.
+
+[Field = BidirectionalNumViews]
+short = bidir
+type = I
+usage = Number of views in first half of bidirectional tilt series
+tooltip =
+manpage = Number of views in the first half of a bidirectional tilt series.
+Entering this option will turn on the checkbox "Break groups at view" to
+prevent combining of views
+for analysis across the two halves of the series.  Do not use this option for a tilt
+series taken with the Hagen scheme.  If the option is set for skipping and
+breaking only for analysis of astigmatism or phase shift, the program will
+still combine views for defocus fitting across the boundary.
+
+[Field = SkipOnlyForAstigPhase]
+short = onlyAP
+type = B
+usage = Skip or break views only when finding astigmatism or phase shift
+tooltip =
+manpage = Skip views in the list of ones to skip, or avoid combining views for
+analysis, only for analysis of astigmatism and phase shift.  With this option
+set, the program will exclude views in the skip list and avoid combining views
+across the bidirectional boundary only when getting a combined spectrum
+for finding astigmatism and phase shift.
+
+[Field = ExpectedDefocus]
+short = expDef
+type = F
+usage = Expected defocus at the tilt axis in nanometers.
+tooltip = Expected defocus at the tilt axis in microns, with a positive
+value for underfocus
+manpage = Expected defocus at the tilt axis in nanometers, with a positive
+value for underfocus.  The frequency of the first zero of the CTF curve 
+is first computed based on this expected defocus.  The segments of the CTF
+curve of the input stack around that frequency are selected to be fitted.
+
+[Field = FocalPairDefocusOffset]
+short = fpOffset
+type = F
+usage = Defocus offset in nanometers for a focal pair of aligned stacks
+tooltip = 
+manpage = Normally, ctfplotter processes a single stack whose name is
+given by InputStack. It can optionally process a pair of stacks with
+identical tilt angles and mutually aligned projections, taken with a
+constant defocus offset between them. If, for example, InputStack is 
+myData.st, one could place a stack with 6 um underfocus in myData_1.st and
+a stack with 2.175 um underfocus in myData_2.st and specify an
+ExpectedDefocus of 6000 and a FocalPairDefocusOffset of -3825.  There is some
+possibility that this processing still works after the major changes in 2018,
+but using it will prevent some of the new features from being available.
+
+[Field = AngleRange]
+short = range
+type = FP
+usage = Starting and ending tilt angles for initial analysis or autofitting
+tooltip =
+manpage = When the \fB-autoFit\fR option is not entered, this entry sets the starting
+and ending tilt angles for the initial analysis and is a required entry.  Views with a
+tilt angle within this range are used to compute the CTF curve.  When \fB-autoFit\fR
+is entered, this entry sets the whole extent over which steps will be taken in
+autofitting.
+
+[Field = AutoFitRangeAndStep]
+short = autoFit
+type = FP
+usage = Range of angles and step between ranges for initial autofitting
+tooltip =
+manpage = Do initial autofitting over the whole tilt series with the given
+range of angles in each fit and step size between ranges.  A value of zero for the step
+will make it fit to each single image separately, regardless of the value for
+the range.  The range entry can also be zero to fit to a single image.  This
+autofitting differs from that invoked through the Angles dialog in several
+respects: 1) Fitting is done at each angle with the current
+defocus from the previous angle, if any, and the "Use current defocus" radio
+button is left selected at the end, unless the \fB-useDef\fR option is
+entered.  If phase is being found, it will also use current phase.
+2) Three fitting iterations
+will be done.  3) The size of the range
+is determined by the parameter entered here, not by the starting and ending
+angles entered with the \fB-range\fR option.  This autofitting will not be done if
+there are already values in the defocus file and if the \fB-range\fR option is
+entered, in order to prevent an annoying message when opening Ctfplotter after
+processing with Batchruntomo(1).  Otherwise, if autofitting is specified
+and there are existing defocus values, the program will ask you to confirm
+whether to replace them.
+
+[Field = UseExpectedDefForAuto]
+short = useDef
+type = B
+usage = Use expected defocus, not current defocus, for initial autofitting
+tooltip =
+manpage = Use the expected defocus value at each angle instead of the current
+defocus when doing initial autofitting.  This is the behavior of the program
+before IMOD 4.10.18.  At each angle, the expected defocus is used the first
+time and the defocus estimate is used for the next two iterations.
+
+[Field = FrequencyRangeToFit]
+short = frequency
+type = FP
+usage = Starting and ending frequencies of range to fit in power spectrum
+tooltip =
+manpage = Starting and ending frequencies of range to fit in power spectrum.
+The two values will be used to set the "X1 starts" and "X2 ends" fields in the
+fitting dialog after the pixel size that governs the meaning of these
+frequencies has been adjusted for any cropping of the spectrum.  In other
+words, if you are also entering the \fB-crop\fR option, enter the fitting
+range that works for the cropping specified by that option.
+
+[Field = ExtraZerosToFit]
+short = extra
+type = F
+usage = Extend range of frequencies to fit by given multiple of inter-zero interval
+tooltip =
+manpage = By default, the ending frequency of the fitting range is set to the
+expected location of the second zero.  With this entry, the range will be
+extended by the given multiple of the interval between first and seconds
+zeros.  For example, entries of 1 or 2 will fit approximately to the third
+or fourth zeros, respectively.  An entry of more than 0.5 will trigger
+fitting to two exponentials, which is important for fitting multiple peaks
+between zeros.
+
+[Field = VaryExponentInFit]
+short = vary
+type = B
+usage = Vary exponent of CTF function when fitting a CTF-like curve
+tooltip =
+manpage = 
+
+[Field = BaselineFittingOrder]
+short = baseline
+type = I
+usage = Order for polynomial used to adjust baseline to be flat (default 4)
+tooltip =
+manpage = Baseline fitting is used to make the power spectrum be flat at high
+frequencies; this entry initializes the "Baseline fitting order" setting in the
+Fitting dialog.  For details, see above.  The default is 4 unless the expected
+position of the first zero is 0.25 reciprocal pixels or higher, in which case it
+is set to 1.
+
+[Field = FindAstigPhaseCuton]
+short = find
+type = IT
+usage = Find astigmatism, phase shift, and cut-on frequency (1 to find, 0 not
+to)
+tooltip =
+manpage = Enter 1 to find astigmatism or 0 not to, 1 to find phase shift or 0
+not to, and 1 to find cut-on frequency also, or 0 not to.
+
+[Field = SearchAstigmatism]
+short = sAstig
+type = B
+usage = Search for astigmatism when fitting
+tooltip =
+manpage = Search for astigmatism when fitting.  This option cannot be entered
+with \fB-find\fR.
+
+[Field = SearchPhaseShift]
+short = sPhase
+type = B
+usage = Search for phase shift when fitting
+tooltip =
+manpage = Search for phase shift when fitting.  This option cannot be entered
+with \fB-find\fR.
+
+[Field = SearchCutonFrequency]
+short = sCuton
+type = B
+usage = Search for cut-on frequency when finding phase shift
+tooltip =
+manpage = Search for cut-on frequency when finding phase shift.  This option
+cannot be entered with \fB-find\fR.
+
+[Field = MinViewsAstigAndPhase]
+short = minViews
+type = IP
+usage = Minimum views for finding astigmatism and phase shift (default 3, 1)
+tooltip =
+manpage = Minimum number of views for finding astigmatism and phase shift; the
+default is 3 for astigmatism and 1 for phase.
+
+[Field = SaveAndExit]
+short = save
+type = B
+usage = Save defocus values to file and exit after autofitting
+tooltip =
+manpage = Save defocus values to file and exit after autofitting.  The program
+will not ask for confirmation before removing existing entries in the defocus
+table.
+
+[Field = PSResolution]
+short = psRes
+type = I
+usage = The number of points over which CTF will be computed (default 101)
+tooltip =
+manpage = The number of points over which CTF will be computed.  The frequency
+range up to Nyquist is divided into equal intervals delineated by these
+points.  The default is 101.
+
+[Field = TileSize]
+short = tileSize
+type = I
+usage = The tile size for computing spectra (default 256)
+tooltip =
+manpage = The tile size for computing spectra.  The size is in
+pixels and the tiles are square.  The whole image is divided into tiles that 
+overlap by 50% in each direction.  For each view, these tiles are assigned to
+strips that are considered to have constant defocus.  The default is 256.
+
+[Field = DefocusTol]
+short = defTol
+type = I
+usage = Defocus tolerance in nanometers defining the strip width (default 200)
+tooltip =
+manpage = Defocus tolerance in nanometers defining the strip width.  The
+center strips are taken from the central region of a view that has defocus
+difference less than this tolerance. Similarly, the off-center strips are
+defined to include tiles whose defocus range is less than this amount.  The default
+is 200.
+
+[Field = LeftDefTol]
+short = leftTol 
+type = F
+usage = Defocus tolerance in nm for strips to the left of center (default 2000)
+tooltip =
+manpage = Defocus tolerance in nanometers for strips to the left of 
+the center strip.  When non-center strips are included in the average, strips
+to the left of center are included if their defocus difference is less than 
+the given value.  The default is 2000.
+
+[Field = RightDefTol]
+short = rightTol
+type = F
+usage = Defocus tolerance in nm for strips to the right of center (default 2000)
+tooltip =
+manpage = Defocus tolerance in nanometers for strips to the right of 
+the center strip.  When non-center strips are included in the average, strips
+to the right of center are included if their defocus difference is less than 
+the given value.  The default is 2000.
+
+[Field = MaxCacheSize ]
+short = cache
+type = I
+usage = Cache size for tile power spectra in megabytes
+tooltip =
+manpage = To speed up computation, ctfplotter uses a cache to hold the
+rotationally averaged power spectra of strips of tiles at 20 times the final
+power spectrum resolution (or whatever is entered with the \fB-hyper\fR
+option).  This option controls the cache size.  The default
+value is 1000 megabytes if the system physical memory cannot be determined;
+otherwise the size is the minimum of 15 GB, 3/4 of physical memory, and
+physical memory minus 1 GB, for memory up to 30 GB, and half of physical
+memory above 30 GB; but in any case at least 400 MB.  These large limits were
+implemented before caching was changed to hold strip sums instead of
+individual tiles; with that scheme, not nearly as much memory is needed.
+
+[Field = HyperResolutionFactor]
+short = hyper
+type = I
+usage = Ratio of points in cached spectra to ones in computed curves (default 20)
+tooltip =
+manpage = 
+
+[Field = NumberOfSectors]
+short = sectors
+type = I
+usage = Number of sectors for astigmatism analysis (default 36)
+tooltip =
+manpage = Number of sectors for astigmatism analysis.  A power spectrum is
+stored separately for each sector; spectra can then be computed fairly quickly
+for wedges of any size that is a multiple of the sector size.  The default is
+36, giving 5 degree sectors.
+
+[Field = WedgeRangeAndInterval]
+short = wedge
+type = FP
+usage=  Angular range and interval of wedges for astigmatism analysis
+tooltip =
+manpage = Initial value for the angular range and interval of wedges for
+astigmatism analysis.  The default is a range of 90 degrees and an interval
+equal to one sector.
+
+[Field = MaximumAstigmatism]
+short = astigMax
+type = F
+usage=  Maximum astigmatism in microns (default 1.2)
+tooltip =
+manpage = Maximum astigmatism, in microns.  During the fitting to wedge
+spectra, the defocus is allowed to vary from the global value by more than
+half of this amount.  The default is 1.2.
+
+[Field = ChangeColors]
+short = colors
+type = B
+usage = Change magenta to white and green to magenta on a black background
+tooltip =
+manpage = Switch to colors that are better for some forms of color-blindness;
+this option will turn on the checkbox for this change on the plotter window.
+The power spectrum changes from magenta to white, a fitted curve changes from
+green to magenta, and the background is set to black.
+
+[Field = DebugLevel]
+short = debug
+type = I
+usage = 0-3, debug level, 3 means printing all messages
+tooltip =
+manpage = Debug level, 0-3. 0: quiet.  1: user messages.  2: cache, tile
+iteration messages.  3: additional fitting messages. The default is 1.
+
+[Field = ParameterFile]
+short = param
+type = PF 
+usage = Read parameter entries from file
+tooltip = 
+manpage = Read parameter entries from this file.
+
+[Field = usage]
+short = help
+type = B
+usage = Print help output
+tooltip = 
+manpage = 

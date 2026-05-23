@@ -1,0 +1,56 @@
+.na
+.nh
+.TH swaptomostacks 1 4.10.10 IMOD
+.SH NAME
+swaptomostacks \- Exchange tilt series files for making tomogram with same parameters
+.SH SYNOPSIS
+swaptomostacks  -from otherRoot -to saveRoot [options] rootname
+.SH DESCRIPTION
+Swaptomostacks will safely rename files in a tilt series data set in
+order to substitute a different raw stack and make a new tomogram using
+the same alignment parameters.  This is useful for STEM data taken
+simultaneously with multiple detectors, or when experimenting with
+a different pre-processing of the raw stack.  In addition to the raw
+stack, the program renames a set of other files by default: 
+"rootname_orig.st", "rootname_xray.st.gz", "rootname.ali",
+"rootname_full.rec", "rootnamea.rec", "rootnameb.rec", and
+"rootname .rec".  As arguments, it requires the
+rootname of the alternate stack to be
+moved into place for processing (with the \fB-from\fR option) and the
+rootname to which to rename existing data set files (with the \fB-to\fR
+option).
+.P
+The program will detect the current naming style of the data set and
+make changes in accordance with that.  If the old naming style is being
+used, 
+the alternative stack may still be named with the extension ".mrc";
+this will be detected and it will be renamed to ".st".  However, when
+files are swapped back, the original extension will be lost.
+.SH OPTIONS
+Swaptomostacks uses the PIP package for input (see the manual page
+for pip(1)).  Options can be specified either as command line
+arguments (with the -) or one per line in a command file
+(without the -).  Options can be abbreviated to unique letters; the currently
+valid abbreviations for short names are shown in parentheses.
+INSERT OPTION TEXT HERE
+.TP
+.B -StandardInput
+Read parameter entries from standard input
+.SH EXAMPLE
+Suppose data are taken with bright-field, dark-field and HAADF
+detectors, the three stacks are named series1.mrc, series1-DF.mrc, and
+series1-HAADF.mrc.  If the bright-field stack is processed first, then
+one can run
+   swaptomostacks series1-DF series1-BF
+.br
+to save the existing files as series1-BF and move the series1-DF files
+into place.  After making the aligned stack and tomogram for the dark-field
+series, one can run
+   swaptomostacks series1-HAADF series1-DF
+.br
+then process the HAADF stack, and at the end run
+   swaptomostacks series1-BF series1-HAADF
+.br
+to bring the bright-field data back to their original names.
+.SH AUTHOR
+David Mastronarde  <mast@colorado.edu>

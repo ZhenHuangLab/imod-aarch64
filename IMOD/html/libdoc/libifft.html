@@ -1,0 +1,43 @@
+<html><head><title>IMOD Library libifft</title>
+<body>
+<A NAME = "TOP"></A>
+<H2  align="center">IMOD Library libifft</H2>
+The IMOD library libifft contains functions for performing 1-D, 2-D, and 3-D
+Fourier transforms, callable from C or Fortran.  If IMOD is built with FFTW
+libraries, then the routines here are mostly wrappers to calls to FFTW, with
+some logic to handle thread number.  Otherwise, the librayr contains 
+FFT routines written by Lynn Ten Eyck, and wrapper routines written by David
+Agard, which were translated from Fortran to C by David Mastronarde.
+<P>
+In these routines, all dimensions being transformed must be even and their
+largest prime factors must be no larger than 19.  All transforms are done in
+place and a normalization is applied in each case.  The X dimension of the
+array must always be dimensioned to 2 more than the dimension of the real
+space image to allow space for an extra column of complex numbers.  The sizes
+passed to the routines are always the real-space image sizes.  Thus, in
+Fortran, an array would be dimensioned as:
+<BR>
+<PRE>
+     real*4 array(nx+2, ny)
+or:
+     complex array((nx+2)/2, ny)
+</PRE>
+<P>
+There are no separate Fortran wrappers for these routines; their names are
+defined so that they can be called directly from Fortran.
+From C, include "cfft.h" to have the function name defined with an underscore
+on Unix-type systems and with capital letters on Windows.  Pass all arguments
+by reference (as pointers), or use the odfftc, todfftc, and thrdfftc functions calls.
+<P>
+All functions exit with an error message to standard out if the image size
+is not allowed or the direction parameter is incorrect.
+<P>
+Header to include: cfft.h
+<P>
+LIST FUNCTIONS FROM odfft.c
+LIST FUNCTIONS FROM todfft.c
+LIST FUNCTIONS FROM thrdfft.c
+<P>
+DESCRIBE FUNCTIONS FROM odfft.c
+DESCRIBE FUNCTIONS FROM todfft.c
+DESCRIBE FUNCTIONS FROM thrdfft.c

@@ -1,0 +1,595 @@
+<html><head><title>
+Distortion Correction with IMOD
+</title>
+
+<body>
+<A NAME = "TOP"></A>
+<H2 ALIGN=center>Calibrating the Distortion Correction Available with IMOD</H2>
+<H3 ALIGN=center>David Mastronarde, University of Colorado, Boulder</H3>
+<HR>
+<BR><A HREF = "#Overlapping">Estimating Distortion from Overlapping Images</A>
+<BR><A HREF = "#pairSpecimen">Specimens for Distortion Pairs</A>
+<BR><A HREF = "#pairImaging">Imaging Parameters for Distortion Pairs</A>
+<BR><A HREF = "#rotatedPairs">Measuring Stretch from 90&deg; Rotated Images</A>
+<BR><A HREF = "#rotatedSpecimen">Specimens for 90&deg; Rotated Images</A>
+<BR><A HREF = "#dpAcquire">Procedure for Acquiring Distortion Pairs</A>
+<BR><A HREF = "#tsAcquire">Procedure for Acquiring Tilt Series Before and After Rotation</A>
+<BR><A HREF = "#dpAnalyze">Initial Analysis of Distortion Pairs</A>
+<BR><A HREF = "#tsAnalyze">Analysis of Rotated Tilt Series</A>
+<BR><A HREF = "#dpFinal">Final Analysis of Distortion Pairs with Stretch Included</A>
+<HR>
+<P>
+IMOD contains two kinds of distortion correction that can be applied in the
+<A HREF = "man/newstack.html#TOP">Newstack</A> and 
+<A HREF = "man/blendmont.html#TOP">Blendmont</A> programs.  One is a correction for a
+fixed distortion in the imaging process at a particular magnification.  The
+other is a correction for the magnification gradient involved when imaging a
+tilted specimen.  In each case, calibrating the distortion requires taking
+images on the microscope (preferably with SerialEM) and analyzing them in
+IMOD.  For imaging distortion, this document gives some background information
+and describes how to acquire the images and analyze them.  Instructions for
+calibrating magnification gradients have not yet been incorporated into this
+document and are available upon request.
+</P>
+<H2 ALIGN=center>Measuring Image Distortion Fields</H2>
+
+<H3><A NAME = "Overlapping"></A>Estimating Distortion from Overlapping Images</H3>
+<P>
+To measure a distortion field at a particular magnification, you need to take
+pairs of overlapping images, where only the stage is moved between the two
+images of a pair.  When these images are lined up where they overlap, the
+distortion field causes image movements when toggling between two images.  The
+image displacement at a given point is the difference between the distortion
+vectors at two different points in the field.  This means that if we measure
+enough image displacements we can solve for the underlying distortion field.
+To obtain a robust solution, we want to have a situation where there are about
+twice as many measured displacements as unknown vectors, and where the
+different measurements are somewhat independent rather than redundant.  
+This can be accomplished by taking four sets of pairs, where each pair
+overlaps over at least 50% of their area and the two images of a pair are
+arranged horizontally, vertically, or along 45&deg; or 135&deg; diagonals.
+These images are then analyzed with <A HREF = "man/finddistort.html#TOP">Finddistort</A>.
+</P>
+<P>
+SerialEM has a procedure that will obtain such pairs (the Calibrate -
+Distortion menu item).  It will work out the stage backlash, take an image,
+move the stage in the desired direction, take a second image, and assess the
+overlap.  If the overlap is not within a specified range, it will try again,
+adjusting its local stage scaling to try to get a better result.  On an FEI
+microscope,
+this procedure is remarkably successful up to a magnification of about 50K with an
+Ultrascan 4000 camera (1 micron field of view).  For smaller fields of view,
+it is prone to fail due to imperfect and non-ideal stage behavior, and it may
+require trying several times at different stage positions.
+</P>
+<H3><A NAME = "pairSpecimen"></A>Specimens for Distortion Pairs</H3>
+<P>
+The specimen for taking these paired images must be rich in image information,
+because displacement will be measured in small patches, by default only 24
+pixels square.  If there are significant empty areas in the image, patches in
+these locations will not have enough information to give good correlations.
+An ideal specimen has been prepared by Misha Sherman at University of Texas
+Medical Branch, by sputter-coating gold onto standard carbon-coated grids.
+The images below, from left to right, were taken with a US4000 on an F20 at
+5K, 19K and 80K;
+scale bars are 500, 100, and 20 nm.  At the lowest magnification there are
+some larger particles as well as dense fine detail from the many small
+particles; at intermediate magnification there is still a good distribution of
+small dense particles in the gaps between larger ones.  At high magnification,
+the gaps between particles are large enough to be a concern, but there is
+sufficient structured detail from the carbon to allow the correlations to
+succeed in the gaps.  The largest particles may disappear with beam exposure,
+but are not needed for the image correlations to work at lower magnifications.
+</P>
+<p align="center">
+<img src="miscImages/5K-500bar.jpg" style="display: inline">
+<img src="miscImages/19K-100bar.jpg" style="display: inline">
+<img src="miscImages/80K-20bar.jpg" style="display: inline">
+</P>
+<P>
+Sections of stained material can also be used provided
+that that there is sufficient density everywhere in a field.
+High-pressure-frozen, freeze-substituted material is best because it tends to
+retain more detailed structure in the cytoplasm.  More extracted material may
+work at low to intermediate magnifications and fail at higher magnifications
+as empty areas become too large.  Large mammalian cells (for
+example, T-cell lymphocytes) and tissue sections should be suitable.  Sections
+of yeast cells are not optimal because they contain vacuoles and their area is
+often not large enough.
+The cross-line grating with gold crystals is not an adequate specimen except
+at relatively low magnifications, because the areas without gold do not have
+much information in them.  
+</P>
+<P>
+The specimen does not need to be very resistant to shrinkage in the beam if
+you can acquire the pairs automatically with SerialEM.  The specimen does not need to have
+significant thickness (unlike the specimen needed for measuring the
+stretch in the distortion field, described below).  A sputter-coated grid or a
+suitable plastic section may be available upon request.
+</P>
+<H3><A NAME = "pairImaging"></A>Imaging Parameters for Distortion Pairs</H3>
+<P>
+The images themselves must be rich in high spatial-frequency information and
+have relatively little noise.  In addition, the images generally do not need to be any
+larger than 1024 pixels.  One approach with CCD camera images is to 
+bin the images to no larger than 1024 pixels, in order to operate the
+camera in its most efficient zone, and set the beam and exposure time to give
+clean images with a high number of counts (e.g., > 1/2 of saturation).
+However, it may be easier to get a good signal-to-noise ratio by acquiring 2K
+images with higher exposure time.  With direct detectors, it is more
+appropriate to acquire 2K images or even unbinned images to avoid saturation
+of the 16-bit image. 
+</P>
+<P>The default spacing parameters for analysis in Finddistort are
+tuned to 1K images.  If you do take images larger than 1K, you should either
+reduce them to 1K or scale the various parameters up by the appropriate factor
+(details are  given below).  There is some evidence that the latter approach may give
+better fits, as long as the data have little noise.  However, there is no
+filtering of the image data in Finddistort, so if the images are somewhat noisy, they
+should be reduced to 1K.  Reduction can be done in 
+<A HREF = "man/newstack.html#TOP">Newstack</A> with binning or
+with anti-aliased reduction using the "-shrink" option. If you take 4K images,
+you should at least reduce them by 2.  Reduction by 4 should definitely done
+with the "-shrink" option to remove aliased noise (i.e, "-shr 4").
+</P>
+<H3><A NAME = "rotatedPairs"></A>Measuring Stretch from 90&deg; Rotated Images</H3>
+<P>
+The information provided by the pairs of overlapping images can be used
+to solve for a distortion field that does not contain any overall stretch.  A
+stretch along one axis of 1-2% is typical for projection in an EM, and an
+energy filter and camera imperfections may impose even bigger stretches.
+Using a distortion field without this stretch included will not impair the
+blending of overlap zones in montages, or the alignment of tilt series
+(at least if the "Projection stretch" variable is included in the
+alignment).  However, it will result in slightly anisotropic reconstructions.
+</P>
+<P>To determine the stretch in the distortion field, you need an image of
+the same structure rotated by 90&deg;.  The difficulty here is that if the structure
+is tilted differently in the two views, then it may be foreshortened by the
+tilt and some of the stretch in the alignment transform will reflect this
+foreshortening rather than the stretch in the distortion in field.  Although
+this effect is a small one because the cosine is very close to 1 near 0&deg;, it
+is possible to control for it.  The solution is to take a small tilt series of
+a specimen that has some distribution of features in depth, before and after
+rotating by 90&deg;.  The pairs of views from the two series that match
+the best will be the closest to being tilted the same in the two orientations,
+and will give the best estimate of the stretching due to rotating in the
+distortion field. <A HREF = "man/matchrotpairs.html#TOP">Matchrotpairs</A> 
+is used to find the best matching pair of images.
+</P>
+<P>
+The tilt series should be at 1.5&deg; intervals between -4.5&deg; and 4.5&deg;.
+The tilt series does not need to be very well aligned; the simple
+macro given below is adequate for acquiring it.  The rotation does not need to
+be exactly 90&deg; (80&deg; is good enough).  Images 1K in size are adequate. 
+</P>
+<P>The most important thing is to get a pair of images before and after the
+90&deg; rotation.  Being able to refine the estimate by controlling for tilt
+is secondary; in the extreme case, a tilt of 4&deg; will make the estimate of
+stretch be off by 0.0024.
+</P>
+<H3><A NAME = "rotatedSpecimen"></A>Specimens for 90&deg; Rotated Images</H3>
+<P>
+The challenges in this measurement are in finding the same area after 90
+degree rotation, preventing excessive shrinkage between the first and second
+setes of images, and having enough 3D information to allow the best set of
+corresponding views to be found.
+Three kinds of specimens are suitable: plastic sections with thickness of
+at least 150-200 nm, the standard cross-line replica grating with latex
+spheres, and colloidal gold placed rather densley on both sides of a thick
+film.  Each has different considerations:
+</P>
+<UL>
+<LI>
+For plastic sections, it should be easy to locate the same area and there
+should be adequate 3D information.
+To minimize shrinkage, it is important to irradiate the chosen
+area for a long time (at least 5 minutes), and to avoid exposing it to a
+much additional dose while rotating and repositioning.  Some degree of uniform
+shrinkage can be tolerated since the analysis will separate an overall mag
+change from the stretch in the alignment transformation.  </LI>
+<LI>
+For the cross-line grating, an area with many latex spheres should be chosen
+to give enough information about features at different depths.  A clump of
+spheres will serve this purpose as well as provide a feature that is easy to
+locate after rotation.  Try to find a clump with as many spheres as in the
+example below.  If you do not have a rotating holder, pick one of the
+grid squares around the center of the grid if possible, so that the area can
+be found again without too much trouble.  The latex beads should probably be
+irradiated somewhat but no special precautions are needed thereafter. </LI>
+<LI>
+With gold on a film, the main issue is getting a thick enough film.  Doing the
+analysis with a standard carbon film is troublesome and tedious because the
+separation between surfaces is so small.  Based on experience with a 30-nm
+film, it seems that a film of at least 60 nm thickness would be needed to make
+the analysis work as easily as for other samples.  A finder gird should be
+used to make it possible to locate the area after rotation.</LI>
+</UL>
+<P align="center">
+<img src="miscImages/manySpheres.jpg">
+</P>
+<H3><A NAME = "dpAcquire"></A>Procedure for Acquiring Distortion Pairs</H3>
+<OL>
+<LI>
+Insert the specimen.
+</LI>
+<LI>
+Use a medium to small objective aperture to get good contrast.
+</LI>
+<LI>
+Find a good area full of image detail that is somewhat larger than the field
+of the camera.  If this area is big enough, you will not need to worry about
+recentering it after each pair.
+</LI>
+<LI>
+For a plastic section, irradiate the area for a few minutes to get almost all
+of the shrinkage over with.  The shrinkage between successive images will then be
+insignificant. 
+</LI>
+<LI>
+At a given magnification, set the beam and exposure to give the desired number
+of counts. Focus the specimen.  A small amount of underfocus is acceptable,
+and might be preferred at high magnifications to bring out detail in the
+carbon film.</LI>
+<LI>
+Open a new data file (e.g. dp18K.mrc)
+</LI>
+<LI>
+Run the Calibrate - Distortion routine, specifying direction 0.  It will save
+the two pairs when it succeeds in getting pairs that overlap by the right
+amount.  If it fails, first try it again.  If it still fails and the stage
+moves are under a micron, try moving to a
+new area at least a few microns away.  If this still fails, select the 
+"Set overlaps" menu entry and make the acceptable range of overlaps larger.
+</LI>
+<LI>
+Run the Calibrate - Distortion routine for directions 1, 2, and 3.
+</LI>
+<LI>
+Close the image file.  
+</LI>
+<LI>
+Repeat these steps for each magnification where a calibration is desired.
+</LI>
+</OL>
+
+<H3><A NAME = "tsAcquire"></A>Procedure for Acquiring Tilt Series Before and
+  After Rotation</H3>
+<OL>
+<LI>
+Set up two macros, one to tilt to the starting angle and present a trial
+picture, and one to acquire the series.  
+<pre>
+   Macro 1:
+   TiltTo -8
+   TiltTo -4.5
+   T
+
+   Macro 2:
+   Loop 7
+   R
+   S
+   TiltBy 1.5
+   EndLoop
+   TiltTo 0
+</pre>
+</LI>
+<LI>
+Turn off "Align on Save" in the Buffer Control Panel.
+</LI>
+<LI>
+Pick an area on the specimen that you will be able to find after rotating.
+</LI>
+<LI>
+If using a plastic section, stabilize the section under the beam for a while.
+</LI>
+<LI>
+Also, take a relatively low mag picture of the area if necessary 
+to use as a reference when searching for the area after rotating.
+</LI>
+<LI>
+Adjust the eucentricity.
+</LI>
+<LI>
+At each mag where distortion pairs were taken, do the following steps:</LI>
+<UL>
+<LI>
+Adjust the focus.
+</LI>
+<LI>
+Open a file for the output (e.g., 18Kts1.mrc)
+</LI>
+<LI>
+Run the first macro (or tilt beyond the starting angle and back to it)
+</LI>
+<LI>
+Adjust centering with stage moves if necessary.
+</LI>
+<LI>
+Run the second macro (or take an image, save it, and tilt)
+</LI>
+<LI>
+Close the file.
+</LI>
+</UL>
+<LI>
+If using a plastic section, go to a low mag and spread the beam to avoid
+intense exposure.  
+</LI>
+<LI>
+Rotate the specimen by about 90&deg; and relocate the area.
+Again, if using a plastic specimen, try to locate the area at low mag.  If
+you took a reference picture, switch to the mag of that picture and try to use
+the camera rather than the screen.
+</LI>
+<LI>
+Center the desired area approximately.
+</LI>
+<LI>
+Adjust the eucentricity.
+</LI>
+<LI>
+For each mag, do the following:
+</LI>
+<UL>
+<LI>
+Read in an image from the first series, rotate it by 90&deg; and copy it
+to the autoalign buffer or another buffer that is easy to access
+</LI>
+<LI>
+Adjust the focus
+</LI>
+<LI>
+Open a file for the output (e.g., 18Kts2.mrc)
+</LI>
+<LI>
+Run the first macro
+</LI>
+<LI>
+Adjust centering with stage moves if necessary.  (Reset image shift after
+shifting the image into alignment with the right mouse button). The centering
+does not need to be perfect; the alignments will work if the areas overlap by
+80%.
+</LI>
+<LI>
+Run the second macro 
+</LI>
+<LI>
+Close the file.
+</LI>
+</UL>
+<LI> Now you have data to analyze.</LI>
+</OL>
+<H3><A NAME = "dpAnalyze"></A>Initial Analysis of Distortion Pairs</H3>
+<P>
+The analysis proceeds in three stages.  First you use 
+<A HREF = "man/finddistort.html#TOP">Finddistort</A> to get a
+stretch-free distortion field.  Then you use 
+<A HREF = "man/matchrotpairs.html#TOP">Matchrotpairs</A> to analyze the
+rotated images and get a transformation that provides information about the
+stretch.  Finally, you rerun 
+<A HREF = "man/finddistort.html#TOP">Finddistort</A> with this transformation to get the
+true distortion field.
+</P>
+<P>
+If you do not have 1K images, you need to increase four parameters proportionally
+from their defaults. The parameters are the spacing between correlated boxes
+("-grid", default 16), the spacing between values used to solve the linear
+equations ("-data", default 20), the spacing between values in the distortion
+field file ("-field", default 40), and the size of the correlated boxes, which
+is normally the only parameter that is varied ("-box", default 24).  Thus, for
+2K images, you should add "-gri 32 -dat 40 -fie 80" to all of the Finddistort
+commands given below, plus either "-box 48" or double the recommended increase
+in box size.
+</P>
+<P>
+Analyze a stack of distortion pairs with: 
+<pre>
+   finddistort -bin 4 -pat dp18K.mrc 18K
+</pre>
+The binning must be specified with the "-bin" parameter.  It should be the final
+binning, the product of the binning on the camera and any reduction applied to
+the images.  The "-pat" parameter
+makes the program output a .patch file that can be converted to an IMOD model
+with <A HREF = "man/patch2imod.html#TOP">Patch2imod</A>. 
+The input file is the file of distortion pairs for one mag,
+and the last entry is a root name for a variety of output files.
+</P>
+<P>
+When you run this you will see output for each iteration such as:
+<pre>
+Shift changes:   0.30   0.24   0.06   0.18  -0.28   0.15  -0.33  -0.03
+ iteration 2   mean change in shift  0.314042598
+ 5436 rows of data, 43718 entries
+ condition #  851.695984  874.654541
+ Mean and max residual in fit:   0.163  0.532
+ Mean and max change in field:    0.0157   0.0648
+</pre>
+The first line shows how much the shifts used to align the overlapping images 
+changed between iterations, and the second line shows the mean change.
+<br>
+The third line indicates the size of the data matrix on this iteration.
+<br>
+The fourth line gives condition numbers indicating how suitable the data are
+for linear solution.
+<br>
+The mean and maximum residual of the fit indicate the reliability of the
+solution.
+<br>
+The final line shows the mean and maximum change in the distortion field from
+the previous iteration to this one.  Both these changes and the changes in
+shifts will go to zero unless something is wrong.
+</P>
+<P>
+If the maximum residual is higher than 1 (or ~1.7 for 2K images), you should
+increase the box size from its default of 24.  Try 32, and if the error is
+still high, try 40 (64 and 80 for 2K images).  With
+these larger box sizes, reduce the indent to 2; i.e., add the arguments
+"-box 32 -ind 2".
+</P>
+<P>
+You can check how well the initial shifts were determined with:
+<pre>
+   midas -b 0 dp18K.mrc 18K.rawxf
+</pre>
+All of the pairs (1-2, 3-4, 5-6, 7-8) should look as well aligned as possible,
+but when you toggle between them you will see the effects of the distortion
+field.
+</P>
+<P>
+You can see how well these images match after distortion correction with:
+<pre>
+   midas -b 0 dp18K.udst 18K.udxf
+</pre>
+The pairs should match very well.
+</P>
+<P>
+You can visualize the distortion field by converting the patch file to a model:
+<pre>
+   patch2imod -f 18K.patch 18K.mod
+   3dmodv 18K.mod
+</pre>
+If the vectors are too long and overlap too much, add the option "-s 5" to set
+the scaling to 5 instead of 10 in the 
+<A HREF = "man/patch2imod.html#TOP">Patch2imod</A> command.  If you open the
+model with <A HREF = "man/3dmod.html#TOP">3dmod</A> instead of 3dmodv, the
+vectors will be displayed with
+arrowheads in the Zap window.  A good set of vectors should change relatively
+smoothly between adjacent positions and not have wild vectors.  Here is an example:
+</P>
+<P align="center">
+<img src="miscImages/goodModel.png" style="width: 600px">
+</P>
+<H3><A NAME = "tsAnalyze"></A>Analysis of Rotated Tilt Series</H3>
+<P>
+The second step is to analyze the rotated images.  If you used a plastic
+section or a cross-line grating with enough depth information, this step is 
+easy:
+<pre>
+   matchrotpairs -d 18K.nosidf -b 4 18Kts1.mrc 18Kts2.mrc rp18K.xf
+</pre>
+Here you provide the no-stretch distortion field, specify the binning of the
+images again, and give the names of the tilt series files and an output file
+for a transform.
+</P>
+<P>
+You will see a difference measure for every possible pair, with a star as each
+new minimum is reached, and at the end the pair that gives the best match will
+be listed.  All of the differences should be somewhat low at the proper
+rotation angle and much higher at the wrong angle.  You can visualize the
+quality of the fit between the best pair with
+<pre>
+   midas -b 0 rp18K.stack rp18K.xf
+</pre>
+</P>
+<P>
+If the fit is poor, or if you have anomalously high differences at the proper
+rotation angle, rerun <A HREF = "man/matchrotpairs.html#TOP">Matchrotpairs</A> 
+with "-m" to run Midas and set the initial
+alignment.  Also, prior to IMOD 4.8.27, it
+might be necessary to run Midas to set the rotation angle if it is not within ~5
+degrees of 90.  
+This time you can add "-a" and the rotation angle determined from
+the first run (+90 or -90).  <A HREF = "man/midas.html#TOP">Midas</A> 
+will open up with the central image from
+each tilt series.  Use shift and rotation to align the images.  Save the
+transforms and exit <A HREF = "man/midas.html#TOP">Midas</A>.
+All pairs will then be analyzed with this
+alignment as an initial alignment.  If 
+<A HREF = "man/midas.html#TOP">Midas</A> opens twice due to a bug in the
+new version of <A HREF = "man/matchrotpairs.html#TOP">Matchrotpairs</A> 
+(IMOD 4.8.27 - 4.8.37), you can prevent this with
+the option "-mirror -1".
+</P>
+<P>
+If the procedure seems not to have found the best pair, it is possible to
+check the pairs manually.  First rerun 
+<A HREF = "man/matchrotpairs.html#TOP">Matchrotpairs</A> with the "-x" option to
+have it output all of the transformations to a set of files, one for each
+section in the second tilt series.  You must include either the "-a" or the
+"-m" option to get this output.  You can use "-za" and "-zb" to run on a subset of
+the sections, but if so always start from section 1 to avoid confusion about
+which sections are being referred to.  For example:
+<pre>
+   matchrotpairs -za 1,5 -zb 1,5 -a 90 -x -d 18K.nosidf -b 4 18Kts1.st 18Kts2.st rp18K.xf
+</pre>
+will produce a set of 5 transform files, rp18K-1.xf, rp18K-2.xf, etc, that
+contain the transforms for aligning each of the sections in the first series
+to section 1, section 2, etc in the second series.
+</P>
+<P>
+You also need undistorted stacks:
+<pre>
+   newstack -ima 4 -dis 18K.nosidf -sec 0-4 18kts1.mrc 18kts1.udst
+   newstack -ima 4 -dis 18K.nosidf -sec 0-4 18kts2.mrc 18kts2.udst
+</pre>
+where "-ima" specifies the existing binning of the data. Then you can run:
+<pre>
+    midas -b 0 -r 18Kts2.udst 18Kts1.udst rp18K-1.xf
+</pre>
+</P>
+<P>
+When this starts, you can assess the match between each section of ts1 with
+section 1 of ts2.  To compare with the next section, use the menu entry
+File - Load transforms and select rp18K-2.xf.  Then make the reference section
+be 2 and you should see aligned image pairs again.  In general, make the
+number of the reference section match the number of the transform file.  In
+this way, you can compare all pairs if necessary and find the best match.
+Finally, rerun Matchrotpairs without the -x option and specifying the best 
+pair of sections.  For example, if the best reference section is 2 and the
+best current section is 4, enter "-za 4,4 -zb 2,2".
+</P>
+<H3><A NAME = "dpFinal"></A>Final Analysis of Distortion Pairs with Stretch Included</H3>
+<P>
+Once you have the rotation pair transform, you rerun 
+<A HREF = "man/finddistort.html#TOP">Finddistort</A>:
+<pre>
+   finddistort -bin 4 -pat -usexf -str rp18K.xf dp18K.st 18K
+</pre>
+The "-usexf" tells it to use the existing raw transforms on the first round, and
+"-str rp18K.xf" tells it to derive the stretch from the transformation file.  Be
+sure to add "-box", "-ind", and other parameters that you used on the last
+initial run.
+</P>
+<P>
+At the end of this run you will see a lot of output about the stretch
+transformation:
+<pre>
+Pair has rotation =   90.02, mag = 1.0171, stretch = 0.9625 on   76.3 deg axis
+Mean mag = 0.9978, using mag = 1.0193 and stretch = 0.9625
+ No-mag transformation:  0.008361 -0.983182  1.017184 -0.009197
+</pre>
+These lines describe the transformation between the rotated images in terms of
+a rotation, magnification, and stretch.  If the mean mag is not 1.0, then the
+transform is scaled up to have a mean mag of 1.0 by increasing its mag
+component.  The result is a no-mag transformation that can then be assumed to
+be the result of the same underlying stretch in the two images.
+<pre>
+True rotation =   90.02, underlying stretch =  1.0096 on   76.4 deg axis
+ Stretch transformation:  0.991546  0.004387  0.004387  1.008546
+</pre>
+These lines describe the underlying stretch transformation that must be added
+to the distortion field.
+<pre>
+ Implied no-mag transformation:  0.008356 -0.983182  1.017184 -0.009192
+</pre>
+The stretch implies a transformation between rotated images, which should
+match the no-mag transform given above.
+<pre>
+ Embedded transformation:  0.991543  0.004386  0.004386  1.008542
+</pre>
+After adding the stretch into the distortion field, the field is analyzed to
+determine the net stretch transformation that has been embedded in the field,
+which should closely match the solved stretch transformation above.
+</P>
+<P>
+The final distortion field is in the file with extension ".idf".  Rename such
+files if desired to provide whatever information users need to identify it (e.g., the date
+or the camera).  In order for Etomo to find the files, place them in a
+subdirectory named "Distortion" of the
+directory pointed to by the IMOD_CALIB_DIR environment variable.  By default
+this directory is /usr/local/ImodCalib except on Windows systems without Cygwin, where
+it is C:\ProgramData\IMOD.
+</P>
+</body>
+</html>

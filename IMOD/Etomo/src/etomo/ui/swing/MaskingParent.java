@@ -1,0 +1,28 @@
+package etomo.ui.swing;
+
+/**
+ * <p>Description: </p>
+ * 
+ * <p>Copyright: Copyright 2009 - 2017 by the Regents of the University of Colorado</p>
+ * 
+ * <p>Organization: Dept. of MCD Biology, University of Colorado</p>
+ *
+ * @version $Id$"
+ * 
+ * <p> $Log$
+ * <p> Revision 1.1  2010/11/13 16:07:34  sueh
+ * <p> bug# 1417 Renamed etomo.ui to etomo.ui.swing.
+ * <p>
+ * <p> Revision 1.1  2009/12/08 02:47:17  sueh
+ * <p> bug# 1286 Factored MaskingPanel out of PeetDialog.
+ * <p> </p>
+ */
+interface MaskingParent {
+  public boolean isReferenceFileSelected();
+
+  public int getVolumeTableSize();
+
+  public boolean fixIncorrectPath(FileTextFieldInterface fileTextField, boolean choosePath);
+
+  public void updateDisplay(boolean init);
+}

@@ -1,0 +1,224 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+  <head>
+    <title>SIRT and SIRT-like Filter Reconstruction Example</title>
+    <META HTTP-EQUIV="Content-Type" Content="text/html;
+                                             charset=Windows-1252">
+      <style type="text/css"> <!-- BODY { font-family:"Arial" }
+        TD { font-size:16 }
+        -->
+        p.style1
+        {margin-bottom:.3em;
+        margin-top: 0em;
+        }
+        
+        .auto-style1 {
+          text-decoration: underline;
+        }
+        
+      </style>
+    </head>
+    <body BGCOLOR="#ffffff" TEXT="#000000">
+      <basefont size="2">
+        <p class="style1" align=center><b><font size="3" style="font-size:
+          large">SIRT and SIRT-like Filter Reconstructions 
+          of a Cryo Tilt Series </font></b></p>
+      <p class="style1" align=center>(IMOD 4.11)</p>
+      <p class="style1" align=center style="font-weight: bold">University of Colorado, 
+        Boulder</p>
+  <p class="style1">
+    &nbsp;</p>
+      <p class="style1">
+        This example data set illustrates how
+        to use the interface in Etomo for reconstruction with SIRT (Simultaneous 
+        Iterative Reconstruction Technique).&nbsp; This method involves three steps at 
+        each iteration:</p>
+      <ul>
+        <li>
+          <p class="style1">
+            Reprojecting from the current estimate of the tomogram by adding
+            up densities along projection lines through the tomogram (blue ray line in first 
+            diagram)</p>
+        </li>
+        <li>
+          <p class="style1">
+            Taking the difference between the original projection data and
+            this reprojection at each pixel; this difference represents the amount of
+            error in the current estimate</p>
+        </li>
+        <li>
+          <p class="style1">
+            Distributing this difference among the pixels along the ray 
+            contributing to it, essentially adding the error to the tomogram by a 
+            back-projection operation</p>
+        </li>
+      </ul>
+        <img src="etomoImages/sirtReproj.png">
+        <img src="etomoImages/sirtDiffBP.png">
+        <br />
+      <p class="style1">
+        Because SIRT is relatively 
+        time-consuming and there is no clear point at which to stop iterating, the 
+        strategy is to do a trial reconstruction on a subarea and examine the results 
+        after a selected set of iterations.&nbsp; One can then pick the number of 
+        iterations to use for the full reconstruction, a number that may be suitable for 
+        other similar data sets.</p>
+      <p class="style1">
+        &nbsp;</p>
+      <p class="style1">
+        The SIRT-like filter in IMOD provides a fast way to emulate the results from 
+        SIRT.&nbsp; It involves replacing the regular linear ramp for radial weighting 
+        (where the filter value is proportional to the frequency, <I>f</I>), with a curve of the 
+        form <em>f * (1 – (1 – a/f)<sup>N</sup>)</em>.&nbsp; Here <em>a</em> is a 
+        constant and <em>N</em> is an iteration number; in IMOD the value of <em>a</em> 
+        and an adjustment to get <em>N</em> from a given iteration number were worked 
+        out by matching the output of SIRT.&nbsp; The following shows the SIRT-like 
+        filter for different values of <em>N</em>; the linear ramp would be a diagonal 
+        line to the upper right corner.</p>
+      <p class="style1">
+        &nbsp;</p>
+      <img src="etomoImages/sirtLikeCurves.jpg">
+      <p class="style1">
+        &nbsp;</p>
+      <p class="style1">
+        The example tilt series is of a preparation of bovine papilloma virus (BPV), taken 
+        by Mary Morphew on 
+        an F20 with a US4000 CCD camera at a defocus of -3.5 microns.</p>
+      <p class="style1" style="text-decoration: underline">
+        </p>
+      <p class="style1" style="text-decoration: underline">
+        Getting and unpacking the data:</p>
+  <ul>
+  <li>
+        If you already unpacked the data set for the CTF tutorial, skip to &quot;Enter the 
+        data set directory&quot;.</li>
+    <li>
+        <a href="http://bio3d.colorado.edu/imod/files/CTF-SIRT-Data.tar.bz2">Download</a> the sample data set from our web site.</li>
+    <li>
+        Move the data set file &quot;CTF-SIRT-Data.tar.bz2&quot; to the directory where you 
+        want to work on it.&nbsp; Its contents will unpack into a subdirectory named 
+        &quot;ctf-sirt&quot;.</li>
+    <li>
+        cd to the directory with the downloaded file</li>
+        <LI>Enter the command:<br />
+          &nbsp;&nbsp;&nbsp; imoduntar CTF-SIRT-Data.tar.bz2<br />
+          or, anywhere except on Windows without Cygwin, you can use<br />
+          &nbsp;&nbsp;&nbsp; tar -xjf CTF-SIRT-Data.tar.bz2</li>
+        <LI>Enter the data set directory with:<br />
+          &nbsp;&nbsp;&nbsp; cd ctf-sirt</li>
+    </ul>
+            <p class="style1" style="text-decoration: underline">
+        Making the aligned stack:</p>
+    <ul>
+        <li>Start Etomo with the command<br />&nbsp;&nbsp;&nbsp; etomo bpv_-3_3a.edf</li>
+    <li>Open the <b>Final Aligned Stack</b> page. </li>
+    <li>If you did not make a CTF corrected stack in the CTF exercise, press <b>Create 
+      Full Aligned Stack</b>.</li>
+    <li>
+      If you have gone through the exercise of finding the defocus with Ctfplotter for 
+      this data set but did not make a CTF corrected stack, you can select the <b>Correct CTF</b> tab, press <b>Correct CTF</b>, 
+      and press <b>Use CTF Correction</b> when done.</li>
+    <li>
+      Press <b>Done</b> to go on to <b>Tomogram Generation</b>.</li>
+      </ul>
+    <p class="style1" style="text-decoration: underline">
+        Making the SIRT reconstruction:</p>
+    <ul>
+    <li>
+      Select <b>SIRT</b>.</li>
+    <li>
+      If you have a copy of the data from before December 2020, uncheck <b>Take logarithm of densities with offset</b>&nbsp;and 
+      change the <strong>Thickness</strong> from <em>120</em> to <em>200</em>.</li>
+  <li>
+    Select <b>Reconstruct subarea</b>.</li>
+  <li>
+    Set the <b>Size in X and Y</b> to <i>400,300</i> and the <b>Offset in Y</b> to
+    <i>-500</i>.&nbsp; The subarea can be offset only in Y through Etomo; offsetting 
+    to a general location is possible but considerably more complicated.</li>
+    <li>
+      Set <b>Iteration #'s to retain</b> to <i>3,5,8,11,15,20,25 </i>. The reconstruction 
+      program will write out the results at each of these iterations.</li>
+    <li>
+      Select <b>Use GPU</b> if you have a GPU available, and only one GPU for this 
+      step if you have more than one.&nbsp; Otherwise, select the number of CPUs to 
+      use in the parallel processing table.</li>
+    <li>
+      Press <b>Run SIRT</b>.</li>
+    <li>
+      When done, press <b>View Tomograms(s) in 3dmod</b>.&nbsp; This brings up a file 
+      chooser with the available reconstructions.&nbsp; To select all of them, click 
+      in the list and type Ctrl-A.</li>
+    <li>
+      Scroll down to about section 80, the center of the particles.&nbsp; Use the left 
+      and right <strong>4th D</strong> arrows or the 1 and 2 hot keys to step between 
+      the different iterations.
+      Note that the early iterations are dominated by low frequencies and that the 
+      reconstructions become progressively noisier as high frequencies are added in 
+      during later iterations. </li>
+    <li>
+      Pick a number of iterations.&nbsp; If you wanted this reconstruction just for 
+      picking particles, you might use 5 or even 3; otherwise 8 is reasonable.</li>
+    <li>
+      Uncheck <b>Reconstruct subarea</b> and change <b>Iteration #'s to retain</b> to 
+      your selected value.</li>
+    <li>
+      If you are using a GPU, it is useful to select up to 3 if they are available.&nbsp; 
+      If you are using CPUs, you may want to select more at this stage.</li>
+    <li>
+      Press <b>Run SIRT</b>.</li>
+    <li>
+      When done, press <b>View Tomograms(s) in 3dmod</b>.&nbsp;You will still need to 
+      select the file in a file chooser.</li>
+    <li>
+      If you want to apply post-processing to this reconstruction, press <b>Use SIRT 
+      Output File</b>, which will rename it to the standard name for a tomogram at 
+      this step.</li>
+  </ul>
+      <p class="auto-style1">
+        Using Filter Trials to Vary the SIRT-like filter</p>
+      <ul>
+        <li>Select <strong>Filter Trials</strong> instead of <strong>SIRT</strong>.</li>
+        <li>In the <strong>High-Frequency Filter</strong> section, set the <strong>
+          Standard Gaussian cutoff</strong> to <em>0.4</em> to match the filter cutoff 
+          that was used with SIRT.</li>
+        <li>Make sure that <strong>SIRT-like filter with iterations</strong> is selected 
+          and fill in text box with <i>3,5,8,11,15,20,25 </i>.</li>
+        <li>In the <strong>Subarea</strong> box, to reconstruct the same subarea, set the
+          <strong>Tomogram width in X</strong> to <em>400</em>, <strong>height in Y</strong> 
+          to <em>300</em>, and <strong>thickness in Z</strong> to <em>200</em>.&nbsp; Set 
+          the <strong>Y shift</strong> to 500. (As elsewhere in IMOD, a shift has the 
+          opposite sign from an offset because a shift is what is applied to an image area 
+          to bring it to center, whereas an offset refers to how to get from the center to 
+          image area.)</li>
+        <li>Each iteration number is done with a separate run or the Tilt program.&nbsp; 
+          Select up to 6 CPUs or GPUs if available.</li>
+        <li>Press <strong>Run Filter Trials.</strong></li>
+        <li>When done, press <b>View Tomograms(s) in 3dmod</b> and select all of the 
+          &quot;slfi&quot; files.</li>
+        <li>Notice that the particles have more contrast that in the SIRT reconstructions 
+          for a given iteration number.&nbsp; If you closely compare the SIRT ones to 
+          these, the iteration number has be about 3-4 times higher for the SIRT-like 
+          filter to match the contrast.</li>
+        <li>To make a full reconstruction with your chosen iteration number, select the
+          <strong>Back Projection</strong> radio button.&nbsp; Select <strong>Use 
+          SIRT-like filter equivalent to</strong> and fill in the iteration number.&nbsp; 
+          Notice that the cutoff for the Gaussian filter is the same as what you set it to 
+          in the <strong>Filter Trials</strong> panel - for many parameters, these panels use the same 
+          underlying values.&nbsp; Press <strong>Generate Tomogram</strong>.</li>
+      </ul>
+        <p>The reason for the contrast discrepancy between SIRT and the SIRT-like filter 
+          is that the contrast of the SIRT reconstruction depends on its thickness.&nbsp; 
+          The scaling of the iteration number 
+          to make an exponent for the SIRT-like filter was initially tuned on this same data set 
+          to match SIRT with thicknesses of 500 pixels.&nbsp; If you remake the SIRT subareas with 
+          a thickness of 400 or 500, you will see that the contrast matches much better for each 
+          iteration number. (You should make the subarea wider if doing a thickness of 
+          500).&nbsp; Apparently, SIRT converges more slowly on the R-weighted 
+          backprojection when the signal in each ray has to be spread over more pixels.&nbsp; 
+          The SIRT-like filter is more predictable because it does not vary with 
+          thickness, but this fact does make it more difficult to transition from using 
+          SIRT to the SIRT-like filter.&nbsp; This discrepancy was discovered just as this 
+          document was being revised for the IMOD 4.11 release.&nbsp; The situation may 
+          well change in an upcoming release.</p>
+      </body>
+</html>

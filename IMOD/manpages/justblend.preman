@@ -1,0 +1,66 @@
+.na
+.nh
+.TH justblend 1 4.10.3 IMOD
+.SH NAME
+justblend \- Batch blending of montages with Blendmont
+.SH SYNOPSIS
+justblend  options  inputFiles...
+.SH DESCRIPTION
+Justblend allows one to run Blendmont(1) to blend one or more 2-D
+montaged images, namely ones that do not consist of serial sections or
+tilts needing alignment.  Multiple images files can be entered and
+processing can be done in parallel.  After an initial run, the program can be run
+again to allow you to fix the displacements in the overlap zones
+manually with Midas(1).  To control the blending, the program has a few
+simple options corresponding to those available in the Etomo interface
+for blending montages, but it also allows arbitrary options to Blendmont
+to be entered.  It makes a command file based on the file
+"sloppyblend.com" in the "IMOD/com" directory
+.P
+Blendmont(1) requires a file with a list of piece coordinates for each
+montage.  If the file is not already present, the program will run
+Extractpieces(1), which will attempt to extract the piece coordinates
+from the image file header, or from the associated ".mdoc" metadata file
+produced by SerialEM.  Montages with more than ~65000 pixels will not
+have piece coordinates in the header, so be sure to provide the ".mdoc"
+files for large area montages.
+.P
+A Blendmont(1) command file will be created in the current directory
+for each input file   The files to be processed do not need to be
+located in the current directory; they can be specified by absolute
+paths or paths relative to the current directory.
+.P
+Blending can be run on multiple processors in one of two ways: by
+running Processchunks(1) once with all of the command files, thus
+running Blendmont(1) once for each input file; or by splitting up the
+blending operation into multiple chunks and running Processchunks(1) on
+those chunks for each input file.  Because of the limitations on such
+parallel blending explained in the Splitblend(1) man page, it is likely
+to be less significantly efficient than blending multiple files at
+once, each in one operation.  However, if there are only a few, large
+input files, the parallel blending of individual files may be quicker.
+
+.SH OPTIONS
+Justblend uses the PIP package for input (see the manual page
+for pip(1)).  Options can be specified either as command line
+arguments (with the -) or one per line in a command file
+(without the -).  Options can be abbreviated to unique letters; the currently
+valid abbreviations for short names are shown in parentheses.
+INSERT OPTION TEXT HERE
+.TP
+.B -StandardInput
+Read parameter entries from standard input
+
+.SH FILES
+For each file, a rootname is used that is either the filname without
+extension if the extension is 4 characters or less, or the full
+filename otherwise.  The command file is named rootname_blend.com and
+the output file is named rootname_blend.mrc.
+.SH AUTHOR
+.nf
+David Mastronarde
+.fi
+.SH SEE ALSO
+blendmont(1), midas(1), processchunks(1)
+.SH BUGS
+Email bug reports to mast@colorado.edu.

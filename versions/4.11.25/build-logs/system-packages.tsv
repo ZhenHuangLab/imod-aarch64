@@ -1,0 +1,10 @@
+build-essential	12.10ubuntu1	arm64
+g++	4:13.2.0-7ubuntu1	arm64
+gcc	4:13.2.0-7ubuntu1	arm64
+gfortran	4:13.2.0-7ubuntu1	arm64
+libfftw3-dev	3.3.10-1ubuntu3	arm64
+libjpeg-dev	8c-2ubuntu11	arm64
+libtiff-dev	4.5.1+git230720-4ubuntu2.5	arm64
+libx11-dev	2:1.8.7-1build1	arm64
+make	4.3-4.1build2	arm64
+tcsh	6.24.10-4build1	arm64

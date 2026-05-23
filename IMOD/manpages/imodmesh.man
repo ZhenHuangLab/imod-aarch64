@@ -1,0 +1,523 @@
+.na
+.nh
+.TH imodmesh 1 2.30 IMOD
+.SH NAME
+imodmesh \- create a triangle mesh from IMOD contour data.
+.SH SYNOPSIS
+imodmesh  [options]  model_files...
+.SH DESCRIPTION
+imodmesh is used to create mesh data in an IMOD model file
+from closed or open contours.  Each contour is connected to
+contours directly above and below by an algorithm that
+minimizes the total area of the triangles used to connect
+the contours.  Branches
+in a volume are handled by combining contours in the same plane with 
+additional points.  Contours contained totally within other contours
+are considered to represent inside surfaces and will be connected to the outer
+surface where appropriate.
+
+.SS Open and Closed Contours
+Most modeling of structures in a plane is done with closed-contour objects,
+where the brightly lit surface is on the outside of the contours.  An 
+open-contour object can be used instead to represent an extended sheet
+or a structure that is cut open on one side.  In this case, there is no
+obvious way to define the inside and outside of the contours, and the program
+will assign the outside surface based on the direction that contours are
+drawn.  Specifically, the outside of a surface formed by a connected set of
+contours is determined by 
+direction of the contour at the lowest Z in that set; higher contours are
+automatically inverted if necessary to maintain a consistent outside face.
+If you are facing the surface from the side that you want to be brightly lit,
+the lowest contour should
+progress (point number should increase) from left to right.  This rule will
+cover most situations, but if you are skipping sections in an irregular
+fashion that requires
+multiple passes to form all connections, then you need to use a consistent
+direction for the lowest contour in each set of contours that are connected on
+the first pass.  If a 
+contour is going the wrong way, you can correct it
+in 3dmod with Edit-Contour-Invert.  If the entire surface is facing the wrong
+way, you can invert the polarity of the surface at the level of the whole
+object; use Edit-Object-Type to define the "Front Surface" as being
+"Inside" rather than "Outside".  You can also turn on "Light both sides" in
+the Model View Object Edit dialog to avoid lighting direction issues.
+
+When meshing open contour objects, imodmesh will attempt to connect all 
+contours between sections, regardless of proximity,
+because it cannot use
+overlapping areas to assess whether contours should be joined.  It will pair
+up the closest contours first, which should lead to correct results in most
+cases.  If incorrect connections occur, contours can be assigned to different
+surfaces in 3dmod, and the
+.B -S
+option can be used to mesh only contours within each surface.
+
+If only some of the contours in an object need to be open, such as if the
+object is only partially cut open, then individual contours in a
+closed-contour object can be defined as open with the Edit-Contour-Type window
+in 3dmod.  Imodmesh will properly join these open contours to each other and to
+the closed contours in the same object.  The inside of one of these open
+contours is defined in the same way as if the contour were closed, and overlap
+of enclosed area is used to assess whether such contours should be connected,
+so using open contours in a closed-contour object
+may give superior results to using open-contour objects.  Two cautions should
+be noted when using open contours in closed-contour objects.  
+First, when there is a
+branch involving an open contour, the open contour will be joined with one or
+more closed contours on the same section to form a merged open contour that
+preserves the open ends; but if such branching requires two open contours on
+the same section to be joined, the surface will not be meshed correctly.
+The way around this is to use gaps insteads of open contours (see "Gaps and
+Phantom Extensions" below).
+Second, if the
+line connecting the start and end of an open contour would intersect the rest
+of the contour, difficulties will arise if that contour has to be joined with
+another on the same section.  The solution to this problem is to use invisible
+extensions to make the contour encompass the whole area with contours in the
+object (see below).
+
+.SS Caps
+A cap is used to close off a surface at a place where a contour is not
+connected to another contour on the adjacent section.  Imodmesh will create
+such caps when you use the 
+.B -c
+or
+.B -C
+option.  If the unconnected contour is relatively round, imodmesh
+inserts a single point above or below the contour, and connects that point to
+all of the points in the contour.  If the contour is more than twice as long
+as it is wide, the program will insert two or more points along the long axis
+of the contour and connect them
+appropriately.  There are several situations in which you may want to create
+your own caps by hand, such as if only some of the unconnected contours on a
+section should be capped, or if the cap created by imodmesh is inadequate.
+To create a simple
+cap by hand, just create a contour with one or two points either directly above
+or directly below the one you want capped.  To create a complex cap, for
+example to cap off a U-shaped contour, create a contour on the adjacent
+section with as many points as needed to describe the cap, then use
+Edit-Contour-Loopback to make the contour be a complex cap that encloses no
+area.
+
+.SS Inside Contours
+A contour that is completely contained inside another contour of the same
+object is assumed to describe a surface that faces in the opposite direction.
+Typically, this means that an inner contour is assumed to face
+inward rather than outward.
+In fact, contours may be nested to any level, with the outermost contour
+facing outward, the next one in facing inward, the next one in facing outward,
+etc.  Connections will be made appropriately, i.e., only between contours that
+are facing the same direction.  In addition, three kinds of transitions can be
+handled.  First, if there is a transition from an annulus (one contour inside
+another) to a single, simple contour that encloses all of the area covered by
+the inside contour on the adjacent section, then the inside surface is assumed
+to end and will be capped, if caps are being made.  Second, if there is a
+transition from an annulus to a single contour that is shaped like a
+horseshoe, and does not enclose the area over the inside contour, then the
+horseshoe-shaped contour will be divided into an inside and an outside contour
+for the purpose of connecting to the two contours on the adjacent section.
+This transition is tricky and may not be handled correctly, especially if more
+than one inside contour is involved in the transition, or if two such
+transitions occur in close proximity.
+If problems arise, try to avoid having more than one transition occur across a
+given pair of sections, and make the points at the tip of the horseshoe (where
+the contour will be divided into two) be close together.  Finally, a branch 
+may emerge from the inside of an inside contour just as it may from a normal,
+outside contour.
+
+.SS Fine-grained Display Information
+Imodmesh will encode some fine-grained display information into the mesh,
+specifically, color, transparency, 3D width changes, and stored values.
+In addition, 3D width, point size, or symbol size can be used to set the
+diameter of a tubular mesh around open contours.
+Contour-specific and
+point-specific properties will always be encoded into the mesh.  This means
+that you cannot see changes in these properties without remeshing the model.
+The treatment of surface-specific properties depends on whether the 
+.B -S
+option is entered to connect contours only within surfaces.  If this option
+is not given, then surface-specific properties are encoded in the mesh as
+well, and changes in these properties will not be seen unless the model is
+remeshed.  If the option is given, then the surface-specific properties are
+not included in the mesh but are applied during display and can be changed
+dynamically.
+
+Connection numbers can be assigned to either points or contours and Imodmesh
+will use these numbers when making the mesh.  Point connection numbers can be
+used to force the mesh to join particular pairs of points between two
+contours.  See the Fine Grain dialog help for more details.
+To force a connection between two contours that do not overlap, give them both
+the same connection number.  To prevent a connection between contours that do
+overlap, give them different connection numbers.  If only one of a pair of
+contours has a connection number it will be ignored when deciding whether to
+join them.
+
+.SS Gaps and Phantom Extensions
+A gap in a contour can also be defined to occur after an individual point,
+either with the Fine Grain dialog or with a hot key in 3dmod.
+A gap at the last point in a closed contour can be used interchangeably with
+defining the contour as open in most situations.  One place where the program
+makes a distinction is when there are other points with gaps adjacent to the
+ends of an open contour.  You can add such points in order to make an
+invisible extension of the contour to enclose other parts of the object that
+need to be meshed with the open component.  Such added points will be referred
+to as phantom extensions.  The typical case is when you are
+modeling a sheet (such as a fraction of a cell membrane) to which other
+components such as vesicles attach.  The most reliable way to get this case to
+mesh properly is to add two or three points to a contour so that it encloses
+the entire image on the side of the sheet containing the rest of the
+components in that object, then define gaps to make the added segments
+invisible.  
+
+In order for the program to recognize this situation for a
+closed-contour object, the contour must be defined as open, and you
+must have at least two phantom segments adjacent to the opening.  The
+segments can all be at the start, all at the end, or at both the start
+and the end.
+
+You may need to add phantom extensions to only one or a few contours.  If any
+contours do have phantom extensions, then the extensions will be added to all
+open contours in the object that do NOT have any gaps adjacent to the opening,
+provided that the opening is sufficiently large relative to the length of the
+contour.  For such a contour, the program will find the nearest contour in Z
+that does have extensions and simply copy the extensions from that contour.
+Thus, you may have to draw new extensions at places where the endpoints very
+differently.  The automatic attachment of extensions could fail.  If the
+program fails to attach an extension to a contour (because it is very long
+and convoluted relative to the distance between its ends), then you need to
+add extensions to the contour.  If the extensions are added by mistake to an
+open contour that is not part of the sheet, then change the contour to closed
+and define a gap at its last point.
+
+The meshing code will try to match up corresponding gaps between sections and
+connect their endpoints.  Adjacent gaps are combined into one for the purpose
+of connecting endpoints.  Here also open contours are treated specially.
+Connections are created in three stages:
+.br
+1) If both contours are open and there is at least one gap adjacent to the
+opening, the program connects the two openings together.
+.br
+2) The pair of remaining gaps with the least distance between their midpoints
+is found and connected provided that this distance is no bigger than the
+largest gap opening.  This process is repeated until all gaps have been
+considered.
+.br
+3) If both contours are open and neither opening has been paired with another
+gap yet, the two openings are connected.
+.br
+In each of these cases, the connections are added only if none of the points
+at the ends of the two paired gaps have a connection number defined.  Thus,
+you can prevent an erroneous pairing and connection of two gaps by defining a
+connection number on one of the four endpoints.  If two gaps fail to be
+connected by this procedure and artifactual triangles are added in the gap,
+then you need to define connection numbers at one or both ends of the gap by
+hand.  See the Fine Grain dialog help for more details.
+
+.SS Tilted Contours
+The program's meshing routines assume that contours
+are flat in the X/Y plane and located at integer steps in Z.  However,
+it will first analyze the contours of an object to find out if they
+deviate from flatness.  If they do, it will find an average orientation of
+the contours in each surface and rotate the contours into the X/Y plane.
+It then meshes the rotated contours and rotates the mesh back to the
+original orientation to fit the contours.  In order for this to work,
+two rules must be followed.  First, all the contours in a surface must
+have very nearly the same orientation.  An object can have contours in
+different orientations as long as they are assigned to different surfaces.
+Second, the average spacing between contours must be at least one pixel in
+the direction perpendicular to the plane of the contours.
+This spacing will be maintained when you model in the slicer window with the
+Lock button on and step between slices with the PageUp and PageDown keys. 
+
+.SS Stored Parameters
+All of the parameters used to mesh an object are stored in the object.
+Most of these stored values are presented in the Remesh panel of the 3dmod
+Model View Object Edit window, where they can be modified and used to remesh
+the object.  By default, the stored parameters will be ignored and replaced
+when you mesh with Imodmesh.  However, with the
+.B -u
+option, you can use the stored parameters instead of having to enter the
+options specifying them.  When you do use stored parameters, any 
+option entries that you make will override specific stored values.
+In addition,
+a set of "-no" options are available for turning off options selected in the
+stored parameters.
+
+.SH OPTIONS
+.TP
+.B -u
+Use parameters stored in each object to set options for meshing.
+.TP
+.B -c
+This option will cap off the ends of objects at their extreme limits in Z.
+.TP
+.B -C
+This option will cap off all unconnected contours.  
+.TP
+.B -D \fIlist of Z-values\fR
+This option can be used with the
+.B -C
+option to keep caps from being made on certain sections.  The list of 
+Z-values (a comma-separated list of ranges) should specify the Z-values at
+which contours are missing for whatever reason.  An unconnected contour on an
+adjacent section will not be capped.  
+.TP
+.B -p \fIvalue\fR
+Don't make connections unless a given percentage of
+the contour overlaps with contours above and below.
+The valid range is 0 to 100.	The default is 0, 
+which means that any amount of overlap will cause a 
+connection to be made. 
+This option is ignored during the
+.B -f
+option's second pass through the data.
+.TP
+.B -s
+Normally connections are only made to adjacent
+sections in the image data.  This option allows
+connections through sections containing no data.
+Note that with this option alone, the sections must contain either no data
+or whatever is
+considered to be a full amount of data.
+.TP
+.B -P \fIvalue\fR
+Do the given number of passes through the contours, connecting contours 
+that are progressively farther apart in Z on each pass.  In the simplest case,
+contours up to 2 sections apart will be connected with 2 passes, etc.  However,
+when the
+.B -s
+option is also given, the program will connect contours across gaps with no 
+data at all on the first pass, then connect contours that are even farther
+apart in Z on the next pass, etc.  To avoid generating unintended connections,
+use both
+.B -s
+and
+.B -P
+and use the minimum number of passes needed to make the desired connections.
+.TP
+.B -S
+This will forbid contours with different surface numbers from being
+connected.  Contours with the same surface number
+sections will be connected, but ones with different surface numbers will not.
+Thus, if you use surface numbers at all, you must make all of the contours
+that belong in one meshed entity have the same surface number.  Contour
+connection numbers would be an easier way to control a small number of 
+misconnections.
+.TP
+.B -I
+Ignore time values and connect contours at different times.  By default,
+a model drawn on multiple image files (referred to as different times in 3dmod)
+will be meshed by connecting only contours with the same time values.  This
+option can be used to override this behavior, in case the contours contain
+inappropriate time information.
+.TP
+.B -f
+Force more connections.  Do a final pass through
+the contour data and make any leftover connections
+with no requirement for contour overlap.  This pass occurs after any
+multiple passes selected with the
+.B -P
+option.  Only contours on sections that would ordinarily be connected without
+the 
+.B -P
+option will be connected.  If this option makes undesirable connections, use
+contour connection numbers.
+.TP
+.B -t \fIlist\fR
+Open contours are by default connected together in a mesh if possible.
+This option causes a tube-like mesh of diameter given by the
+line width to be created instead, for objects in the list (comma-separated list
+of ranges).  Closed contour objects included in the list will be meshed as
+usual.
+.TP
+.B -d \fIdiameter\fR
+Override the default diameter used for making tubes with the
+.B -t
+option.  The diameter is given in pixels, the default value is the
+3D line width of the current object.  In addition, -1 or -2 can be
+entered to set the diameter from the spherical point size or from the symbol
+size, respectively.  Either of these items can vary from point to point.
+.TP
+.B -E
+Cap the ends of tubes made with the 
+.B -t
+option.
+.TP
+.B -H
+Cap the ends of tubes with hemispheres (domes) instead of flat disks.  If you
+use this option, you do not need the 
+.B -E
+option.  
+These two options are only way to get tubes capped and are independent of the
+.B -c
+and
+.B -C
+options.
+.TP
+.B -T 
+Do more time consuming calculations by searching exhaustively through all
+possible sets of connections instead of guessing at one initial connection.
+This may help reduce artifacts in some cases.  This flag can cause the
+computation to take an order of magnitude more time.
+.TP
+.B -o \fIlist of object #'s\fR
+Do operations only on objects in the list of numbers.  The list can consist
+of comma-separated ranges (e.g., 1,7-11,13-17,19).
+Without this option, all objects are scanned for skinning.
+.TP
+.B -R \fIvalue\fR
+Tolerance value for point reduction, given in pixels.  With this option, the
+number of points is reduced by removing ones which are less than a certain
+distance from the remaining line segments.  This will remove points
+selectively from relatively straight segments and not from tight corners.
+A tolerance value of about 0.25 can substantially reduce the number of points
+with little perceptible change in the model; larger values could be used to
+get models that mesh and display faster.
+.TP
+.B -i \fIvalue\fR
+Form a mesh between contours at z-values that are a multiple of
+the given z-increment.
+.TP
+.B -z \fIminimum,maximum,[increment]\fR
+Filters which contours will be considered while meshing.
+Contours less then the minimum value and greater then the
+maximum value will be skipped. An optional increment value
+will cause only z-values that are a multiple of the given
+increment to be meshed.
+.TP
+.B -x \fIminimum,maximum\fR
+.B -y \fIminimum,maximum\fR
+Exclude triangles from the mesh if they are outside the given limits in X or
+in Y.  This is an alternative to using clipping planes to chop off surfaces at
+the edge of the data set, although the result will be more ragged than using a
+clipping plane.
+.TP
+.B -l
+Form a low resolution mesh.  Any new mesh data created by this run of the
+program will be marked as low resolution mesh.  Existing low resolution mesh
+will be replaced but existing high resolution mesh will be retained.  If
+tolerance and z-increment values are not entered with the
+.B -R, -i,
+or
+.B -z
+options, relatively large default values are used to generate a coarse mesh.
+The low resolution mesh can be toggled on and off in the 3dmod Model View
+window with the View-Low Res menu entry or the "R" hot key.
+.TP
+.B -F \fIvalue\fR
+This option sets the criterion Z difference for deciding whether
+contours are flat enough to mesh without rotating.
+If the value is nonzero, the program will determine the maximum Z extent of
+all contours in the object.  If the Z difference is greater than the
+criterion, it will mesh each surface separately after finding the best
+rotation angles for it.  The default value is 1.5.
+.TP
+.B -a
+Append the mesh data to objects, replacing only the existing mesh in the
+given range instead of replacing the entire mesh.  This option would be used
+to "edit" a mesh that has problems, by skinning only a few Z planes with the
+.B -T
+option.
+.TP
+.B -e
+Erase all mesh data instead of creating new data.  Other options besides
+.B -l
+and
+.B -o
+are ignored.
+.TP
+.B -n
+Recompute the normals in the existing mesh, without computing a new mesh from
+contours.  Other options besides
+.B -l
+and
+.B -o
+are ignored.
+.TP
+.B -n
+Rescale the normals in the existing mesh by the value given in the 
+.B -Z
+option.
+.TP
+.B -Z \fIscale\fR
+A scaling multiplier applied to the z values of normals.  The
+default value is 1.0.
+.TP
+.B -noc
+.PD 0
+.TP
+.B -noC
+.TP
+.B -nos
+.TP
+.B -noS
+.TP
+.B -noI
+.TP
+.B -nof
+.TP
+.B -noE
+.TP
+.B -noT
+.PD
+Turn off the corresponding option when using stored parameters.
+.TP
+.B -noD
+Remove any restrictions on Z values to cap to when using stored parameters.
+.TP
+.B -not
+Do not mesh open objects as tubes when using stored parameters.
+.TP
+.B -nox
+.PD 0
+.TP
+.B -noy
+.TP
+.B -noz
+.PD
+Remove any limits on X, Y, or Z coordinates when using stored parameters.
+.TP
+.B -B
+Make mesh output backward-compatible to IMOD before 3.6.14 if possible.  
+Regardless of this option, if a
+mesh contains fine-grained display changes, then it will be encoded in a 
+new-style mesh, which results in a 20% smaller model file.  This option can
+be set automatically for all runs of imodmesh by setting the environment
+variable IMODMESH_OLDMESH.
+
+.SH FILES
+A backup file of the original model is created with the 
+~ extension.
+.SH AUTHORS
+Jim Kremer and David Mastronarde <mast@colorado.edu>
+.SH SEE ALSO
+3dmod(1), 3dmodv(1), reducecont(1)
+
+The algorithm in imodmesh is based on:
+.br
+Fuchs, H., Kedem, Z.M., and Uselton, S.P. 1977.  Optimal surface reconstruction
+from planar contours.  Graphics and Image Processing, 20: 693-702.
+.br
+Shantz, M. 1981.  Surface definition for branching, contour-defined objects.
+Computer Graphics, 15: 242-267.
+.SH BUGS
+The algorithm for finding the set of triangles with minimum area is currently
+quadratic; that is, execution time is proportional to the square of the number
+of points in the contours being connected.  imodmesh can bog down badly if
+there are too many points; point reduction with the 
+.B -R
+option will solve this for now.
+
+Here are some things that will create strange-looking meshes:
+
+Contours on the same section that overlap.  There is now a function that
+eliminates modest amounts of overlap before meshing.
+
+Two unconnected branches that overlap in the next section.
+Setting a threshold for percentage overlap with the 
+.B -p
+option may keep them from being connected incorrectly.
+
+Two overlapping horseshoes that open in different places.  The program would 
+need to recognize this situation and split both into inside and outside
+contours before trying to join them.

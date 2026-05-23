@@ -1,0 +1,172 @@
+.na
+.nh
+.TH nad_eed_3d 1 3.5.2 IMOD
+.SH NAME
+nad_eed_3d \- Nonlinear anisotropic diffusion, edge enhancing, in 3D
+.SH SYNOPSIS
+nad_eed_3d  [options]  input_file  output_file
+.SH DESCRIPTION
+nad_eed_3d is Frangakis and Hegerl's 3D anisotropic diffusion program with
+edge-enhancing diffusion only (see Frangakis, A., and Hegerl, R., 2001.
+"Noise reduction in electron tomographic reconstructions using nonlinear
+anisotropic diffusion." J. Struct. Biol. 135: 239-205).  In addition to options
+to control the algorithm itself, this version provides some options to make
+it easier to explore the effects of different parameters.
+.P
+The program requires ~36 times as much memory as the number of voxels in the
+input file.  To process a large volume, place the command line needed to
+run the program into a command file and use chunksetup(1) to obtain command
+files to process the volume in chunks.  Determine the maximum number of
+megabytes of memory that you want this processing to require, and divide by 36
+to obtain the value to enter with the
+.B -m
+option to chunksetup.  See the example below.
+.P
+Finding the right parameters for anisotropic diffusion can be difficult.  To
+adjust parameters, first clip out a small subvolume, e.g., 100x100x30 pixels,
+with typical features of interest.  One strategy is to look at a restricted
+range of iterations, such as 5-10 or possibly 5-15, and find the K value that
+gives the desired result.  A very wide range of K needs to be explored,
+perhaps from .02 to 5 times the standard deviation of the data.  For typical
+byte data this might be a range of 0.4 to 100.  The range should thus be
+explored in two stages.  In the first stage, you might try K values of 0.4,
+1.6, 6.4, 26, 102, then look at the results as described below.  When you see
+that the desired K value falls in one of these intervals, then try 5 K values
+to fill in the interval with finer steps, such as 2.4, 3.2, 4.0, 4.8, and 5.6
+for the interval from 1.6 and 6.4.  Once you have chosen your parameters, you
+can process the whole volume.
+.P
+The Etomo program contains an
+interface for extracting a subvolume, testing different K values and iteration
+numbers, and running the diffusion on a full volume.  From the File menu,
+select "New Parallel Process" then press the "Nonlinear Anisotropic Diffusion" button.
+.SH OPTIONS
+.TP
+.B -k \fIvalue\fR
+The K value (sometimes referred to as lambda).  The ratio
+of the local image gradient to K is used to determine whether density will
+diffuse isotropically or primarily in the direction of least density
+variation (along edges).  Lower K values will preserve more edges; higher K
+values will give more isotropic smoothing.
+.TP
+.B -n \fIvalue\fR
+The number of iterations.  The higher the number of iterations, the smoother
+the result.
+.TP
+.B -i \fIlist\fR
+A list of iterations at which output should be written to a file (ranges such
+as 1-3,5,8 are allowed).  If such a list is entered, the 
+.B -n
+option is ignored.  By default, the entire volume will be written at each
+listed iteration, with the filename outfile_file-nnn, where output_file is the
+name entered on the command line, and nnn is the number of iterations, with
+leading zeros as needed to give three digits.  However, if the 
+.B -o
+option is entered, a single slice will be written at each of the specified
+iterations, all into the same output file.
+.TP
+.B -e \fIext\fR
+An extension (excluding the dot) to put after the iteration number of
+the filename when writing files at selected iterations, so the name has
+the form output_file-nnn.ext.
+.TP
+.B -o \fIvalue\fR
+Single slice to output (numbered from 1).  This option is useful when
+adjusting parameters if you can
+judge the performance by looking at just one slice.  It will not make the
+program do the computation on only one slice; it will still operate on the
+whole input volume.
+.TP
+.B -m \fIvalue\fR
+Mode for output file: 0 for byte, 1 for integer, 2 for real, or 6 for unsigned
+integer.  By default, the
+output file will have the same mode as the input file.  This works for byte
+data because densities will never
+become more extreme than in the original volume.  However, if you have byte
+input data with a low
+dynamic range, you may need to specify real output to avoid
+seeing discrete density levels in the smoothed regions.
+.TP
+.B -s \fIvalue\fR
+Sigma value for smoothing or averaging the structure tensor, which might
+give a more accurate estimate of the direction of an edge.  The default is 0
+for no smoothing.
+.TP
+.B -t \fIvalue\fR
+The time step.  The product of the time step and the number of iterations
+determines the amount of diffusion.  The diffusion will run faster with a
+higher time step but may become unstable.
+.TP
+.B -f
+Use faster but less accurate routine for computing eigenvectors.  With
+this option the program will run about 75% faster, but the results will
+differ by about 1%.  The difference is probably not meaningful.
+.TP
+.B -P
+Print process ID to standard error.
+.SH EXAMPLES
+To get a set of volumes, one at every third iteration, enter:
+   nad_eed_3d -i 3,6,9,12,15,18,21 -k 1.2 tomo.rec tomo.nad
+
+This will produce tomo.nad-003, tomo.nad-006, etc.  They can be
+visualized with:
+   3dmod tomo.nad-*
+
+To get a single file with one slice, say slice 16, from every iteration from
+5 to 15, enter:
+   nad_eed_3d -i 5-15 -k 1.2 -o 16 tomo.rec tomo.nad-1.2
+
+To get a series of such files at different K values, just repeat the above
+command, or (under tcsh) enter:
+   foreach i (0.6 0.8 1.0 1.2 1.4 1.6)
+   nad_eed_3d -i 5-15 -k $i -o 16 tomo.rec tomo.nad-$i    
+   end
+
+This will produce tomo.nad-0.6, tomo.nad-0.8, etc., which can be
+visualized with:
+   3dmod tomo.nad-*.*
+
+If your file is large (e.g., > 10 megavoxels), and you have determined 
+your optimal parameters, say 15 iterations with a K of 1.3, then prepare 
+a command file, e.g., nad.com, with the line:
+   $nad_eed_3d -k 1.3 -n 15 INPUTFILE OUTPUTFILE
+.br
+(Do not indent the line; the $ must be the first character on the
+line.  Also, do not substitute your input and output files, the command file
+really should say INPUTFILE and OUTPUTFILE.)
+
+Then enter:
+   chunksetup -m 10 nad.com tomo.rec tomo.nad
+
+If you are doing more than 8 iterations, you should increase the overlap
+between chunks by adding the option
+"-p #" where "#" is the number of iterations; this will reduce the effects
+of cutting the volume into chunks to a minor level.  Overlap of 4 times the 
+number of iterations is needed to eliminate these effects but this could
+increase chunk sizes substantially.
+
+The Chunksetup command with option "-m 10" will produce command files in which
+each run of the program will require less than 360 MB of memory (use a
+different amount to allow for more memory).  On a single processor machine,
+run these with:
+   subm nad-all
+
+If multiple machines or processors are available, run in parallel with:
+   processchunks list_of_machines nad
+.br
+or just
+   processchunks # nad
+.br
+to run with # processors on the local machine.
+.SH FILES
+If an output file already exists, it will be made a backup file by adding ~
+to its name.
+.SH AUTHORS
+Achilleas Frangakis and Reiner Hegerl (IMOD modifications by David 
+Mastronarde).
+The program is copyright Max-Planck-Institut for Biochemistry, Martinsried, 
+Germany.
+.SH SEE ALSO
+chunksetup(1), processchunks(1), 3dmod(1)
+.SH BUGS
+Email bug reports to mast@colorado.edu.

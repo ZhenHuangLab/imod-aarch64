@@ -1,0 +1,259 @@
+# The cpu.adoc file contains descriptions of the computers you wish to use when
+# running parallel processes with processchunks through Etomo.  The file is
+# placed in the IMOD calibration directory (defined by $IMOD_CALIB_DIR, default
+# location /usr/local/ImodCalib).  Run "man cpuadoc" for complete details on
+# the entries to a cpu.adoc file.  This file shows a number of examples.
+
+#
+# An example of cpu.adoc for a standalone computer:
+#
+
+Version = 1.2
+[Computer = localhost]
+# In this example the computer has two cores or CPUs.
+number = 2
+# The computer also has three graphics cards that may be used for processing.
+# This entry allows from one to three GPUs to be selected in the Parallel
+# Processing panel.  The GPUs are represented here by their device number.  The
+# priority of each GPU is represented by the order of this list.
+gpu.device = 2,1,3
+
+#
+# An example of cpu.adoc for 4 computers with the same operating system and 
+# type of processor:
+#
+
+Version = 1.2
+units.speed = GHz
+units.memory = GB
+
+[Computer = frodo]
+# This computer has two cores or CPUs.
+number = 2
+speed = 2.3
+memory = 4.0
+# This computer has one graphics card that may be used for processing.
+gpu = 1
+
+[Computer = sam]
+# This computer has only 1 core.
+speed = 2.5
+memory = 2.0
+# This computer has one graphics card that may be used for processing, but it
+# should not be used from another computer.
+gpu.local = 1
+
+[Computer = pippin]
+speed = 2.4
+memory = 2.0
+# This computer has two graphics cards that may be used for processing.  GPU# 2
+# will be used when only one GPU is requested.
+gpu.device = 2,1
+
+[Computer = merry]
+speed = 2.3
+memory 2.0
+number = 2
+
+# If the resulting table in Etomo is too wide, optional cpu.adoc entries
+# can be ommitted:
+
+Version = 1.2
+
+[Computer = frodo]
+number = 2
+gpu = 1
+
+[Computer = sam]
+gpu.local = 1
+
+[Computer = pippin]
+gpu.device = 2,1
+
+[Computer = merry]
+number = 2
+
+#
+# An example of cpu.adoc for identical, single processor computers:
+#
+
+Version = 1.2
+
+[Computer = frodo]
+
+[Computer = sam]
+
+[Computer = pippin]
+
+[Computer = merry]
+
+#
+# An example of a cpu.adoc for a larger group of computers that are mostly 
+# using Linux:
+#
+
+Version = 1.2
+units.speed = GHz
+units.memory = GB
+max.tilt = 12
+max.volcombine = 8
+
+[Computer = frodo]
+type = AMD 64
+number = 2
+speed = 2.4
+memory = 2.0
+
+[Computer = sam]
+type = Opteron
+speed = 2.4
+memory = 8.0
+number = 2
+
+[Computer = pippin]
+number = 2
+speed = 2.3
+memory = 5.0
+type = G5 - OSX
+
+[Computer = merry]
+type = P4
+speed = 3.0
+memory = 2.0
+.
+.
+.
+
+#
+# An example of cpu.adoc for Linux computers with different types of processors:
+#
+
+Version = 1.2
+units.speed = GHz
+units.memory = GB
+
+[Computer = frodo]
+type = AMD 64
+number = 2
+speed = 2.4
+memory = 2.0
+
+[Computer = sam]
+type = Opteron
+speed = 2.4
+memory = 8.0
+number = 2
+
+[Computer = pippin]
+speed = 2.8
+type = Xeon
+memory = 4.0
+number = 2
+
+[Computer = merry]
+type = P4
+speed = 3.0
+memory = 2.0
+
+#
+# An example of cpu.adoc for computers with different operating systems and
+# types of processor:
+#
+
+Version = 1.2
+units.speed = GHz
+units.memory = GB
+
+[Computer = frodo]
+type = AMD 64
+number = 2
+speed = 2.4
+memory = 2.0
+os = linux
+
+[Computer = sam]
+type = Opteron
+speed = 2.4
+memory = 8.0
+number = 2
+os = linux
+
+[Computer = pippin]
+number = 2
+speed = 2.3
+memory = 5.0
+os = OSX
+type = G5
+
+[Computer = merry]
+type = P4
+speed = 3.0
+memory = 2.0
+os = linux
+
+#
+# Examples of cpu.adoc for running on pbs, pbs-maui, or sge cluster queues
+#
+Version = 1.2
+[Queue = cluster]
+number = 370
+# Choose one of the following 3 lines based on the queue type.
+# The -q option is required for pbs-maui.
+command = queuechunk -t sge
+#command = queuechunk -t pbs
+#command = queuechunk -t pbs-maui -q cluster
+
+#
+# An example of a cpu.adoc for running etomo on your local machine
+# while ssh'ing to a PBS cluster login node to schedule each chunk.
+# This configuration is useful for clusters which don't allow the
+# etomo gui on the login node.
+#
+Version = 1.2
+[Queue = cluster]
+number = 370
+command = queuechunk -t pbs -h clusterLoginNode.someorg.edu
+
+#
+# Three examples of entries for running on Slurm cluster queues.
+# Resources under Slurm are typically specified using quality of 
+# service (QOS) or partition names, rather than queue names.
+#
+Version = 1.2
+
+# Crestone uses a consumable resource model. No prior allocation needed.
+# Resources on this cluster are selected using the -q option to specify 
+# quality of service (QOS).
+# 
+[Queue = Crestone]
+# The following two commands are equivalent.
+# Note the use of commas to avoid any spaces in options following -l.
+command = queuechunk -t slurm -q crestone
+#command = queuechunk -t slurm -q crestone -l -n1,-c1
+number = 240
+
+# This example is similar to that above, but demonstrates configuration
+# for a system on which resources are selected via partition name (in
+this case "himem") rather than QOS.
+# 
+[Queue = Redstone]
+# The following two commands are equivalent.
+# Note the use of commas to avoid any spaces in options following -l.
+command = queuechunk -t slurm -l -n1,-c1,-phimem
+#command = queuechunk -t slurm -l -n1,-c1,--partition=himem
+number = 240
+
+# Janus uses exclusive node acces. Prior allocation using slurmInit.sh
+# and cleanup using slurmCleanup.sh are required. Resources are selected
+# with QOS which is required as a second argument to the initialize 
+command.  coresPerNode is required so etomo can compute the number of 
+nodes needed based on the requested number of cores. The sample 
+# slurmInit.sh file shipped with IMOD currently only supports resource 
+# selection via QOS, and would have to be modified for selection by
+# named partitions or other options.
+[Queue = Janus]
+command = queuechunk -t slurm -q janus
+coresPerNode = 12
+number = 240
+initialize = slurmInit.sh %{nodes} janus
+deinitialize = slurmCleanup.sh

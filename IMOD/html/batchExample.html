@@ -1,0 +1,157 @@
+<html><head><title>Using the Batch Reconstruction Interface in IMOD </title>
+  <style type="text/css">
+    .style1
+    {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+<A NAME = "TOP"></A>
+<basefont size="2">
+<H2 ALIGN=center>Using the Batch Reconstruction Interface with Dual-axis
+  Tutorial Data Sets</H2>
+      <p align=center>(IMOD 4.11)</p>
+      <p align=center style="font-weight: bold">University of Colorado, 
+        Boulder</p>
+<P>
+  This document will take you through the steps required to reconstruct the IMOD
+dual-axis tutorial data sets in Etomo&#39;s interface for batch reconstruction with 
+  Batchruntomo.
+  It explains some of the most important points as they arise. For more details, 
+  consult <a href="batchGuide.html#TOP">Batch Tomography Guide</a>, which you
+  should read through before trying to process your own data sets in this
+  interface. In this document, labels in the interface 
+  are shown in <b>Bold</b>, and entries in fields are shown in <i>Italics</i>.&nbsp;
+  <P class="style1">
+    Get started:</p><ul>
+    <li>Download both the 
+      <a href="http://bio3d.colorado.edu/imod/files/tutorialData.tar.gz">binned</a> 
+      and the <a href="http://bio3d.colorado.edu/imod/files/tutorialData-1K.tar.gz">unbinned</a> tutorial data sets from the IMOD web site;
+this allows more features to be illustrated than doing just one data set.
+</li>
+    <li>Move both files, &quot;tutorialData.tar.gz&quot; and &quot;tutorialData-1K.tar.gz&quot;, to the 
+      directory where you want to do batch processing.</li>
+    <li>In a terminal, cd to that directory.</li>
+    <li>Unpack the unbinned set, rename its directory, and unpack the binned set:</li>
+  </ul>
+<pre>      imoduntar tutorialData-1K.tar.gz
+    mv tutorialData BB-unbinned   (Use ren instead of mv on Windows without Cygwin)
+    imoduntar tutorialData.tar.gz
+</pre>
+You can use code>tar -xzf</code> instead of <code>imoduntar</code> except on Windows without Cygwin.
+<p class="style1">Go to the batch interface and set up the batch parameters:</p>
+<UL>
+<LI> Start Etomo with<br />
+&nbsp;&nbsp; <code>etomo</code>
+<LI> Press <B>Batch Tomograms</B>  on the Front Page.&nbsp; The interface opens 
+  with the <b>Batch Setup</b> tab.<LI> Select <i>plasticSection.adoc</i> as the <B>System Template</B>.
+  This template turns on Sobel filtering when tracking beads to give improved 
+  centering of the points.<LI> The initial radio buttons allow stacks to be moved 
+    from elsewhere into automatically created data set directories.&nbsp; Your 
+    stacks are already in their own data set directories, so there is no need to 
+    change the default selection.
+  <LI> At the bottom, two fields allow one to change the <b>root name</b> that will be used as a 
+    prefix for all the batch processing files, and to select a different <b>Location</b> in which various batch project files will be kept.&nbsp; Again, 
+    there is no need to change the defaults here.</UL>
+<P class="style1">
+Add the two stacks, unbinned then binned, and set their properties:</P>
+<UL>
+<LI> Switch to the  <B>Stacks</B> tab.
+<LI> Press <B>Add Stacks</B>.
+<LI> Browse to the "BB-unbinned" folder and select &quot;BBa.st&quot;.  Notice that the
+  interface detects that the set is dual-axis.&nbsp; You could also select both 
+  &quot;BBa.st&quot; and &quot;BBb.st&quot;, and the interface would include only one data set.&nbsp; 
+  This feature is handy if you need to select several dual-axis sets in one 
+  directory.<LI> Check  <B>Beads on Two Surfaces</B>
+<LI> Press <B>Add Stacks</B>.
+<LI>Go to the "tutorialData" folder and select &quot;BBa.st&quot;.  The set
+  inherits the <b>Two Surfaces</b> setting from the previous entry.
+<LI> Notice the right arrow button in the  <B>Stack</B> column header.  
+  Press this to show the full paths of the files and see that you have files
+  in two different directories.
+</UL>
+<P class="style1">
+Set parameters for the data sets:</P>
+<UL>
+<LI> Switch to the  <B>Dataset Values</B> tab.  
+  This "Basic" screen presents a carefully selected subset of the many parameters shown on the 9 
+  different screens in the Reconstruction interface.&nbsp; Parameters are provided 
+  to Batchruntomo in text files containing &quot;directives&quot;.&nbsp; Other
+  options can set in an "Advanced" screen opened by pressing
+  the <B>Advanced</b> button, or by supplying them in a template file or a starting batch 
+  directive file.
+<LI> Select  <B>Remove X-Rays</B>.
+<LI> Enter <i>10</i> for <B>Bead size (nm)</B> and <i>25</i> for <B>Target number of
+    beads</B>.  (There are actually 28 beads of high quality in these data
+    sets; others are paired or elongated.  Enter <i>28</i> if you wish.)
+<LI> Select <B>Enable distortion (stretching) in alignment</B> and <B>Use
+    local alignments</B>.  These selections do not guarantee that these
+    alignment features will be used.  Stretching will not be used if there are
+    not enough beads on both surfaces; local alignments also require a minimum
+    number of beads.
+<LI> Select <B>Do positioning for</B> and leave the radio button set
+  for <B>Plastic section</B>.  There is no need to enter a tomogram thickness
+  since the automatically selected thickness will work.  
+<LI> In the Reconstruction section, the selection of the <B>Calculated
+    thickness</B> is appropriate; the thickness will come from the positioning
+    step, but a thickness would be available from the positions of
+    the gold beads on two sides even if the positioning step were not
+    included.  However, an entry for <B>With fallback</B> is required with this
+    choice in case both of those sources of information come out with too low
+    a thickness.  Enter <i>250</i> here.  With a pixel size of 1 nm for a 300 nm
+    section, the unbinned data set is expected to have a thickness of about
+    180-200 pixels.
+<LI> Also enter <i>16</i> for <B>Plus (optional)</B>; this will allow some extra thickness
+  that can be trimmed away in the postprocessing step.
+<LI> Select <B>Postprocess with trimvol</B>.  This will cause the volume to
+    reoriented with rotation around X.  Turn on <B>Find plastic section
+    limits and add</B> and enter <i>10</i> to find the limits of the section
+    and trim to 10 pixels more than that.  Turn on <B>Fraction of Z slices to
+    analyze</B> to convert to bytes; the default fraction of 0.33 is fine
+    here so the field can be left blank.
+<LI> To give the binned data set some different values, press  <B>Open</B> on
+  the second line of the <B>Datasets</B> table.  A separate <B>Dataset Values</B> screen
+  will open for this data set.
+<LI> Turn off  <B>Remove X-rays</B>, which is not appropriate for the binned
+  data.  In the <B>Reconstruction</B> section, set <B>With fallback</B>
+  to <i>130</i> and <B>Plus (optional)</B> to <i>10</i>.
+  Open <B>Postprocessing</B> and set the added pixels to <i>6</i>.
+<LI> For more variety, you can turn on <B>Erase gold</B>, select <B>Find beads
+    in 3D</B>, and set the <B>Tomogram thickness (pixels)</B> to <i>130</i>.
+<LI>Press <B>OK</B> to close this secondary dialog.  Notice the "Set"
+  entry in the table to indicate that this set has its own values.
+</UL>
+<P class = "style1">
+Switch to the <B>Run</B> tab to run the data sets.</P>
+<UL>
+<LI> The initial default is to use one CPU and no GPU.  Once you select
+  <B>Use multiple CPUs</B>, <B>Parallel GPUs</B>, or both,
+  the <B>Resources</B> table will appear at the top.  There, depending on your
+  computer setup, you can select how many cores to use, which machines to use
+  them on if you have access to multiple machines, and what GPUs to access.  A
+  single GPU is quite sufficient for these simple data sets.
+  <LI> Make whatever selection of CPU and GPU resources that is appropriate for your 
+    computer.<LI> Press <B>Run</B>.  Directive files will be written for each data set and
+  the processing will begin.  Watch the status output in the table at the
+  bottom.  Pausing, killing, and resuming are possible but more complicated
+  than for ordinary processing; see
+  <A HREF="batchGuide.html#Run">Running the Data Sets</A> in the Batch Guide for details.
+<LI>Essential items like mean residual values and 
+  warnings appear in the project log during the processing.  At any
+  time after a set begins being processed, you can
+  see the full output from the batch program by pressing the button in
+  the <B>Open Log</B> column. Once a set has finished or reached a stopping
+  point, it can be opened in the Etomo reconstruction interface with the
+  button in the <B>Open Set</B> column.  Once there is a final reconstruction, it
+  can be opened with the 3dmod button in the <B>Open Rec</B> column.
+<LI> You can see that if you turned on <B>Stop after</B>, the default choice
+  would be to stop after the gold detection, which might be useful if you were
+  erasing gold.  Both data sets would run to that point for both axes
+  (regardless of whether those steps were actually run for a particular step).
+  When you restart, both sets would restart after that point, unless an
+  earlier point were selected.
+</UL>
+</basefont>
+</body>
+</html>

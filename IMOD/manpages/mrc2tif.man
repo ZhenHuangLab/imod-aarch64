@@ -1,0 +1,197 @@
+.na
+.nh
+.TH mrc2tif 1 2.00 IMOD
+.SH NAME
+mrc2tif \- Create TIFF, JPEG, or PNG files from an MRC image file.
+.SH SYNOPSIS
+mrc2tif  [options]  mrc_input_file  tiff_file_root_name
+.SH DESCRIPTION
+mrc2tif usually creates a series of TIFF files with the prefix \fItiff_file_root_name\fR
+and with the suffix .nnn.tif, where nnn is the z number.  Byte, signed and
+unsigned 16-bit integer, float, 
+and RGB color files (modes 0, 1, 6, 2, 16) can be converted.  The input
+file need not be an MRC file; it can be any kind of file readable by
+other IMOD programs, plus
+the image file types readable by 3dmod using Qt libraries, of which the most
+useful are PNG, JPEG, and BMP.
+There are
+options to create JPEG or PNG output files instead of TIFF.  The data will be
+written to a TIFF file in the same mode as in the input file by default, but
+there are options that allow the integer and float modes to be scaled to
+bytes; the same options allow scaling of byte and RGB values.  If the input
+file has only one section, then the output file will simply be the 
+\fItiff_file_root_name\fR with no suffix added.  
+.P
+When the output mode is integer or float, the TIFF file will contain the
+minimum and maximum value for the data in the file.  When a TIFF stack is
+created, each
+image will have the same overall minimum and maximum, rather than values
+specific to that image.  This way, 3dmod will be able to read
+in the data with proper scaling.  However, Photoshop pays no attention to
+these values when displaying integer data, so when the integer data have a
+relatively small range, the image will initially appear black or very dark.
+The simplest solution for this problem is to apply the scaling options
+described next.
+.P
+When either the \fB-S\fR, the \fB-C\fR, or the
+.B -a
+option is entered, integer and floating point data will be scaled to bytes and
+any values outside the range of 0 to 255 will be truncated.  If the input data
+is already in bytes (either byte data or RGB data), these options will cause
+the data to be scaled, and values outside the range truncated.  To have the
+range of the input data mapped into the full range of byte data, just enter
+"-C 0,255".  To have a subset of the input range mapped to 0 to 255, either
+enter the limits of the subset of the range directly with the 
+.B -S
+option, or adjust the contrast in 3dmod(1) to give the desired expansion of
+the dynamic range for that subset of the image data, and enter the contrast
+settings withs the 
+.B -C
+option.
+.P
+Output to JPEG or PNG files is selected by entering the
+.B -j
+or the
+.B -p
+option.  There are some restrictions in these cases.  An output stack cannot
+be created, only a series of single-image files.  The type of compression
+cannot be specified, but the quality or degree of compression can.  Tiling
+cannot be specified.  Only byte and RGB output is available.  Integer and
+floating point files are converted to byte based either on the minimum and maximum
+densities in the input file or on the values entered 
+with \fB-S\fR, \fB-C\fR, or \fB-a\fR.
+In addition to the fact that JPEG images cannot be bigger than 65535 pixels in
+X or Y, problems may be encountered with images much bigger than 1 gigapixel.
+.P
+Since IMOD is distributed with version 4 of the TIFF library, this program
+will write files bigger than 4 GB in the BigTIFF format, and continue to write
+smaller files in classical TIFF format.  
+.P
+When images are written to TIFF files with ZIP or LZW compression, the
+program will use compress the data in parallel threads, with the number
+of threads depending on the image size.  However, if the image is
+larger than a certain threshold, it is processed in chunks instead of
+read  in all at once, and the parallel compression routine cannot be
+used.  The default threshold is 400 MB.  To ensure parallel compression,
+you can either raise this threshold with the
+.B -t
+option or override the default behavior with "-O 1".  Note that with
+parallel compression, memory usage will be about 2.2 times the size of the image.
+.SH OPTIONS
+.TP
+.B -s
+Create a single output file, a TIFF stack with all of
+the sections in the input file.
+.TP
+.B -j
+Produce JPEG files instead of TIFF files.  See above for the restrictions with
+this kind of output.
+.TP
+.B -p
+Produce PNG files instead of TIFF files.  See above for the restrictions.
+.TP
+.B -c \fIvalue\fR
+Compress the data in TIFF files with the type of compression indicated.  The
+most useful compression types are LZW (value 5), Zip or Deflate (value 8), and
+JPEG (value 7).  For these types, the value can be given as a text string:
+"lzw", "zip", or "jpeg".  The other allowed values are 32773 for
+Packbits and 32946 for a possibly different Deflate.  These are
+available on all operating systems when
+running with the TIFF libraries distributed with IMOD.  
+Also note that JPEG compression is not available with 16-bit data.
+.TP
+.B -q \fIvalue\fR
+Set the quality for JPEG or ZIP compression (ZIP compression is used in PNG
+output).  For JPEG, the quality ranges from
+0 to 100 with a default of 75; higher numbers preserve more information but
+with less compression.  For ZIP/PNG, which is a lossless compression, the quality
+factor ranges from 1 to 9 with a default of 6 and specifies a tradeoff between
+speed and amount of compression.  Higher numbers giving somewhat more
+compression for more computational time.  Lower numbers give somewhat less
+compression with potentially much less computational time.
+.TP
+.B -S \fImin,min\fR
+Specify an initial intensity scaling that will scale "min" to 0 and "max" to
+255, just as is achieved with the 
+.B -s
+options to 3dmod(1) and mrcbyte(1).  
+.TP
+.B -C \fIblack,white\fR
+Specify intensity scaling to match the scaling achieved with the given
+black and white contrast settings in 3dmod(1), with the -c option to
+mrcbyte(1), or the "-contrast" option to newstack.  If both
+.B -S
+and
+.B -C
+are entered, the final scaling will be the product of these two scalings.
+If
+.B -S
+is entered alone, the black/white values are 0/255 (no scaling for contrast).
+If
+.B -C
+is entered alone, the initial scaling will be from the minimum in the input
+file to 0, and from the maximum in the file to 255.  If you have integer data
+and you want to convert it to bytes, you will generally want to apply some
+scaling with black/white values to preserve the dynamic range of the data of
+interest.
+.TP
+.B -a \fImean,SD\fR
+Scale data for conversion to bytes so that it has the given mean and
+standard deviation.  Enter 0 for either value to use the default
+for auto-contrasting in 3dmod(1), which is a mean of 150 and an SD of 40.  This option
+cannot be entered with \fB-S\fR or \fB-C\fR, since it supercedes the
+scaling specified by them.
+.TP
+.B -z \fImin,max\fR
+ Starting and ending Z slices in file to output, numbered from 0.
+.TP
+.B -i \fIvalue\fR
+Initial file number.  The default is the number of the first Z slice output,
+where Z is numbered from 0.
+.TP
+.B -r \fIvalue\fR
+Set the resolution setting of the output file in dots per inch to the given
+value.
+.TP
+.B -P
+Use the pixel spacing in the MRC file header to set the resolution in
+the output file.  The resolution will be set in dots per cm in a TIFF file and will
+typically be a very large number, but this value allows the pixel spacing to
+be recovered if the file is read back into IMOD programs or converted
+back with Tif2mrc(1).
+.TP
+.B -T \fIxsize,ysize\fR or \fIsize\fR
+Organize output data in tiles instead of strips, which can allow faster access
+to subareas of very large images.  Enter one number for the tile size in both
+dimensions, or two numbers to specify a different size in X and Y.  The TIFF
+library requires that all tiles be the same size, which means that the image
+file will be padded so that tiles on the bottom and right sides have
+the same sizes as the rest.  The program will pick an actual tile size near
+the entered number that is a multiple of 16 and that minimizes the amount of
+padding required.
+.TP
+.B -t \fIvalue\fR
+Set the criterion for processing each image in strips to the given value in
+megabytes (fractional values are allowed).  Whole images will be 
+read in, processed, and saved as a unit if they are less than this criterion
+(default 400 MB).  Above the criterion, images will be read, processed, and
+saved in strips (unless "-O 1" is entered), with much lower memory requirements.
+.TP
+.B -O \fIvalue\fR
+Override the default behavior on whether to compress data in parallel.
+Specifically, a value of 0 will force data not to be compressed in
+parallel if it ordinarily would be.  A value of 1 will force large
+images to be compressed in parallel if they would ordinarily be read in
+chunks instead.
+.TP
+.B -o
+Use old IMOD code instead of libtiff for writing the files (for testing
+purposes).
+.SH AUTHORS
+Jim Kremer, David Mastronarde
+.SH SEE ALSO
+clip, newstack
+.SH BUGS
+Complex and long integer data modes are not supported.
+
+Email bug reports to mast@colorado.edu.

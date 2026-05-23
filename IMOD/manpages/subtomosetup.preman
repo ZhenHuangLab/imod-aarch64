@@ -1,0 +1,174 @@
+.na
+.nh
+.TH subtomosetup 1 4.8.7 IMOD
+.SH NAME
+subtomosetup \- Sets up command files for reconstructing multiple subvolumes
+.SH SYNOPSIS
+subtomosetup  options
+.SH DESCRIPTION
+Subtomosetup creates a set of command files for directly reconstructing multiple
+numbered subvolumes from an aligned tilt series.  Its main use is to allow
+subtomogram alignment and averaging to be done on unbinned data after
+selecting particle positions on a binned-down tomogram, without having
+to build a full unbinned tomogram.  It also allows one to apply CTF correction to
+the aligned stack for a series of Z depths in the tomogram, and use the
+appropriate corrected stack in reconstructing each subvolume.  Note
+that if the unbinned tomogram already exists, the program
+Boxstartend(1) can be used to extract subvolumes from it.
+.SS Rules of Operation
+The program allows considerable flexibility as long as several
+restrictions are followed.
+  1) The program must be run from the dataset reconstruction directory,
+and the command files provided to it should ideally be ones managed and
+output by Etomo.  Do not try to use a tilt.com constructed with what
+seem to be the minimum required entries.
+  2) The raw tilt series stack must still be present.  Alternatively, a
+file with the same name as the stack containing just the header can be
+used.
+  3) The new aligned stack must already be made at the desired size and
+binning.
+  4) The tomogram on which points were selected for reconstruction must
+be available and entered with the \fB-volume\fR option, although it
+need not be in the current directory.  Alternatively, a file with just
+the header of this volume can be supplied.
+  5) The tilt series alignment, tomogram positioning parameters, the
+X-axis tilt, and the tilt angle offset in the Tomogram Generation panel
+of Etomo must not be changed between the binned tomogram and subvolume
+reconstructions.  Whether to use a GPU may be changed, and the current
+choice will determine whether a GPU is used for the reconstructions.
+  6) If you apply any processing to that volume outside of Etomo, the
+header entries for pixel spacing, origin, and tilt angles must be
+preserved in the file entered with the \fB-volume\fR option.  If you need to
+trim some more, use Trimvol(1); if you need to bin, use Binvol(1).  
+  7) If you need to apply other software that does not preserve these
+header entries, follow these procedures: Make sure that the file
+analyzed has the same dimensions as the IMOD-based file from which it
+was derived.  Enter the name of the IMOD-based file instead of the
+analyzed file with the \fB-volume\fR option.  Supply a point coordinate
+file instead of a model file for the \fR-center\fR option (use
+Model2Point(1) with the \fB-float\fR option to make such a file).
+Other alternatives are to
+load a model onto the IMOD-based file with the \fB-m\fR option and save
+it again, or to run Imodtrans(1) on a model with the \fB-image\fR
+option and the name of the IMOD-based files, and use
+the resulting model.
+.P
+To make a file with a copy of the header from the raw stack or modeled
+volume, you can use the script "copyheader" with two arguments: the name
+of the input image file and the file in which to write the header, e.g.:
+   copyheader setname.st setname_header.st
+.P
+You are free to make an aligned stack from a centered subarea or
+an over-sized area and to change this area between the binned and
+subvolume reconstructions.  You can apply any trimming options in the
+Post-processing panel in Etomo.  Note that the subvolumes will be
+reoriented the same way that the binned tomogram was.
+.SS 3-D CTF Correction
+3-D CTF correction is activated with the \fB-zlevels\fR option, which
+specifies the number of levels in Z at which to compute CTF
+corrections, or with the \fB-extent\fR option, which sets the range in
+Z over which each CTF correction is used  The total Z range of the
+subvolume centers will be divided into levels based on one or the other
+entry, and each subvolume will be
+reconstructed from the aligned stack for its Z-level.  The command
+files are set up to process the Z-levels in order, with the CTF-corrected
+stack from the previous Z-level deleted before going on to a new Z-level.
+The command file for correction ("ctfcorrection.com" by default) must
+already include the necessary options before running this program,
+including the correct pixel size for the aligned stack.
+The aligned stack must not already be CTF-corrected, but it may have
+gold fiducials erased already.  Alternatively, fiducials can be erased
+in each corrected stack with the \fB-erase\fR option.  If so, the
+command file for erasing ("golderaser.com" by default) must also have
+the correct options before running this program.
+.P
+A GPU can be used for both correction and reconstruction, for neither,
+or for correction but not reconstruction.  If the reconstruction
+command file specifies use of the GPU, then it will be used for CTF
+correction as well, regardless of the setting in the command file for
+correction.  However, if reconstruction is done on CPUs instead, the
+setting in the correction command file determines whether correction is
+done on a GPU.  It may be more efficient to do correction on one GPU even
+when many CPUs are available, because correction with CPUs will be split into
+many jobs to be run in parallel, which incurs some overhead and
+delays.  When correction is done on CPUs, the operation will be split
+up by assuming there are 8 CPUs, unless a specific number is specified
+with \fB-proc\fR.  Also, if reconstruction is set to be done on a GPU,
+correction (on the GPU) will be split into jobs when \fB-proc\fR is
+entered with a value higher than 1.
+.P
+If an X-axis tilt is included in either the reconstruction or
+correction command files, then the program evaluates whether it is
+similar enough in the two operations.  If an X-axis tilt is being applied at all during
+correction, it should closely match the value used for reconstruction,
+otherwise the program gives a warning.  If
+there is an X-axis tilt in reconstruction but not correction, the
+program will determine the maximum difference in defocus produced by
+the two different X-axis tilt values, which occurs at the
+extremes of the reconstruction in Y.  If this defocus is larger than a
+certain fraction of the Z-level extent, the program issues a warning.
+.SS Chunks, Subvolumes, and Running the Jobs
+Subtomosetup generates command files named with the root name of the
+Tilt command file ("tilt" by default) plus "-sub-001.com", etc. By
+default, each
+command file will produce ten subtomograms named "rootname-N.mrc" where
+"rootname" is the dataset root name, and "N" is a number that increases
+sequentially for all subvolumes computed,
+but with enough leading zeros so that all files have the same number of
+digits and will list in order.  The numbers will be in the same order
+as the points in the model or point file, but with 3-D CTF correction,
+they will not be computed in order.  If a position is too close to the top
+or bottom of the Y-extent that can be reconstructed from the current
+aligned stack, the particle will be skipped, but output files will
+still be numbered sequentially unless the \fB-skip\fR option is
+entered.  For positions not quite so close to
+the limits in Y, a Tilt(1) run will be included to generate a subvolume
+with up to 1/6 of the extent blank in that direction.
+.P
+Multiple Tilt(1) runs are put in each command file in order to reduce
+the overhead in starting and monitoring commands, and to reduce the
+number of .com and .log files in the directory.  The division of runs
+into jobs can be controlled by the \fB-proc\fR and \fB-runs\fR
+options.  When doing 3-D CTF correction, runs at each Z level are
+apportioned into chunks using the same strategy, but with the same
+target for the total number of reconstruction chunks.
+.P
+The command files can be run with
+Subm(1), Processchunks(1), or the generic parallel processing interface
+in Etomo.  For example
+   subm tilt-sub*.com
+.br
+to run all files in sequence, or
+   processchunks 8 tilt-sub
+.br
+to run in parallel on 8 processors, as can also be done in the Etomo
+interface.  A GPU will be used if specified in the original command
+file.  The Etomo interface can be used to run on multiple GPUs located
+on different machines, but to run on multiple GPUs in one machine,
+processchunks must be run directly, such as with
+   processchunks -G localhost:1:2:3
+
+.SH OPTIONS
+Subtomosetup uses the PIP package for input (see the manual page
+for pip(1)).  Options can be specified either as command line
+arguments (with the -) or one per line in a command file
+(without the -).  Options can be abbreviated to unique letters; the currently
+valid abbreviations for short names are shown in parentheses.
+INSERT OPTION TEXT HERE
+.TP
+.B -StandardInput
+Read parameter entries from standard input
+
+.SH FILES
+All temporary files are removed by each command file as it runs, and
+command and log files except 
+"-finish.log" file are removed by the "-finish.com" file.
+.SH AUTHOR
+.nf
+David Mastronarde
+.fi
+.SH SEE ALSO
+tilt(1), subm(1), processchunks(1), boxstartend(1), trimvol(1),
+binvol(1), model2point(1), imodtrans(1)
+.SH BUGS
+Email bug reports to mast@colorado.edu.

@@ -1,0 +1,105 @@
+<head>
+<title>Scale Bar Dialog</title>
+</head>
+<A NAME = "TOP"><H2>Scale Bar Dialog</H2></A>
+This dialog box is used to control the drawing of scale bars in most image
+windows and in the model view window.  The length of a bar is automatically
+set to a
+round number (usually, 1, 2 or 5 times a power of ten) in the units of the
+pixel size defined in the model header.  The dialog is opened from the
+<B>Edit</B> menu of the 3dmod Information window, or from the 
+<B>View</B> menu of the
+Model View window when the program is started as 3dmodv.
+<P>
+The settings in this windows are stored between invocations of 3dmod along
+with the user preferences, rather than in a model file.  The settings are:
+<UL>
+<LI><B>Draw scale bars</B> can be used to turn the scale bars on and off.  Bars
+are drawn only when the dialog is open and this checkbox is on.
+<LI>
+<B>White bars</B> can be turned on to get white rather than black bars.  It
+is not necessary to turn this on to get a white bar in the Model View window,
+as long as an image is not being displayed there.  In that case,
+when the Model View window has a black or a white background, the scale bar is
+automatically drawn as white or black, respectively, regardless of this
+setting.  However, if image display is on, then the scale bar is drawn as
+black by default, and this checkbox can still be used to have it drawn as white.
+<LI>
+<B>Vertical bars</B> can be turned on to get vertical instead of horizontal
+bars.
+<LI>
+<B>Color ramp</B> can be used to get a false color ramp instead of a black or
+white bar.  This bar provides a key when showing images or stored values with
+false color.  The colors will be based on the standard false color map in
+3dmod, or on a custom map if one was loaded.
+<LI>
+<B>Invert ramp</B> will reverse the direction of color ramp.  Note that stored
+values are displayed with an inverted color ramp, while the false color ramp
+for image display can be inverted with the F11 hot key.
+<LI>
+<B>Minimum length</b> controls the size of the scale bars by specifying their
+minimum length in pixels.
+The smallest round number is found that gives a bar at least this long.
+<LI>
+<B>Thickness</B> sets the thickness of the bars in pixels.
+<LI>
+The <B>Position</B> combo box allows you to place the bars in any one of
+the four corners of a window.
+<LI>
+<B>Indentation in X and Y</B> determine the distance of the bar from the
+edges of the window and can be set to shift the bar farther away from
+the corner in either direction.
+<LI>
+When <B>Make bar multiple of</B> is turned on, the bars will always be set to
+the value in the spin box times a power of ten, rather than to a multiple of
+1, 2, or 5.  This feature can be used to
+get bars of intermediate length; for example, when a 20 nm bar is too short but
+a 50 nm bar seems too long.
+<LI>
+When <B>Make bar exactly</B> is turned on, the bars will always be set to
+exactly the value in the text box, overriding the setting of <B>Make bar
+    multiple of</B> and regardless of the length in pixels.  This feature is
+useful for keeping the bar to a fixed size in real units when making a series
+of snapshots (e.g., a movie in Model View) with a widely varying zoom.  The
+first time this is turned on, it will use the last scale bar length drawn.
+This will be helpful if you get the bar to the desired size before turning
+this option on.
+<LI>
+When <B>Draw labels</B> is turned on, the length of the scale bar will be
+written below the bar.  The font size can be set in the <B>Size</B> spin
+box, and the spacing between the bar and the label can be adjusted with the
+<B>Y offset</B> spin box.  This offset can be negative to place the label
+above the bar. When taking a montage snapshot, the font and
+spacing will be scaled along with the scale bar so that the snapshot will
+resemble the current image when viewed at the same size.
+</UL>
+At the bottom of the dialog appears a list of actual scale bar lengths in
+whatever windows are open.  Values are shown for the most recently active
+(top) Zap, Slicer, and Multi-Z windows, as well as for the XYZ and Model View
+windows if they are open.
+<P>
+<B>Montage snapshots:</B> You may need to adjust the scale bar
+properties if you want to take a high-resolution montage snapshot of the Zap
+or Model
+View windows.  
+Scale bar size and indentation are automatically scaled up by
+the montaging factor so that the bar will appear proportionally the same in the
+snapshot as in the original window.  
+However, this scaled up bar must be located entirely in one of the montage
+panels (e.g., in the bottom right quarter of the window if montaging by 4).
+If the bar does not fit in a panel with the properties that you have set,
+the program will first try to shift the bar toward the corner of the image
+by reducing the indentation in the direction of the bar length
+(X for a horizontal bar).  If that change is not sufficient, it then tries to
+shorten the bar by reducing
+the minimum length of the bar in pixels to as little as half of the original
+setting.  A message is printed indicating either that such changes were made,
+or that the bar cannot be drawn with the current settings.  In the latter
+case, or if you do not like the changes that were made, you can adjust the
+settings yourself to position the bar completely within one panel.
+<P>
+In any case, the actual length of the
+scale bar for the montage is printed on the terminal, since it is possible
+for the length to be different from that in the original window.
+<P>
+<A HREF="index.html#TOP">Help Index<A>

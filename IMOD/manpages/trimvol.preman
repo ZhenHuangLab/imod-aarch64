@@ -1,0 +1,103 @@
+.na
+.nh
+.TH trimvol 1 2.30 IMOD
+.SH NAME
+trimvol \- Trim a volume and optionally rotate or scale to bytes or integers
+.SH SYNOPSIS
+trimvol  [options]  input_file  output_file
+.SH DESCRIPTION
+Trimvol provides an interface to the program
+Newstack(1) for trimming out, scaling, and rotating a selected portion
+of an MRC image volume.
+There are options for specifying the volume to be extracted, and for 
+controlling the scaling. By default, coordinates are numbered from 1.
+.P
+Scaling can be specified in several different ways.  The \fB-c\fR
+option specifies a scaling to bytes given black and white
+contrast settings from 3dmod(1).  The \fB-mm\fR option will scale the
+minimum and maximum of the file to the specified values, converting to
+integers by default or to a data mode entered with \fB-mode\fR.  Other
+scaling involves analyzing a region of the volume in one of two ways.
+One way is to run Findcontrast(1), which chooses a scaling that
+saturates the intensities of one pixel per slice, on average, at
+the dark and the light end.  The other way is to run Densmatch(1) to
+find the scaling to a
+specified mean and standard deviation.  The latter method is invoked by
+the \fB-meansd\fR option and can be used to scale to bytes or to a specified
+mode.  If \fB-meansd\fR is not entered, scaling with
+Findcontrast(1) is invoked by entering the \fB-sz\fR option, and
+scaling must be to bytes.
+.P
+When computing a scaling, by
+default, regions
+within 10% of the lateral borders of each section are omitted, but a different
+region can be set with
+.B -sx
+and
+.B -sy.
+The coordinates specified with these options and \fB-sz\fR will be
+treated as coming from a flipped volume only if the
+.B -f
+option is entered.
+
+By default, the origin of the output file will be adjusted so that a model
+built on the input volume will display correctly on the output file.  This
+will even work for a volume rotated with
+.B -rx
+but not for one flipped with
+.B -yz.
+This adjustment can be turned off with the 
+.B -k
+option.
+
+.SH OPTIONS
+You can enter only one of
+.B -c,
+.B -mm,
+or a combination of 
+.B -sz
+and
+.B -meansd.
+Similarly, you cannot enter both
+.B -x
+and
+.B -nx,
+both
+.B -y
+and
+.B -ny,
+or both
+.B -z
+and
+.B -nz.
+You can also enter only one of 
+.B -yz
+and
+.B -rx.
+.P
+It is possible to enter limits for \fB-x\fR, \fB-y\fR, or \fB-z\fR that
+are outside the range of the volumes, provided that the specified
+volume includes some pixels within range for in each dimension.
+Regions in X and Y out of range will be filled with the mean value, and
+blank slices will be put for Z values out of range.
+.P
+Trimvol uses the PIP package for input (see the manual page for pip(1)).
+Options can be specified either as command line arguments (with the -)
+or one per line in a command file (without the -).  Options can be abbreviated
+to unique letters; the currently valid abbreviations for short names are shown
+in parentheses.
+INSERT OPTION TEXT HERE
+.TP
+.B -StandardInput
+Read parameter entries from standard input
+
+.SH FILES
+If the output file already exists a backup image
+of the original is created
+with the ~ extension.  The temporary file needed when flipping or rotating is
+created in the current directory with ".tmp.nnn" added to the input filename,
+where "nnn" is the process ID.
+.SH AUTHOR
+David Mastronarde  <mast@colorado.edu>
+.SH SEE ALSO
+newstack(1), findcontrast(1)

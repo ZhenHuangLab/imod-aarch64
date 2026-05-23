@@ -1,0 +1,107 @@
+<HEAD>
+<TITLE>Model View Mouse Controls</TITLE>
+</HEAD>
+<A NAME = "TOP"><H2>Model View Mouse Controls</H2></A>
+<P>
+By default, the first button referred to here is the left mouse button and the
+second button is the middle button.  
+These two buttons can be switched using an option in the 3dmod Preferences
+dialog, accessed via the <B>Edit-Options</B> menu entry in the 3dmod Info
+Window.
+
+<H4>Moving/Rotating/Zooming the Model</H4>
+<DL>
+<DT>First Mouse Button Drag
+<DD>The first mouse button moves the model when held down.
+<DT>Second Mouse Button Drag
+<DD>The second mouse button rotates the model around an axis perpendicular to
+the direction of motion of the mouse.  It can also be used to "throw" the model
+in a new direction if the model is already rotating automatically, or if a
+button or hot key has been pressed to start rotation.  The model will rotate
+continuously in the direction of movement, and the speed of rotation will be
+proportional to the distance moved.  (Moving 100 pixels will make it rotate at
+the standard speed.)
+<DT>[Shift] + Right Mouse Button Drag
+<DD>The right mouse button together with the Shift key can be used to rotate
+the model around the viewing (Z) axis.
+<DT>Scroll Wheel
+<DD>The scroll wheel zooms the model display up or down.
+</DL>
+
+<H4>Moving/Rotating a Clipping Plane</H4>
+<DL>
+<DT>[Ctrl] + First Mouse Button Drag
+<DD>When the Ctrl key is held down, the first mouse button moves the current
+clipping plane.
+<DT>[Ctrl] + Second Mouse Button Drag
+<DD>When the Ctrl key is held down, the second mouse button rotates the current
+object clipping plane around an axis perpendicular to
+the direction of motion of the mouse.
+<DT>[Ctrl] + [Shift] + Right Mouse Button Drag
+<DD>When both the Ctrl and the Shift key are held down, the right mouse 
+button rotates the current clipping plane around the viewing (Z) axis.
+</DL>
+<H4>Moving the Light Source</H4>
+<DL>
+<DT>[Shift] + Second Mouse Button Drag
+<DD>When the Shift key is held down, the second mouse button rotates the light
+source instead instead of the model.  A red vector with a cross on the end is
+drawn from the middle of the window in the direction of the light
+source.  If you move the light by mistake, you can recenter it by rotating it
+until only the cross appears.  The light direction is specific to each model
+if multiple models are loaded, and to the particular view if multiple views
+have been stored.
+</DL>
+<H4>Selecting Points and Contours</H4>
+<DL>
+<DT>Right Mouse Button Click
+<DD>Clicking on a point in the model with
+the right mouse button will select the nearest, frontmost point in the model as
+the current model point.  This is mostly useful when using the Model View from
+3dmod, but it can be used to select and delete contours when running the
+program as 3dmodv.  When 3dmod is in model mode, clicking on an object with a
+  saved isosurface will make that the current object.
+<DT>[Ctrl] + Right Mouse Button Click or Drag
+<DD>Multiple contours can be selected by holding the Ctrl key down; click on a
+contour to add it to the set of contours selected in Model View or to remove
+  it from the set if it is already selected.  Dragging the mouse with the
+  right button down and the Ctrl key down will add contours that are crossed
+  by the mouse to the set of contours selected in Model View.  In either
+  case, if the current point was
+  selected in a 3dmod window instead of in Model View, the set of selected
+  contours will be cleared before adding ones selected in Model View.  
+  When 3dmod is in model mode, clicking on an object with a
+  saved isosurface will add that object to the list of selected objects.
+  Because there is no visible indicator of which objects are selected, the
+  list of selected objects will be printed in the Info window.
+Note that Ctrl+A can also be used to select all contours
+that are being drawn in the current object (excluding ones that are completely
+clipped).
+<DT>[Ctrl] + [Shift] + Right Mouse Button Click
+<DD>Points can be selected in the current object by holding down the Ctrl and
+  Shift keys and clicking with the right mouse button.  The nearest, frontmost
+  point in the current object will be selected.  This feature is particularly
+  useful when modeling scattered points that are being used to paint an
+  isosurface, but it will work in other situations as well.
+</DL>
+<H4>Modeling Scattered Points</H4>
+If the current object type is scattered points, then holding down the Ctrl and
+Shift buttons allows you to move, resize, or add points with the mouse.  
+Hot keys can also be used to move or delete a point.
+<DL>
+<DT>[Ctrl] + [Shift] + Left Mouse Button Drag
+<DD>Moving the mouse while holding down the Ctrl and Shift keys and the left
+  mouse button will move the current scattered point.
+<DT>[Ctrl] + [Shift] + Middle Mouse Button Click
+<DD>Clicking the middle mouse button while holding down the Ctrl and Shift keys 
+  will insert a scattered point, as long as the model view is opened from
+  3dmod and 3dmod is in model mode.  The point will be centered at the
+  location that would be selected by clicking with the right mouse button.  If
+  the click selects a point on a meshed surface, then the new point will have
+  its center on that surface.
+<DT>[Ctrl] + [Shift] + Scroll Wheel
+<DD>Operating the mouse scroll wheel while holding down the Ctrl and Shift keys 
+  will resize the the current scattered point.
+</DL>
+<P>
+<A HREF="index.html#TOP">Help Index<A>

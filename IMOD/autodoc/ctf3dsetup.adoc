@@ -1,0 +1,141 @@
+Version = 1.0
+Pip = 1
+
+[Field = TiltCommandFile]
+short = reccom
+type = FN
+usage = Command file for reconstruction (with or without extension)
+tooltip =
+manpage = Command file for reconstruction, which can be entered with or
+without its extension of ".com".  If this option is not entered, a non-option
+argument is used for this command file.  This entry is required one way or the
+other.
+
+[Field = CorrectionComFile]
+short = ctfcom
+type = FN
+usage = Command file for CTF correction (with or without extension)
+tooltip =
+manpage = Command file for CTF correction, which can be entered with or
+without its extension of ".com".  If this option is not entered,
+"ctfcorrection" will be substituted for "tilt" in the name of the command file
+for reconstruction.
+
+[Field = NumberOfSlabs]
+short = slabs
+type = I
+usage = Number of reconstructions to make at different depths in Z
+tooltip =
+manpage = Number of reconstructions to make at different depths in Z with
+different corrections for CTF.  Either this option or \fB-thickness\fR must be
+entered, but not both.  This entry must be at least 3.
+
+[Field = SlabThicknessInNm]
+short = thickness
+type = I
+usage = Maximum thickness of reconstructions at different depths, in nanometers
+tooltip =
+manpage = The maximum thickness of reconstructions at different depths, in
+nanometers.  This value, if entered, must be less than half of the tomogram
+thickness so that at least 3 three slabs are computed.
+
+[Field = RunSlabsInParallel]
+short = parallel
+type = B
+usage = Make each slab with one processor or GPU
+tooltip =
+manpage = Make each slab with one processor or GPU by creating a chunk file containing
+both the Ctfphaseflip(1) and Tilt(1) commands.  This arrangement is the most
+efficient if there are more slabs than GPUs or processors, but requires more
+storage, as there will be as many created aligned stacks as processors.  The
+default is to make each slab sequentially, with parallel processing (if any)
+used to create the aligned stack then reconstruct the slab.  In this case only
+one corrected aligned stack exists at any time.
+
+[Field = NumberOfProcessors]
+short = procs
+type = I
+usage = Target or expected number of CPUs or GPUs (default 8, or 1 if GPU is used)
+tooltip =
+manpage = Use this option to specify the number of processors or GPUs that you expect to
+run the command files on.  It is appropriate only when computing slabs
+sequentially and cannot be entered with the \fB-parallel\fR option.  It is
+passed directly to Splittilt(1) unless it is 1, in which case the processing
+is not divided into chunks.  The default is 8 unless the Tilt command file
+contains the option to use the GPU, in which case it is 1.
+
+[Field = ChunksPerProcessor]
+short = perproc
+type = I
+usage = Number of chunks per processor (default 3)
+tooltip =
+manpage = Use this option to set the number of chunks per processor when
+correction and reconstruction are divided into chunks; it will
+be multiplied by the number of processors to give a value for the
+\fB-TargetChunks\fR option to Splittilt(1) and used to determine the number
+of slices to be corrected per chunk in Splitcorrection(1).  The default is 3.
+
+[Field = EraseFiducials]
+short = erase
+type = B
+usage = Run a command file to erase gold after CTF correction of aligned stack
+tooltip =
+manpage = 
+
+[Field = GoldEraserComFile]
+short = goldcom
+type = FN
+usage = Name of command file to use for erasing gold
+tooltip =
+manpage = Name of command file to use for erasing gold.  If this option is not
+entered, "golderaser" will be substituted for "tilt" in the name of the
+command file for reconstruction.
+
+[Field = VerticalSlices]
+short = vertical
+type = B
+usage = Do vertical slices instead of old-style X-axis tilting
+tooltip =
+manpage = Do vertical slices with interpolation between slices instead of
+old-style X-axis tilting, regardless of the time penalty.
+
+[Field = OldStyleXtilting]
+short = oldstyle
+type = B
+usage = Do old-style X-axis tilting instead of vertical slices
+tooltip =
+manpage = Do old-style X-axis tilting, with direct backprojection into each
+output voxel, instead of vertical slices with interpolation between slices.
+
+[Field = TemporaryDirectory]
+short = tempdir
+type = CH
+usage = Directory to use for temporary files (default is current directory)
+tooltip = 
+manpage = Directory to use for temporary files.  The default is that the
+temporary files will be placed in the current directory.
+
+[Field = LeaveTempFiles]
+short = leave
+type = B
+usage = Leave temporary CTF-corrected stacks and reconstructed slabs
+tooltip =
+manpage = 
+
+[Field = BoundaryPixels]
+short = boundary
+type = I
+usage = Number of boundary pixels when writing in chunks (default 2048)
+tooltip =
+manpage = Set the number of boundary pixels saved in separate files to the
+given value when slabs are computed sequentially and each CTF correction and
+reconstruction is parallelized.
+The boundary pixels are rewritten to the output file (aligned stack or slab
+reconstruction) after all chunks are done.
+
+[Field = usage]
+short = help
+type = B
+usage = Print help output
+tooltip = 
+manpage = 

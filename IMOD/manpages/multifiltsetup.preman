@@ -1,0 +1,84 @@
+.na
+.nh
+.TH multifiltsetup 1 4.10.11 IMOD
+.SH NAME
+multifiltsetup \- Test multiple reconstruction filter values on a subvolume
+.SH SYNOPSIS
+multifiltsetup  options  tilt_com_file_name
+.SH DESCRIPTION
+Multifiltsetup produces command files for reconstructing a defined
+region of a tomogram with a series of values for one of the types of
+radial filters in Tilt(1).  Four kinds of filters can be varied, but
+only one kind can be changed on any given run.
+.P
+Two filters providing an alternative form for the ramp function, the
+SIRT-like filter and "exact filters", can be varied with:
+  \fB-fake\fR    \fIList of iteration values\fR
+  \fB-exact\fR   \fIList of "object sizes"\fR
+.br
+The two alternative high-frequency filtering options, the standard
+Gaussian filter and the Hamming-like filter, can be varied with:
+  \fB-cutoff\fR   \fIList of cutoffs\fR and/or \fB-falloff\fR  \fIList of falloffs\fR
+  \fB-hamming\fR  \fIList of start frequencies\fR
+.P
+The behavior and requirements when varying the Gaussian filter are
+complicated because there are two parameters.  The rules are these:
+  1) If both \fB-cutoff\fR and \fB-falloff\fR are entered, either both
+must have the same number of frequencies listed, or one must
+have only a single value.
+  2) If \fB-falloff\fR is entered but not \fB-cutoff\fR, a fixed cutoff
+for all runs is taken from the "RADIAL" entry in the input command file.
+  3) If \fB-falloff\fR is entered with multiple values and
+\fB-cutoff\fR with one value, that cutoff is used for all of the runs
+  4) If \fB-cutoff\fR is entered but not \fB-falloff\fR, a fixed ratio of
+falloff to cutoff is taken from the ratio of the falloff and cutoff
+values of the "RADIAL" entry in the input command file.
+  5) If \fB-cutoff\fR is entered with multiple values and
+\fB-falloff\fR with one value, a fixed ratio of falloff to cutoff is
+taken from the ratio of the entered falloff value and the first cutoff.
+  6) If \fB-cutoff\fR is entered with multiple values and a falloff is
+not entered for each, then the falloff values will all be this fixed
+ratio times their respective cutoff values.
+.br
+This scaling will not work if the first cutoff is 0, or if the falloff
+is 0.
+.P
+For example, if \fB-cutoff\fR is entered as "0.1,0.2,0.3", no
+\fB-falloff\fR is entered, and the "RADIAL" entry in the file is
+"0.35 0.035", then the ratio will be 0.035 / 0.35 = 0.1 and the
+falloffs will be 0.01, 0.02, and 0.03.  If \fB-falloff\fR is entered
+with just "0.02", the ratio will be 0.02 / 0.1 = 0.2 and the falloffs
+will be 0.02, 0.04, and 0.06.
+.P
+Unless options are entered to specify a subvolume, the default is to
+reconstruction the full area with the same thickness.
+.SH OPTIONS
+Multifiltsetup uses the PIP package for input (see the manual page
+for pip(1)).  Options can be specified either as command line
+arguments (with the -) or one per line in a command file
+(without the -).  Options can be abbreviated to unique letters; the currently
+valid abbreviations for short names are shown in parentheses.
+INSERT OPTION TEXT HERE
+.TP
+.B -StandardInput
+Read parameter entries from standard input
+
+.SH FILES
+The command files are named "tilt_mulfil-*.com" for an input file
+"tilt.com", "tilt_mulfila-*.com" for "tilta.com", etc.  For \fB-fake\fR and
+\fB-exact\fR options, they produce tomograms "setname_slfinnn.mrc" and
+"setname_efosnnn.mrc", where "setname" is the root name of the data set
+and "nnn" is the iteration number or object size,
+respectively, and all files in a run will be 2, 3, or 4 digits with
+leading zeros as needed.  For the \fB-hamming\fR option, the
+tomograms are "setname_hlfs0.xxx.mrc" where "0.xxx" is the starting frequency to 3
+decimal places.  When varying the Gaussian filter, the tomogram names
+contain both the cutoff and falloff as "setname_gfc0.xxx-f0.xxx.mrc".
+.SH AUTHOR
+.nf
+David Mastronarde
+.fi
+.SH SEE ALSO
+tilt(1), proceschunks(1)
+.SH BUGS
+Email bug reports to mast@colorado.edu.

@@ -1,0 +1,796 @@
+#!/usr/bin/env python
+# framewatcher - look for alignframes command files or frame stack files in a directory
+# and run them
+#
+# Author: David Mastronarde
+#
+# $Id$
+#
+
+progname = 'framewatcher'
+prefix = 'ERROR: ' + progname + ' - '
+
+# Comparison function for sorting by modification time
+def diffKey(item):
+   return item[1]
+
+
+# Move or copy a file or directory with shutil to processDir with retries
+def retryMoveOrCopy(fromFile, mess, ifCopy, nameForErrList, numTrials):
+   global erredList
+   err = moveOrCopyWithRetry(fromFile, processedDir, mess, ifCopy, numTrials)
+   if err:
+      erredList.append(nameForErrList)
+   return err
+
+
+# Moves or renames various files as appropriate when a frame stack is "done"
+def moveOrRenameIfDone(nameForErrList, comFile, logFile):
+   global erredList
+   if not processedDir:
+      renFile = comFile
+      if not comFile:
+         renFile = stack
+      try:
+         os.rename(renFile, renFile + '.done')
+      except OSError:
+         prnstr('An error occurred renaming ' + renFile + ' to ' + renFile + '.done :')
+         prnstr('    ' + str(sys.exc_info()[1]))
+         erredList.append(nameForErrList)
+         return 1
+
+   else:
+
+      if stack:
+         if retryMoveOrCopy(stack, 'moving ' + stack, False, nameForErrList, 1):
+            return 1
+         for metaFile in (stack + '.mdoc', stackRoot + '_saved.txt'):
+            if os.path.exists(metaFile):
+               if retryMoveOrCopy(metaFile, 'moving ' + metaFile, False, nameForErrList,
+                                  1):
+                  return 1
+               
+         # Also make sure there is a copy of gain reference and defect file if needed
+         if defectPath and not os.path.exists(processedDir + '/' + defectFile):
+            if retryMoveOrCopy(defectPath, 'copying ' + defectFile, True,
+                               nameForErrList, 1):
+               return 1
+         if gainPath and not os.path.exists(processedDir + '/' + gainFile):
+            if retryMoveOrCopy(gainPath, 'copying ' + gainFile, True,
+                               nameForErrList, 1):
+               return 1
+
+      # Move a tilt series directory if the last component of the relative path is
+      # the tilt series name.  normpath removes trailing slash and allows basename
+      # to extract last directory of the path
+      elif mdocFile and relPath and \
+           mdocRoot == os.path.basename(os.path.normpath(relPath)):
+         mess = 'moving ' + relPath + ' directory'
+         if retryMoveOrCopy(relPath, mess, False, nameForErrList, 1):
+            return 1
+
+      if comFile and retryMoveOrCopy(comFile, 'moving ' + comFile, False,
+                                     nameForErrList, 1):
+         return 1
+
+      # The log file is the one file just produced that may still have a lock on it,
+      # so do retries for it
+      if logFile and retryMoveOrCopy(logFile, 'moving ' + logFile, False,
+                                     nameForErrList, 5):
+         return 1
+
+      return 0
+
+
+# Edit a file if necessary and run it
+def editAndRunComFile(nameForErrList):
+   global defectFile, gainFile, sizeOrig
+   sedcom = []
+   sizeOrig = -1
+
+   if masterCom and stack and os.path.exists(stack):
+      try:
+         sizeOrig = os.path.getsize(stack)
+      except OSError:
+         pass
+
+   # Get the possible defect and gain reference file from com file
+   if usingAlignframes and stack and processedDir:
+      if defectPath:
+         (dirn, defectFile) = os.path.split(defectPath)
+      if gainPath:
+         (dirn, gainFile) = os.path.split(gainPath)
+
+   # Foreign file: just process INPUTFILE into OUTPUTFILE
+   if not usingAlignframes:
+      sedcom.append(fmtstr('|OUTPUTFILE|s||{}/|', outName))
+      sedcom.append(fmtstr('|INPUTFILE|s||{}/|', stack))
+      
+   # Otherwise edit a known alignframes command file
+   elif editFile:
+      if gpuEntered:
+         sedcom.append(sedModify('UseGPU', useGPU, delim = '|'))
+
+      # Substitute the output name in all cases
+      # If working with master com, substitute the input name
+      sedcom.append(fmtstr('|OutputImageFile.*|s||OutputImageFile {}|', outName))
+      if masterCom:
+         sedcom.append(fmtstr('|InputFile.*|s||InputFile {}|', stack))
+
+      # Fix the binning if entered
+      if sumBin:
+         binArr = optionValue(comLines, 'AlignAndSumBinning', INT_VALUE, numVal = 2)
+         if not binArr:
+            prnstr('There is a problem with the AlignAndSumBinning line in ' + comFile)
+            erredList.append(nameForErrList)
+            return 1
+
+         sedcom.append(sedModify('AlignAndSumBinning', fmtstr('{} {}', binArr[0],
+                                                              sumBin), delim = '|'))
+
+      if sumScale > 0.:
+         sedcom += sedDelAndAdd('ScalingOfSum', sumScale, 'AlignAndSumBinning',
+                                delim = '|')
+
+      if totalDose > 0.:
+         sedcom += sedDelAndAdd('FixedTotalDose', totalDose, 'AlignAndSumBinning',
+                                delim = '|') + \
+             ['|FixedFrameDoses|d', '|TypeOfDoseFile|d']
+      elif frameDoses:
+         sedcom += sedDelAndAdd('FixedFrameDoses', frameDoses, 'AlignAndSumBinning',
+                                delim = '|') + \
+             ['|FixedTotalDose|d', '|TypeOfDoseFile|d']
+      if dosesInMdoc:
+         hasMdoc = mdocFile != ''
+         if not hasMdoc and stack:
+            mdocName = stack + '.mdoc'
+            if os.path.exists(mdocName):
+               hasMdoc = True
+               sedcom += sedDelAndAdd('MetadataFile', mdocName, 'AlignAndSumBinning',
+                                      delim = '|')
+         if hasMdoc:
+            sedcom += sedDelAndAdd('TypeOfDoseFile', 4, 'AlignAndSumBinning',
+                                   delim = '|') + \
+               ['|FixedTotalDose|d', '|FixedFrameDoses|d']
+         else:
+            prnstr('There is no mdoc file for ' + comFile + ' for doing dose weighting')
+
+      if normalizeDW:
+         sedcom += sedDelAndAdd('NormalizeDoseWeighting', 1, 'AlignAndSumBinning',
+                                delim = '|')
+      if unwgtSuffix:
+         (outRoot, ext) = os.path.splitext(outName)
+         if outRoot.endswith('_ali'):
+            outRoot = outRoot[:-4]
+         sedcom += sedDelAndAdd('UnweightedOutputFile', outRoot + '_' + unwgtSuffix + ext,
+                                'AlignAndSumBinning', delim = '|')
+      if priorDose > 0.:
+         sedcom += sedDelAndAdd('InitialPriorDose', priorDose, 'AlignAndSumBinning',
+                                delim = '|')
+      if voltage > 0:
+         sedcom += sedDelAndAdd('Voltage', voltage, 'AlignAndSumBinning', delim = '|')
+      if driftDist > 0.:
+         sedcom += sedDelAndAdd('DriftLimitDistAndNumber', 
+                                fmtstr('{} {}', driftDist, driftNum), 
+                                'AlignAndSumBinning', delim = '|')
+
+      if pysed(sedcom, comLines, comFile, delim = '|', retErr=True):
+         prnstr('Error modifying ' + comFile)
+         erredList.append(nameForErrList)
+         return 1
+
+   # Run with the necessary options
+   prnstr('Running ' + comFile)
+   (comRoot, ext) = os.path.splitext(comFile)
+   logFile = comRoot + '.log'
+
+   # Loop until it finishes or gives an error: in either case test if the stack got
+   # bigger and redo the loop if so
+   while True:
+      try:
+         threadText = ''
+         if threadLimit:
+            threadText = '-e OMP_NUM_THREADS=' + str(threadLimit)
+         runcmd(fmtstr('vmstopy -n {} -x -q {} "{}" "{}"', niceVal, threadText, comFile,
+                       logFile))
+         if stackGotBigger(stack):
+            continue
+         prnstr('Finished ' + comFile)
+         break
+         
+      except ImodpyError:
+         if stackGotBigger(stack):
+            continue
+         errStrings = getErrStrings()
+         for line in errStrings:
+            prnstr(line)
+
+         prnstr(" ")
+         erredList.append(nameForErrList)
+         return 1
+
+   # When done, either rename the .pcm file or move .pcm and stack to process directory
+   if moveOrRenameIfDone(nameForErrList, comFile, logFile):
+      return 1
+
+   # Make reduced image and/or power spectrum pair
+   if reducedTarget > 0 or powerHeight > 0:
+      try:
+         mess = ' getting header of '
+         cleanList = []
+         (nx, ny, nz) = getmrcsize(outName)
+         izUse = nz // 2
+         redRoot = stackRoot
+         if thumbDir:
+            redRoot = thumbDir + '/' + redRoot
+         elif outputDir:
+            redRoot = outputDir + '/' + redRoot
+
+         # Get reduced image in mrc file
+         if reducedTarget > 0:
+            if reducedTarget <= 32:
+               redFac = reducedTarget
+            else:
+               redFac = int(round(math.sqrt(nx * ny) / reducedTarget))
+            redFac = max(2, redFac)
+            redName = redRoot + '_red' + str(redFac) + '.mrc'
+
+            mess = ' making ' + redName + ' from '
+            runcmd(fmtstr('newstack -shr {} -sec {} "{}" "{}"', redFac, izUse, outName,
+                          redName))
+
+         # Get reduced image and power spectrum and join into jpeg
+         if powerHeight > 0:
+            redFac = max(1.2, ny / float(powerHeight))
+            nxOut = int(nx / redFac)
+            nyOut = int(ny / redFac)
+            redName = redRoot + '_redtmp.mrc'
+
+            mess = ' making power spectrum pair: making ' + redName + ' from '
+            cleanList.append(redName)
+            runcmd(fmtstr('newstack -mod 0 -mean {},{} -shr {} -sec {} -siz ' + \
+                             '{},{} "{}" "{}"', byteMean, byteSD, redFac, izUse, nxOut,
+                          nyOut, outName, redName))
+
+            powName = redRoot + '_powtmp.mrc'
+            mess = ' making power spectrum pair: making ' + powName + ' from '
+            cleanList.append(powName)
+            runcmd(fmtstr('clip spectrum -2d -iz {} -oy {} {} "{}" "{}"', izUse, nyOut,
+                          scaleOpt, outName, powName))
+
+            sideMrcName = redRoot + '_powpair.mrc'
+            mess = ' making power spectrum pair: making ' + sideMrcName + ' from '
+            cleanList.append(sideMrcName)
+            runcmd(fmtstr('assemblevol -nxf 2 -nyf 1 -nzf 1 "{}" "{}" "{}"',
+                          redName, powName, sideMrcName))
+
+            sideName = redRoot + '_powpair.jpg'
+            mess = ' making power spectrum pair: making ' + sideName + ' from '
+            runcmd(fmtstr('mrc2tif -j "{}" "{}"', sideMrcName, sideName))
+
+
+      # Failure to make a thumbnail is not returned as an error
+      except ImodpyError:
+         prnstr('ERROR:' + mess + outName)
+         errStrings = getErrStrings()
+         for line in errStrings:
+            prnstr(line)
+
+      if cleanList:
+         cleanupFiles(cleanList)
+            
+   return 0
+
+
+# Run a command with variable subsitution
+def runEnteredCommand(command, nameForErrList, logSuffix):
+   if not command:
+      return 0
+   
+   # Set up the value list and then substitute text for empty values if any
+   subVals = [outputDir, processedDir, thumbDir, gainPath, defectPath, stack,
+              outName, stackRoot]
+   for ind in range(len(subVals)):
+      if not subVals[ind]:
+         subVals[ind] = textForNone
+
+   # This is THE Python way to loop over multiple lists in tandem
+   for (keyv, subv) in list(zip(keyVals, subVals)):
+      subFull = subv
+      if subv and (keyv != 'rootName' or ' ' in subv):
+         subFull = '"' + subv + '"'
+      command = command.replace('%{' + keyv + '}', subFull)
+
+   prnstr('Running: ' + command)
+   logName = stackRoot + '_' + logSuffix + '.log'
+   if outputDir:
+      logName = outputDir + '/' + logName
+   try:
+      logFile = open(logName, 'w')
+   except Exception:
+      prnstr('ERROR: Failed to open log file ' + logName + ' for command output')
+      erredList.append(nameForErrList)
+      return 1
+   
+   # Run the command, point to log on failure
+   try:
+      runcmd(command, outfile = logFile, inStderr = 'stdout')
+   except ImodpyError:
+      prnstr('ERROR: Command failed.  Log from running command is in ' + logName)
+      errStrings = getErrStrings()
+      for line in errStrings:
+         prnstr(line)
+      erredList.append(nameForErrList)
+      return 1
+   finally:
+      try:
+         close(outFile)
+      except Exception:
+         pass
+
+   # Give message about log or remove it on success
+   if keepLogs:
+      prnstr('Log from running command is in ' + logName)
+   else:
+      cleanupFiles([logName])
+
+   return 0
+            
+
+# Check the variables listed in a command before starting
+def checkCommand(command):
+   if not command:
+      return
+   subbed = command
+   keyOut = ''
+   for keyv in keyVals:
+      fullKey = '%{' + keyv + '}'
+      subbed = subbed.replace(fullKey, '')
+      keyOut += '  ' + fullKey
+
+   indStart = subbed.find('%{')
+   if indStart < 0:
+      return
+   indEnd = subbed[indStart:].find('}')
+   if indEnd > 0:
+      badKey = subbed[indStart:indStart + indEnd + 1]
+   else:
+      badKey = subbed[indStart:]
+   prnstr('ERROR: Unrecognized key for substitution in command')
+   prnstr('Command: ' + command)
+   prnstr('Unrecognized part: ' + badKey)
+   prnstr('Available keys:' + keyOut)
+   exitError('Unrecognized key for substitution in command')
+
+
+# See if a stack has gotten bigger since alignment started and if so, wait some more
+def stackGotBigger(stack):
+   global maturedTime, sizeOrig
+
+   # return if no measured size, or get a new size
+   if sizeOrig < 0 or not os.path.exists(stack):
+      return False
+   try:
+      sizeNew = os.path.getsize(stack)
+   except OSError:
+      return False
+   if sizeNew <= sizeOrig:
+      return False
+
+   # If it increased, bump up the wait time, wait again
+   maturedTime *= 1.5
+   prnstr(fmtstr('Stack size has increased from {} to {} while aligning!', sizeOrig,
+                 sizeNew))
+   prnstr(fmtstr('Waiting for stack to mature with wait time increased to {:.1f} sec',
+          maturedTime))
+   lastMtime = os.path.getmtime(stack)
+   timeAtLastMtime = time.time()
+   while True:
+      thisMtime = os.path.getmtime(stack)
+      thisTime = time.time()
+      if thisMtime != lastMtime:
+         lastMtime = thisMtime
+         timeAtLastMtime = thisTime
+      modDiff = max(0., thisTime - timeAtLastMtime)
+      if modDiff > maturedTime:
+         break
+      else:
+         time.sleep(maturedTime + 3. - modDiff)
+
+   # get a new size
+   prnstr('Rerunning command file')
+   try:
+      sizeOrig = os.path.getsize(stack)
+   except OSError:
+      pass
+   return True
+
+
+#### MAIN PROGRAM  ####
+#
+# load System Libraries
+import os, sys, glob, time, shutil, copy, math
+
+#
+# Setup runtime environment
+if os.getenv('IMOD_DIR') != None:
+   sys.path.insert(0, os.path.join(os.environ['IMOD_DIR'], 'pylib'))
+   from imodpy import *
+   addIMODbinIgnoreSIGHUP()
+else:
+   sys.stdout.write(prefix + ' IMOD_DIR is not defined!\n')
+   sys.exit(1)
+
+#
+# load IMOD Libraries
+from pip import *
+from pysed import *
+
+keyVals = ['outputDir', 'processedDir', 'reducedDir', 'gainReference',
+           'defectFile', 'frameFile', 'outputFile', 'rootName']
+
+# Fallbacks from ../manpages/autodoc2man 3 1 framewatcher
+options = ["watch:WatchDirectory:CH:", "output:OutputDirectory:CH:",
+           "processed:ProcessedDirectory:CHM:", "master:MasterCommandFile:FN:",
+           "nocom:NoCommandFile:B:", "age:MinimumAgeOfStacks:F:", "gpu:UseGPU:I:",
+           "binning:BinningOfSum:I:", "sumscale:ScalingOfSum:F:",
+           "dmdoc:DosesInMetadataFile:B:", "dtotal:FixedTotalDose:F:",
+           "dframe:FixedFrameDoses:F:", "dprior:InitialPriorDose:F:",
+           "dnorm:NormalizeDoseWeighting:B:", "unweight:UnweightedFileSuffix:CH:",
+           "volt:Voltage:I:", "drift:DriftLimitDistAndNumber:FP:",
+           "reduce:ReducedSum:I:", "power:PowerSpectrum:I:", "scale:ScaleSpectrum:FP:",
+           "thumb:ThumbnailDirectory:CH:", "before:RunCommandBefore:CH:",
+           "after:RunCommandAfter:CH:", "none:TextForNone:CH:",
+           "keep:KeepCommandLogs:B:", "avoid:AvoidWindowsCopy:I:",
+           "nice:NicenessSetting:I:", "thread:ThreadLimit:I:", "help:usage:B:"]
+
+(opts, nonopts) = PipReadOrParseOptions(sys.argv, options, progname, 0, 0, 0)
+
+# Get options
+watchDir = PipGetString('WatchDirectory', '')
+sumBin = PipGetInteger('BinningOfSum', 0)
+sumScale = PipGetFloat('ScalingOfSum', 0.)
+totalDose = PipGetFloat('FixedTotalDose', 0.)
+frameDoses = PipGetString('FixedFrameDoses', '')
+priorDose = PipGetFloat('InitialPriorDose', 0.)
+dosesInMdoc = PipGetBoolean('DosesInMetadataFile', 0)
+normalizeDW = PipGetBoolean('NormalizeDoseWeighting', 0)
+unwgtSuffix = PipGetString('UnweightedFileSuffix', '')
+(driftDist, driftNum) = PipGetTwoFloats('DriftLimitDistAndNumber', 0., 0.)
+outputDir = PipGetString('OutputDirectory', '')
+thumbDir = PipGetString('ThumbnailDirectory', '')
+masterCom = PipGetString('MasterCommandFile', '')
+noComs = PipGetBoolean('NoCommandFile', 0)
+powerHeight = PipGetInteger('PowerSpectrum', 0)
+(bkgdGray, annulus) = PipGetTwoFloats('ScaleSpectrum', -1., 0.)
+reducedTarget = PipGetInteger('ReducedSum', 0)
+runBefore = PipGetString('RunCommandBefore', '')
+runAfter = PipGetString('RunCommandAfter', '')
+textForNone = PipGetString('TextForNone', '')
+keepLogs = PipGetBoolean('KeepCommandLogs', 0)
+voltage = PipGetInteger('Voltage', 0)
+useGPU = PipGetString('UseGPU', 0)
+gpuEntered = 1 - PipGetErrNo()
+niceVal = PipGetInteger('NicenessSetting', 15)
+threadLimit = PipGetInteger('ThreadLimit', 0)
+maturedTime = PipGetFloat('MinimumAgeOfStacks', 15.)
+avoidWin = PipGetInteger('AvoidWindowsCopy', 0)
+
+# Get one or more processed dirs
+procDirInd = 0
+processedDirArray = []
+processedDir = ''
+numProcDirs = PipNumberOfEntries('ProcessedDirectory')
+for ind in range(numProcDirs):
+   processedDir = PipGetString('ProcessedDirectory', '')
+   processedDir = imodAbsPath(processedDir).rstrip('/\\')
+   processedDirArray.append(processedDir)
+
+editFile = gpuEntered or sumBin or outputDir or masterCom or frameDoses or \
+    totalDose > 0. or dosesInMdoc or priorDose > 0. or voltage > 0 or normalizeDW or \
+    sumScale > 0. or unwgtSuffix or driftDist > 0
+sleepTime = 5.
+byteMean = 140
+byteSD = 40
+initializeMoveOrCopy(skipWinCopy = avoidWin)
+
+if masterCom and noComs:
+   exitError('You cannot enter both -nocom and -master')
+if noComs and not (runBefore or runAfter or processedDir):
+   exitError('You must enter -processed, -before, or -after with -nocom')
+if (totalDose > 0. and (frameDoses or dosesInMdoc)) or (frameDoses and dosesInMdoc):
+   exitError('You enter only one of -dmdoc, -dtotal, and -dframe')
+if voltage > 0 and voltage != 200 and voltage != 300:
+   exitError('Voltage must be either 200 or 300')
+   
+scaleOpt = ''
+if bkgdGray >= 0.:
+   scaleOpt = fmtstr('-l {} -h {}', int(round(bkgdGray)), annulus)
+
+checkCommand(runBefore)
+checkCommand(runAfter)
+
+defectPath = ''
+defectFile = ''
+gainPath = ''
+gainFile = ''
+watching = '.pcm'
+usingAlignframes = True
+if masterCom or noComs:
+   usingAlignframes = False
+   watching = '.mrc, .tif, and .eer'
+
+# If there is a master com file, figure out if it is alignframes or generic
+if masterCom:
+   masterLines = readTextFile(masterCom)
+   gotINPUT = False
+   gotOUTPUT = False
+   for line in masterLines:
+      if 'alignframes -Standard' in line:
+         usingAlignframes = True
+      elif 'INPUTFILE' in line:
+         gotINPUT = True
+      elif 'OUTPUTFILE' in line:
+         gotOUTPUT = True
+         
+   if not usingAlignframes and not (gotINPUT and gotOUTPUT):
+      exitError('The command file does not run alignframes so it must have INPUTFILE ' +\
+                'and OUTPUTFILE entries')
+   if usingAlignframes and (gotINPUT or gotOUTPUT):
+      exitError('A command file running alignframes should not have INPUTFILE or ' +\
+                'OUTPUTFILE entries')
+   if usingAlignframes:
+      defectPath = optionValue(masterLines, 'CameraDefectFile', STRING_VALUE)
+      gainPath = optionValue(masterLines, 'GainReferenceFile', STRING_VALUE)
+
+# Before changing to watch directory, convert other paths to absolute and convert
+# backslashes in any path that is going into sed
+if outputDir:
+   outputDir = imodAbsPath(outputDir).rstrip('/\\')
+   outputDir = outputDir.replace('\\', '/')
+if thumbDir:
+   thumbDir = imodAbsPath(thumbDir).rstrip('/\\')
+      
+# If watch directory entered, make sure it is OK
+if watchDir:
+   if not os.path.exists(watchDir):
+      exitError(watchDir + ' does not exist')
+   if not os.path.isdir(watchDir):
+      exitError(watchDir + ' is not a directory')
+   try:
+      os.chdir(watchDir)
+   except OSError:
+      exitError(fmtstr('Cannot change to {}: {}', watchDir, str(sys.exc_info()[1])))
+
+   prnstr('Looking for ' + watching + ' files in ' + watchDir)
+else:
+   prnstr('Looking for ' + watching + ' files in current directory')
+
+# If processed dirs or thumb dir are entered, create each if needed and possible
+
+for dirName in processedDirArray + [thumbDir]:
+   if dirName:
+      if os.path.exists(dirName):
+         if not os.path.isdir(dirName):
+            exitError('There is already a file (not a directory) named ' + dirName)
+      else:
+         try:
+            os.mkdir(dirName)
+         except OSError:
+            exitError('Creating directory ' + dirName + ': ' + str(sys.exc_info()[1]))
+
+# Start loop looking for files
+erredList = []
+doneList = []
+while True:
+
+   # LOOKING FOR STACK FILES
+   if masterCom or noComs:
+
+      # Get all possible files and then copy only the eligible ones over to the new list
+      fullList = glob.glob('*.mrc') + glob.glob('*.tif') + glob.glob('*.eer')
+      fileList = []
+      for stack in fullList:
+         if not stack.endswith('_ali.mrc') and stack not in doneList and \
+            stack not in erredList and not os.path.exists(stack + '.openTS'):
+
+            # If not done or errored, looked for a .pcm.done file and add to one list or
+            # the other
+            (stackRoot, ext) = os.path.splitext(stack)
+            if os.path.exists(stackRoot + '.pcm.done'):
+               doneList.append(stack)
+            else:
+
+               # Check if file is even started yet before putting it on the list
+               # The openTS is created only when a tilt series itself starts
+               skipIt = False
+               try:
+                  if stack.endswith('.eer'):
+                     skipIt = os.path.getsize(stack) < 1000000
+                  else:
+                     (nx, ny, nz) = getmrcsize(stack)
+                     skipIt = nz == 0
+               except ImodpyError:
+                  skipIt = True
+               
+               if not skipIt:
+                  try:
+                     fileList.append([stack, os.path.getmtime(stack),
+                                      os.path.getsize(stack), time.time()])
+                  except OSError:
+                     prnstr(stack + ' gave error getting size or modification time; ' +\
+                            'skipping it')
+                     erredList.append(stack)
+                  
+      # If list is empty, wait a little while before looking again
+      if not fileList:
+         time.sleep(sleepTime)
+         continue
+
+      # Sort files by modification time
+      fileList.sort(key = diffKey)
+
+      # Loop on files by index
+      for fileInd in range(len(fileList)):
+         if numProcDirs:
+            processedDir = processedDirArray[procDirInd]
+         stack = fileList[fileInd][0]
+         if fileInd == len(fileList) - 1:
+            try:
+
+               # For last file, loop until it is mature
+               while True:
+                  thisMtime = os.path.getmtime(stack)
+                  nowTime = time.time()
+                  thisSize = os.path.getsize(stack)
+                  if thisMtime != fileList[fileInd][1] or \
+                     thisSize != fileList[fileInd][2]:
+                     fileList[fileInd][1] = thisMtime
+                     fileList[fileInd][2] = thisSize
+                     fileList[fileInd][3] = nowTime
+
+                  modDiff = max(0, nowTime - fileList[fileInd][3])
+                  if modDiff > maturedTime:
+                     break
+                  else:
+                     time.sleep(maturedTime + 3. - modDiff)
+
+            except OSError:
+               prnstr(stack + ' gave error getting size or modification time; ' + \
+                      'skipping it')
+               erredList.append(stack)
+
+         # Make a com file by the name of the stack and process it
+         (stackRoot, ext) = os.path.splitext(stack)
+         outName = stackRoot + '_ali.mrc'
+         if outputDir:
+            outName = outputDir + '/' + outName
+         mdocFile = ''
+         relPath = ''
+         comFile = stackRoot + '.pcm'
+         if os.path.exists(comFile):
+            comLines = readTextFile(comFile, returnOnErr = True)
+            if not isinstance(comLines, str):
+               defectPath = optionValue(comLines, 'CameraDefectFile', STRING_VALUE)
+               gainPath = optionValue(comLines, 'GainReferenceFile', STRING_VALUE)
+               if defectPath:
+                  (dirn, defectFile) = os.path.split(defectPath)
+               if gainPath:
+                  (dirn, gainFile) = os.path.split(gainPath)
+              
+         elif ext != '.eer':
+
+            # Try to get frame and defect names from the stack header
+            try:
+               fullHeader = runcmd('header "' + stack + '"')
+               for line in fullHeader:
+                  line = line.strip()
+                  if (line.startswith('Super') or line.startswith('Count')) and \
+                     'Ref_' in line and len(line.split()) == 1:
+                     gainFile = gainPath = line
+                  if line.startswith('defects_') and line.endswith('.txt'):
+                     defectFile = defectPath = line
+
+            except ImodpyError:
+               pass
+
+         if runEnteredCommand(runBefore, stack, 'before'):
+            continue
+         if masterCom:
+            comLines = copy.deepcopy(masterLines)
+            if editAndRunComFile(stack):
+               continue
+         else:
+            if not os.path.exists(comFile):
+               comFile = None
+            if moveOrRenameIfDone(stack, comFile, None):
+               continue
+            mess = 'Transferred ' + stack
+            if comFile:
+               mess += ' and associated files'
+            prnstr(mess)
+               
+         if runEnteredCommand(runAfter, stack, 'after'):
+            continue
+         if numProcDirs:
+            procDirInd = (procDirInd + 1) % numProcDirs
+
+   # LOOKING FOR .PCM FILES
+   else:
+      fileList = glob.glob('*.pcm')
+
+      # If list is empty, wait a little while before looking again
+      if not fileList:
+         time.sleep(sleepTime)
+         continue
+
+      # Loop through all files, they are assumed ready to process
+      fileList.sort()
+      for comFile in fileList:
+         if numProcDirs:
+            processedDir = processedDirArray[procDirInd]
+         if comFile in erredList:
+            continue
+
+         # Read the file and make sure it is alignframes file
+         # Retry because there may be a filesystem entry before it is readable or written
+         numComTries = 3
+         comReadFailed = False
+         for comTrial in range(numComTries):
+            comLines = readTextFile(comFile, returnOnErr = True)
+            if isinstance(comLines, str):
+               if comTrial < numComTries - 1:
+                  time.sleep(1.)
+                  continue
+               prnstr(comLines)
+               erredList.append(comFile)
+               comReadFailed = True
+               break
+
+            for line in comLines:
+               if 'alignframes -Standard' in line:
+                  break
+            else:     # ELSE ON FOR
+               if comTrial < numComTries - 1:
+                  time.sleep(1.)
+                  continue
+               prnstr(comFile + ' does not have an alignframes command in it; ' + \
+                      'skipping it')
+               erredList.append(comFile)
+               comReadFailed = True
+
+         if comReadFailed:
+            continue
+
+
+         # Get stack name if any, or relative path if doing an mdoc
+         stack = optionValue(comLines, 'InputFile', STRING_VALUE)
+         mdocFile = optionValue(comLines, 'MetadataFile', STRING_VALUE)
+         outputFile = optionValue(comLines, 'OutputImageFile', STRING_VALUE)
+         defectPath = optionValue(comLines, 'CameraDefectFile', STRING_VALUE)
+         gainPath = optionValue(comLines, 'GainReferenceFile', STRING_VALUE)
+         if not stack and not mdocFile or not outputFile:
+            prnstr(comFile + ' is missing an InputFile, MetadataFile, or ' + \
+                   'OutputImageFile option; skipping it')
+            erredList.append(comFile)
+            continue
+
+         outName = os.path.basename(outputFile)
+         if outputDir:
+            outName = outputDir + '/' + outName
+         (stackRoot, ext) = os.path.splitext(comFile)
+         if runEnteredCommand(runBefore, comFile, 'before'):
+            continue
+         if mdocFile:
+            (mdocRoot, ext) = os.path.splitext(os.path.basename(mdocFile))
+            (mdocRoot, ext) = os.path.splitext(mdocRoot)
+            relPath =  optionValue(comLines, 'PathToFramesInMdoc', STRING_VALUE)
+
+         # Modify and run the file
+         if editAndRunComFile(comFile):
+            continue
+         if runEnteredCommand(runAfter, comFile, 'after'):
+            continue
+         if numProcDirs:
+            procDirInd = (procDirInd + 1) % numProcDirs
+

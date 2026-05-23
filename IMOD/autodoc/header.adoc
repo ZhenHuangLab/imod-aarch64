@@ -1,0 +1,104 @@
+Version = 1.0
+Pip = 1
+
+[Field = InputFile]
+short = input
+type = FNM
+usage = Input image file
+tooltip = 
+manpage = Input image file.  All nonoption arguments will be treated as input
+files.
+
+[Field = Size]
+short = size
+type = B
+usage = Output image dimensions
+tooltip = 
+manpage = 
+
+[Field = Mode]
+short = mode
+type = B
+usage = Output data mode
+tooltip = 
+manpage = 
+
+[Field = PixelSize]
+short = pixel
+type = B
+usage = Output pixel spacing in angstroms
+tooltip = 
+manpage = 
+
+[Field = Origin]
+short = origin
+type = B
+usage = Output origin values
+tooltip = 
+manpage = 
+
+[Field = Minimum]
+short = minimum
+type = B
+usage = Output minimum value of data
+tooltip = 
+manpage = 
+
+[Field = Maximum]
+short = maximum
+type = B
+usage = Output maximum value of data
+tooltip = 
+manpage = 
+
+[Field = Mean]
+short = mean
+type = B
+usage = Output mean value of data
+tooltip = 
+manpage = 
+
+[Field = RootMeanSquare]
+short = rms
+type = B
+usage = Output RMS deviation from mean of the data
+tooltip = 
+manpage = Output the RMS value (root-mean-square deviation from the mean)
+stored in the header.
+
+[Field = VolumeNumber]
+short = volume
+type = I
+usage = Volume number (from 1) of multi-volume HDF file to output header for
+tooltip = 
+manpage = For an HDF file with multiple volumes, the program will report the
+number of volumes and output the header of the first.  Use this option to
+specify a different volume number to see the header of, numbered from 1.
+
+[Field = Brief]
+short = brief
+type = B
+usage = Output brief header
+tooltip = 
+manpage = Output brief header with dimensions, pixel size, mode, minimum,
+maximum, and mean value, the first and last title, and a one-line summary of
+items in a SerialEM extended header if any.  This is the only way
+to get a brief header output; the IMOD_BRIEF_HEADER environment variable is
+ignored when running this program.
+
+[Field = FullSizeOfEERFile]
+short = eer
+type = B
+usage = Output full super-resolution size and number of frames in an EER file
+tooltip = 
+manpage = Output the full super-resolution size and the number of frames in an
+EER file, overriding settings of the environment variables
+IMOD_READ_EER_SUPER_RES and IMOD_READ_EER_Z_SUMMING.  By default, the program
+will output whatever size these variable settings produce.
+
+[Field = usage]
+short = help
+type = B
+usage = Print help output
+tooltip = 
+manpage = 

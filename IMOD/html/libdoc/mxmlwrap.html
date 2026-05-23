@@ -1,0 +1,21 @@
+<html><head><title>Mxml Wrapper Module</title></head>
+<body>
+<A NAME = "TOP"></A>
+<H2  align="center">Mxml Wrapper Module</H2>
+The mxmlwrap module contains functions for accessing and manipulating known
+elements of an XML data structure through the Mini-XML library, included in
+IMOD as libimxml.  The module can hold multiple XML data structures, accessed
+by their indexes in all functions.  There is no "current" XML set, unlike in
+the autodoc module, so different structures can thus be accessed by different
+threads.  All data are accessed via node indexes that are stored in lists.
+When an element is added, its index is added to the list.  When nodes are
+looked up by name under a given node, their indexes are added to the list.
+<P>
+There are no Fortran wrappers yet.
+<P>
+Header to include: mxmlwrap.h
+<P>
+LIST FUNCTIONS FROM mxmlwrap.c
+<P>
+DESCRIBE FUNCTIONS FROM mxmlwrap.c
+</body>

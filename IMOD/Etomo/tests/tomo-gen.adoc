@@ -1,0 +1,889 @@
+Version = 1.2
+
+[function = main]
+mb.parallel-processing=-
+if.var.stop-after-final-alignment.end=
+[[if = plugin]]
+  run.function.plugin=
+[[]]  
+[[if = run_sirt]]
+  if.var.quick.return=
+  run.function.sirt=
+[[]]
+run.function.filter-trials=
+run.function.tilt=
+if.var.test-gui.run.function.test-files=
+if.var.build.bn.done=
+if.var.build.return=
+bn.done=
+
+
+[function = plugin]
+# Go into the demo plugin and update display and advanced.  Then go back to the regular
+# parts of the dialog.  No need to test the demo.  Just make sure the regular code can
+# recover from it.
+rb.demo=
+cb.modify-sleep-time=
+mb.demo=A
+rb.back-projection=
+
+
+[function = assert-variable-tilt-values]
+[[if = patch-tracking]]
+  run.function.assert-variable-tilt-values-patch-tracking=
+[[]]
+[[ifnot = patch-tracking]]
+  if.not.var.simple-align.assert.tf.tomogram-thickness-in-z=%{tomogram-thickness-in-z}
+  if.var.simple-align.assert.tf.tomogram-thickness-in-z=%{z-simple-align}
+  if.not.var.simple-align.assert.tf.x-axis-tilt=%{x-axis-tilt}
+  if.var.simple-align.assert.tf.x-axis-tilt=%{x-axis-tilt-simple-align}
+[[]]
+
+
+[function = assert-variable-tilt-values-patch-tracking]
+[[if = montage]]
+  assert.tf.x-axis-tilt=%{x-axis-tilt-patch-tracking}
+  assert.tf.tomogram-thickness-in-z=%{tomogram-thickness-in-z-patch-tracking}
+[[]]
+if.var.montage.return=
+#BB B axis was automatically generated
+if.var.axis.return=b
+assert.tf.x-axis-tilt=%{x-axis-tilt-patch-tracking}
+assert.tf.tomogram-thickness-in-z=%{tomogram-thickness-in-z-patch-tracking}
+
+
+
+[function = test-files]
+if.var.fidless.return=
+assert.contains.file=tilt%{axis}.com|EXCLUDELIST*1
+#Ignore tilt_sirt.com - unpredictible file
+if.var.run_sirt.assert.contains.file=tilt%{axis}_for_sirt.com|EXCLUDELIST*1
+
+
+[function = tilt]
+rb.back-projection=
+# Different name output file with single axis:  dataset_full.rec
+set.var.tomo-ext=
+if.var.single.set.var.tomo-ext=_full
+mb.tilt=+
+[[if = test-gui]]
+	# check values
+	assert.rb.back-projection=on
+	assert.rb.sirt=off
+	assert.cb.parallel-processing=on
+	assert.cb.take-logarithm-of-densities-with-offset=on
+	assert.tf.take-logarithm-of-densities-with-offset=0.0
+	run.function.assert-variable-tilt-values=
+	# Radial Filtering
+	assert.rb.standard-ramp-function=on
+	assert.rb.use-sirt-like-filter-equivalent-to=off
+	assert.tf.use-sirt-like-filter-equivalent-to=
+	# High-Frequency Filtering
+	assert.rb.standard-gaussian,-cutoff=on
+	assert.tf.standard-gaussian,-cutoff=0.35
+  assert.tf.falloff=0.035
+  assert.rb.hamming-like-filter-starting-from=off
+  assert.tf.hamming-like-filter-starting-from=
+  #
+  assert.cb.use-local-alignments=on
+	assert.cb.use-z-factors=on
+	assert.bn.generate-tomogram=off
+	mb.tilt.1=A
+	assert.tf.logarithm-density-scaling-factor=%{output-density-scaling-factor}
+	assert.tf.offset=0.0
+	assert.tf.linear-density-scaling-factor=%{linear-density-scaling-factor}
+	assert.tf.offset.1=0.0
+	assert.tf.tomogram-width-in-x=
+	assert.tf.tomogram-height-in-y=
+	assert.tf.y-shift=
+	assert.tf.x-shift=0.0
+	if.not.var.fidless.assert.tf.z-shift=0.0
+	if.var.fidless.assert.tf.z-shift=6.6
+  if.not.var.fidless.assert.tf.tilt-angle-offset=0.0
+  if.var.fidless.assert.tf.tilt-angle-offset=-0.03
+  assert.cb.super-sample-by=off
+  assert.sp.super-sample-by=2
+  assert.cb.super-sample-input-also=off
+  # Radial Filtering
+  assert.rb.use-'exact-filter'-functions-with-'object-size'-of=off
+  assert.tf.use-'exact-filter'-functions-with-'object-size'-of=
+  #
+	assert.tf.extra-views-to-exclude=
+	mb.tilt.1=B
+	# check enabled/disabled
+	assert.enabled.cb.parallel-processing=
+	assert.enabled.cb.take-logarithm-of-densities-with-offset=
+	assert.enabled.tf.take-logarithm-of-densities-with-offset=
+	assert.enabled.tf.tomogram-thickness-in-z=
+	assert.enabled.tf.x-axis-tilt=
+	assert.enabled.tf.standard-gaussian,-cutoff=
+	assert.enabled.tf.falloff=
+  # Radial Filtering
+  assert.enabled.rb.standard-ramp-function=
+  assert.enabled.rb.use-sirt-like-filter-equivalent-to=
+  assert.disabled.tf.use-sirt-like-filter-equivalent-to=
+  # High-Frequency Filtering
+  assert.enabled.rb.standard-gaussian,-cutoff=
+  assert.enabled.tf.standard-gaussian,-cutoff=
+  assert.enabled.tf.falloff=
+  assert.enabled.rb.hamming-like-filter-starting-from=
+  assert.disabled.tf.hamming-like-filter-starting-from=
+  #
+	if.not.var.fidless.assert.enabled.cb.use-local-alignments=
+	if.var.fidless.assert.disabled.cb.use-local-alignments=
+	if.not.var.fidless.assert.enabled.cb.use-z-factors=
+	if.var.fidless.assert.disabled.cb.use-z-factors=
+	assert.enabled.bn.generate-tomogram=
+	assert.enabled.bn.view-tomogram-in-3dmod=
+	assert.enabled.bn.delete-intermediate-image-stacks=
+	mb.tilt.1=A
+	assert.enabled.tf.logarithm-density-scaling-factor=
+	assert.enabled.tf.offset=
+	assert.disabled.tf.linear-density-scaling-factor=
+	assert.disabled.tf.offset.1=
+	assert.enabled.tf.tomogram-width-in-x=
+	assert.enabled.tf.tomogram-height-in-y=
+	assert.enabled.tf.y-shift=
+	assert.enabled.tf.x-shift=
+	assert.enabled.tf.z-shift=
+	assert.enabled.tf.tilt-angle-offset=
+	assert.enabled.cb.super-sample-by=
+	assert.disabled.sp.super-sample-by=
+	assert.disabled.cb.super-sample-input-also=
+	# Radial Filtering
+	assert.enabled.rb.use-'exact-filter'-functions-with-'object-size'-of=
+  assert.disabled.tf.use-'exact-filter'-functions-with-'object-size'-of=
+  #
+	assert.enabled.tf.extra-views-to-exclude=
+	mb.tilt.1=B
+  #check behavior
+  cb.take-logarithm-of-densities-with-offset=off
+  assert.disabled.tf.take-logarithm-of-densities-with-offset=
+  mb.tilt.1=A
+  assert.disabled.tf.logarithm-density-scaling-factor=
+  assert.disabled.tf.offset=
+  assert.enabled.tf.linear-density-scaling-factor=
+  assert.enabled.tf.offset.1=
+  mb.tilt.1=B
+  cb.take-logarithm-of-densities-with-offset=on
+  assert.enabled.tf.take-logarithm-of-densities-with-offset=
+  mb.tilt.1=A
+  cb.super-sample-by=on
+  assert.enabled.sp.super-sample-by=
+  assert.enabled.cb.super-sample-input-also=
+  cb.super-sample-by=off
+  # Radial Filtering
+  rb.use-sirt-like-filter-equivalent-to=
+  assert.enabled.tf.use-sirt-like-filter-equivalent-to=
+  # High-Frequency Filtering
+  rb.hamming-like-filter-starting-from=
+  assert.disabled.tf.standard-gaussian,-cutoff=
+  assert.disabled.tf.falloff=
+  assert.enabled.tf.hamming-like-filter-starting-from=
+  rb.standard-gaussian,-cutoff=
+  #
+  mb.tilt.1=A
+  assert.enabled.tf.logarithm-density-scaling-factor=
+  assert.enabled.tf.offset=
+  assert.disabled.tf.linear-density-scaling-factor=
+  assert.disabled.tf.offset.1=
+  # Radial Filtering
+  rb.use-'exact-filter'-functions-with-'object-size'-of=
+  assert.enabled.tf.use-'exact-filter'-functions-with-'object-size'-of=
+  rb.standard-ramp-function=
+  #
+	mb.tilt.1=B
+	#test save
+	# Radial Filtering
+	#test com file
+	rb.use-sirt-like-filter-equivalent-to=
+	tf.use-sirt-like-filter-equivalent-to=3
+	save=
+	assert.contains.file=tilt%{axis}.com|FakeSIRTiterations*3
+	#test edf file
+	rb.standard-ramp-function=
+	save=
+	assert.contains.file=%{dataset}.edf|Setup.Gen.%{cap-axis-key}.FakeSIRTiterations=3
+	#reset
+	rb.use-sirt-like-filter-equivalent-to=
+	tf.use-sirt-like-filter-equivalent-to=
+	rb.standard-ramp-function=
+	# High-Frequency Filtering
+	#test com file
+	tf.standard-gaussian,-cutoff=0.47
+	tf.falloff=0.047
+	save=
+	assert.contains.file=tilt%{axis}.com|RADIAL*0.47*0.047
+	#test edf file
+	rb.hamming-like-filter-starting-from=
+	save=
+	assert.contains.file=%{dataset}.edf|Setup.Gen.%{cap-axis-key}.RadialRadius=0.47
+	assert.contains.file=%{dataset}.edf|Setup.Gen.%{cap-axis-key}.RadialSigma=0.047
+	#test com file
+	tf.hamming-like-filter-starting-from=0.9
+	save=
+	assert.contains.file=tilt%{axis}.com|HammingLikeFilter*0.9
+	#test edf file
+  rb.standard-gaussian,-cutoff=
+  save=
+	assert.contains.file=%{dataset}.edf|Setup.Gen.%{cap-axis-key}.HammingLikeFilter=0.9
+	#reset
+	tf.standard-gaussian,-cutoff=0.35
+  tf.falloff=0.035
+  rb.hamming-like-filter-starting-from=
+  tf.hamming-like-filter-starting-from=
+  rb.standard-gaussian,-cutoff=
+  mb.tilt.1=A
+  #test com file
+  # Radial Filtering
+  rb.use-'exact-filter'-functions-with-'object-size'-of=
+  tf.use-'exact-filter'-functions-with-'object-size'-of=8
+  save=
+  assert.contains.file=tilt%{axis}.com|ExactFilterSize 8
+  #test edf file
+  rb.standard-ramp-function=
+  assert.contains.file=%{dataset}.edf|Setup.Gen.%{cap-axis-key}.ExactFilterSize=8
+  #reset
+  rb.use-'exact-filter'-functions-with-'object-size'-of=
+  tf.use-'exact-filter'-functions-with-'object-size'-of=
+  rb.standard-ramp-function=
+  mb.tilt.1=B
+[[]]
+# test trial tilt
+run.function.trial-tilt=
+run.function.setup-patch-tracking=
+# run with parallel processing
+[[if = test-gui]]
+  #test field validation
+  tf.take-logarithm-of-densities-with-offset=0.0abc
+  bn.generate-tomogram=
+  popup.field-validation-failed=OK
+  assert.disabled.bn.kill-process=
+  tf.take-logarithm-of-densities-with-offset=0.0
+[[]]
+cb.parallel-processing=on
+bn.generate-tomogram=
+wait.process.processchunks-tilt%{axis}=done
+if.var.build.return=
+# check files
+assert.exists.file=tilt%{axis}.com
+assert.exists.file=tilt%{axis}-start.com
+assert.exists.file=tilt%{axis}-finish.com
+assert.exists.file=tilt%{axis}.log
+assert.exists.file=tilt%{axis}-start.log
+assert.exists.file=tilt%{axis}-finish.log
+assert.exists.file=processchunks%{axis}.out
+assert.exists.image-file=%{dataset}%{tomo-ext}%{axis}.rec
+# check comscript
+[[ifnot = fidless]]
+	run.function.same-file=
+[[]]
+run.function.without-processchunks=
+# run agains with parallel processing
+cb.parallel-processing=on
+bn.generate-tomogram=
+wait.process.processchunks-tilt%{axis}=done
+# check files
+assert.exists.file=tilt%{axis}.log~
+assert.exists.file=processchunks%{axis}.out~
+assert.exists.image-file=%{dataset}%{tomo-ext}%{axis}.rec~
+assert.exists.file=tilt%{axis}.com
+assert.exists.file=tilt%{axis}-start.com
+assert.exists.file=tilt%{axis}-finish.com
+assert.exists.file=tilt%{axis}.log
+assert.exists.file=tilt%{axis}-start.log
+assert.exists.file=tilt%{axis}-finish.log
+assert.exists.file=processchunks%{axis}.out
+assert.exists.image-file=%{dataset}%{tomo-ext}%{axis}.rec
+# run 3dmod
+if.not.var.clear-view.bn.view-tomogram-in-3dmod=
+# check values
+assert.bn.generate-tomogram=on
+# clean up
+bn.delete-intermediate-image-stacks=
+
+[function = without-processchunks]
+if.var.only-processchunks-tilt.return=
+# run again without parallel processing
+cb.parallel-processing=off
+bn.generate-tomogram=
+wait.process.calculating-tomogram=done
+# check files
+assert.exists.file=tilt%{axis}.log~
+assert.exists.image-file=%{dataset}%{tomo-ext}%{axis}.rec~
+assert.exists.file=tilt%{axis}.com
+assert.exists.file=tilt%{axis}.log
+assert.exists.image-file=%{dataset}%{tomo-ext}%{axis}.rec
+# run again without parallel processing
+bn.generate-tomogram=
+wait.process.calculating-tomogram=done
+# check files
+assert.exists.file=tilt%{axis}.log~
+assert.exists.image-file=%{dataset}%{tomo-ext}%{axis}.rec~
+assert.exists.file=tilt%{axis}.com
+assert.exists.file=tilt%{axis}.log
+assert.exists.image-file=%{dataset}%{tomo-ext}%{axis}.rec
+cb.parallel-processing=on
+
+
+[function = setup-patch-tracking]
+if.not.var.patch-tracking.return=
+if.equals.var.dataset.return=BB
+tf.tomogram-thickness-in-z=%{tomogram-thickness-in-z-patch-tracking}
+
+[function = same-file]
+[[ifnot = simple-align]]
+	#if.not.var.patch-tracking.assert.same.file=tilt%{axis}.com
+	if.not.var.patch-tracking.run.function.test-tilt-com=
+[[]]
+
+[function = test-tilt-com]
+assert.contains.file=tilt%{axis}.com|$tilt*-StandardInput
+assert.contains.file=tilt%{axis}.com|LOCALFILE*%{dataset}%{axis}local.xf
+assert.contains.file=tilt%{axis}.com|TILTFILE*%{dataset}%{axis}.tlt
+assert.contains.file=tilt%{axis}.com|XTILTFILE*%{dataset}%{axis}.xtilt
+assert.contains.file=tilt%{axis}.com|ZFACTORFILE*%{dataset}%{axis}.zfac
+
+
+[function = trial-tilt]
+if.var.build.return=
+mb.tilt.1=A
+mb.trial-tilt=+
+[[if = test-gui]]
+	# check values
+	assert.cbb.trial-tomogram-filename=
+	# check enabled/disabled
+	assert.enabled.cbb.trial-tomogram-filename=
+	assert.enabled.bn.generate-trial-tomogram=
+	assert.enabled.bn.view-trial-in-3dmod=
+	assert.enabled.bn.use-current-trial-tomogram=
+[[]]
+# run with parallel processing
+cb.parallel-processing=on
+mb.parallel-processing=-
+cbb.trial-tomogram-filename=trial%{axis}
+bn.generate-trial-tomogram=
+wait.process.processchunks-tilt%{axis}=done
+# check files
+assert.exists.file=tilt%{axis}.com
+assert.exists.file=tilt%{axis}-start.com
+assert.exists.file=tilt%{axis}-finish.com
+assert.exists.file=tilt%{axis}.log
+assert.exists.file=tilt%{axis}-start.log
+assert.exists.file=tilt%{axis}-finish.log
+assert.exists.file=processchunks%{axis}.out
+assert.exists.file=trial%{axis}
+# run with parallel processing
+cb.parallel-processing=on
+bn.generate-trial-tomogram=
+wait.process.processchunks-tilt%{axis}=done
+# check files
+assert.exists.file=tilt%{axis}.log~
+assert.exists.file=processchunks%{axis}.out~
+assert.exists.file=trial%{axis}~
+assert.exists.file=tilt%{axis}.com
+assert.exists.file=tilt%{axis}-start.com
+assert.exists.file=tilt%{axis}-finish.com
+assert.exists.file=tilt%{axis}.log
+assert.exists.file=tilt%{axis}-start.log
+assert.exists.file=tilt%{axis}-finish.log
+assert.exists.file=processchunks%{axis}.out
+assert.exists.file=trial%{axis}
+# run 3dmod
+if.not.var.clear-view.bn.view-trial-in-3dmod=
+# use
+bn.use-current-trial-tomogram=
+# check files
+assert.not-exists.file=trial%{axis}
+assert.exists.image-file=%{dataset}%{tomo-ext}%{axis}.rec
+# check values
+assert.bn.use-current-trial-tomogram=on
+#
+mb.trial-tilt=-
+mb.tilt.1=B
+mb.parallel-processing=+
+
+
+
+[function = filter-trials]
+#Test with Filter trials radio button selected.
+rb.filter-trials=
+[[if = test-gui]]
+  #
+  #check default settings:
+  #
+  #check values
+  assert.rb.sirt-like-filter-with-iterations=on
+  assert.tf.sirt-like-filter-with-iterations=
+  assert.rb.'exact-filter'-function-with-'object-sizes'=off
+  assert.tf.'exact-filter'-function-with-'object-sizes'=
+  assert.rb.standard-gaussian-with-cutoffs=off
+  assert.tf.standard-gaussian-with-cutoffs=
+  assert.tf.falloffs=
+  assert.rb.hamming-like-filter-with-start-frequencies=off
+  assert.tf.hamming-like-filter-with-start-frequencies=
+  assert.tf.tomogram-width-in-x=
+  assert.tf.x-shift=
+  assert.tf.tomogram-height-in-y=
+  assert.tf.y-shift=
+  assert.tf.tomogram-thickness-in-z=
+  assert.tf.z-shift=
+  #check enabled
+  assert.enabled.rb.sirt-like-filter-with-iterations=
+  assert.enabled.tf.sirt-like-filter-with-iterations=
+  assert.enabled.rb.'exact-filter'-function-with-'object-sizes'=
+  assert.disabled.tf.'exact-filter'-function-with-'object-sizes'=
+  assert.enabled.rb.standard-gaussian-with-cutoffs=
+  assert.disabled.tf.standard-gaussian-with-cutoffs=
+  assert.disabled.tf.falloffs=
+  assert.enabled.rb.hamming-like-filter-with-start-frequencies=
+  assert.disabled.tf.hamming-like-filter-with-start-frequencies=
+  assert.enabled.tf.tomogram-width-in-x=
+  assert.enabled.tf.x-shift=
+  assert.enabled.tf.tomogram-height-in-y=
+  assert.enabled.tf.y-shift=
+  assert.enabled.tf.tomogram-thickness-in-z=
+  assert.enabled.tf.z-shift=
+  #
+  #check behavior
+  #
+  rb.'exact-filter'-function-with-'object-sizes'=
+  assert.disabled.tf.sirt-like-filter-with-iterations=
+  assert.enabled.tf.'exact-filter'-function-with-'object-sizes'=
+  rb.standard-gaussian-with-cutoffs=
+  assert.enabled.tf.standard-gaussian-with-cutoffs=
+  assert.enabled.tf.falloffs=
+  rb.hamming-like-filter-with-start-frequencies=
+  assert.enabled.tf.hamming-like-filter-with-start-frequencies=
+  run.function.reset-to-defalt-filter-trials=
+[[]]
+run.function.filter-trials-tilt-parameters=
+[[ifnot = build]]
+  tf.tomogram-width-in-x=200
+  tf.tomogram-height-in-y=200
+  tf.tomogram-thickness-in-z=30
+  #check run permutations
+  tf.sirt-like-filter-with-iterations=5,10,20
+  bn.run-filter-trials=
+  wait.process.processchunks-tilt_mulfil%{axis}=done
+  assert.exists.image-file=%{dataset}%{axis}_slfi05.mrc
+  assert.exists.image-file=%{dataset}%{axis}_slfi10.mrc
+  assert.exists.image-file=%{dataset}%{axis}_slfi20.mrc
+  rb.'exact-filter'-function-with-'object-sizes'=
+  tf.'exact-filter'-function-with-'object-sizes'=100,200
+  bn.run-filter-trials=
+  wait.process.processchunks-tilt_mulfil%{axis}=done
+  assert.exists.image-file=%{dataset}%{axis}_efos100.mrc
+  assert.exists.image-file=%{dataset}%{axis}_efos200.mrc
+  rb.standard-gaussian-with-cutoffs=
+  tf.standard-gaussian-with-cutoffs=.1,.15,.2
+  bn.run-filter-trials=
+  wait.process.processchunks-tilt_mulfil%{axis}=done
+  assert.exists.image-file=%{dataset}%{axis}_gfc0.100-f0.010.mrc
+  assert.exists.image-file=%{dataset}%{axis}_gfc0.150-f0.015.mrc
+  assert.exists.image-file=%{dataset}%{axis}_gfc0.200-f0.020.mrc
+  rb.hamming-like-filter-with-start-frequencies=
+  tf.hamming-like-filter-with-start-frequencies=.05,.1
+  bn.run-filter-trials=
+  wait.process.processchunks-tilt_mulfil%{axis}=done
+  assert.exists.image-file=%{dataset}%{axis}_hlfs0.050.mrc
+  assert.exists.image-file=%{dataset}%{axis}_hlfs0.100.mrc
+  run.function.reset-to-defalt-filter-trials=
+[[]]
+
+
+
+
+
+[function = reset-to-defalt-filter-trials]
+rb.filter-trials=
+rb.'exact-filter'-function-with-'object-sizes'=
+tf.'exact-filter'-function-with-'object-sizes'=
+rb.standard-gaussian-with-cutoffs=
+tf.standard-gaussian-with-cutoffs=
+tf.falloffs=
+rb.standard-gaussian-with-cutoffs=
+tf.standard-gaussian-with-cutoffs=
+tf.falloffs=
+rb.hamming-like-filter-with-start-frequencies=
+tf.hamming-like-filter-with-start-frequencies=
+rb.sirt-like-filter-with-iterations=
+tf.sirt-like-filter-with-iterations=
+tf.tomogram-width-in-x=
+tf.tomogram-height-in-y=
+tf.tomogram-thickness-in-z=
+
+
+[function = filter-trials-tilt-parameters]
+#Test with Filter trials radio button selected.
+rb.filter-trials=
+[[if = test-gui]]
+  #
+  #check default settings:
+  #
+  #check existance
+  mb.tilt-parameters=+
+  mb.tilt-parameters.1=B
+  assert.exists.rb.use-'exact-filter'-functions-with-'object-size'-of=
+  #check enabled
+  assert.disabled.rb.standard-ramp-function=
+  assert.disabled.rb.use-sirt-like-filter-equivalent-to=
+  assert.disabled.tf.use-sirt-like-filter-equivalent-to=
+  assert.disabled.rb.use-'exact-filter'-functions-with-'object-size'-of=
+  assert.disabled.tf.use-'exact-filter'-functions-with-'object-size'-of=
+  assert.enabled.rb.standard-gaussian,-cutoff=
+  assert.enabled.tf.standard-gaussian,-cutoff=
+  assert.enabled.tf.falloff=
+  assert.enabled.rb.hamming-like-filter-starting-from=
+  assert.disabled.tf.hamming-like-filter-starting-from=
+  #
+  #check behavior
+  #
+  rb.standard-gaussian-with-cutoffs=
+  assert.enabled.rb.standard-ramp-function=
+  assert.enabled.rb.use-sirt-like-filter-equivalent-to=
+  assert.disabled.tf.use-sirt-like-filter-equivalent-to=
+  assert.enabled.rb.use-'exact-filter'-functions-with-'object-size'-of=
+  assert.disabled.tf.use-'exact-filter'-functions-with-'object-size'-of=
+  assert.disabled.rb.standard-gaussian,-cutoff=
+  assert.disabled.tf.standard-gaussian,-cutoff=
+  assert.disabled.tf.falloff=
+  assert.disabled.rb.hamming-like-filter-starting-from=
+  #
+  rb.use-sirt-like-filter-equivalent-to=
+  assert.enabled.tf.use-sirt-like-filter-equivalent-to=
+  #
+  rb.'exact-filter'-function-with-'object-sizes'=
+  assert.disabled.tf.use-sirt-like-filter-equivalent-to=
+  rb.hamming-like-filter-with-start-frequencies=
+  rb.standard-ramp-function=
+  run.function.reset-to-defalt-filter-trials=
+[[]]
+
+
+[function = sirt]
+rb.sirt=
+#test tilt in sirt
+[[if = test-gui]]
+  mb.tilt-parameters=+
+  # check existence
+  mb.tilt-parameters.1=A
+  assert.exists.tf.logarithm-density-scaling-factor=
+  assert.exists.tf.offset=
+  assert.exists.tf.linear-density-scaling-factor=
+  assert.exists.tf.offset.1=
+[[]]
+mb.tilt-parameters=-
+[[if = test-gui]]
+  # check values
+  assert.cb.reconstruct-subarea=off
+  assert.tf.size-in-x-and-y=
+  assert.tf.offset-in-y=
+  assert.tf.standard-gaussian,-cutoff=0.4
+  assert.tf.falloff=0.035
+  assert.tf.iteration-#'s-to-retain=
+  assert.cb.scale-retained-volumes-to-integers=off
+  assert.cb.do-not-make-vertical-slice-output-files-used-for-resuming=off
+  assert.cb.delete-existing-reconstructions-after-starting-point=off
+  assert.rb.start-from-beginning=on
+  assert.rb.resume-from-last-iteration=off
+  assert.rb.go-back,-resume-from-iteration=off
+  assert.cbb.go-back,-resume-from-iteration=
+  assert.bn.run-sirt=off
+  assert.bn.use-sirt-output-file=off
+  mb.sirt.1=A
+  assert.tf.flat-filter-fraction=
+  mb.sirt.1=B
+  # check enabled/disabled
+  assert.enabled.cb.reconstruct-subarea=
+  assert.disabled.tf.size-in-x-and-y=
+  assert.disabled.tf.offset-in-y=
+  assert.enabled.tf.standard-gaussian,-cutoff=
+  assert.enabled.tf.falloff=
+  assert.enabled.tf.iteration-#'s-to-retain=
+  assert.enabled.cb.scale-retained-volumes-to-integers=
+  assert.enabled.cb.do-not-make-vertical-slice-output-files-used-for-resuming=
+  assert.enabled.cb.delete-existing-reconstructions-after-starting-point=
+  assert.enabled.rb.start-from-beginning=
+  assert.disabled.rb.resume-from-last-iteration=
+  assert.disabled.rb.go-back,-resume-from-iteration=
+  assert.disabled.cbb.go-back,-resume-from-iteration=
+  assert.enabled.bn.run-sirt=
+  assert.enabled.bn.view-tomogram-in-3dmod=
+  assert.enabled.bn.use-sirt-output-file=
+  mb.sirt.1=A
+  assert.enabled.tf.flat-filter-fraction=
+  mb.sirt.1=B
+  #
+  cb.reconstruct-subarea=on
+  assert.enabled.tf.size-in-x-and-y=
+  assert.enabled.tf.offset-in-y=
+  assert.disabled.rb.resume-from-last-iteration=
+  assert.disabled.rb.go-back,-resume-from-iteration=
+  cb.reconstruct-subarea=off
+[[]]
+mb.tilt-parameters=+
+cb.use-the-gpu=on
+mb.tilt-parameters=-
+[[if = single]]
+  set.var.full-ext=_full
+  return.var.full-ext=
+[[]]
+[[if = dual]]
+  set.var.full-ext=
+  return.var.full-ext=
+[[]]
+# subarea
+[[if = montage]]
+  run.function.run-sirt-subarea=
+[[]]
+[[ifnot = montage]]
+  if.var.simple-align.return=
+  run.function.run-sirt-full=
+  # create a single output file and use tomogram
+  cb.scale-retained-volumes-to-integers=off
+  cb.delete-existing-reconstructions-after-starting-point=on
+  rb.start-from-beginning=
+  tf.iteration-#'s-to-retain=1
+  # create the single rec to be opened, etc
+  cb.reconstruct-subarea=off
+  bn.run-sirt=
+  wait.process.processchunks-tilt%{axis}_sirt=done
+  if.not.var.clear-view.bn.view-tomogram-in-3dmod=
+  bn.use-sirt-output-file=
+  popup.etomo-question=Yes
+[[]]
+[[if = simple-align]]
+  if.var.montage.return=
+  run.function.run-sirt-both=
+[[]]
+# put things back the way they where for tilt
+mb.tilt-parameters=+
+cb.use-the-gpu=off
+mb.tilt-parameters=-
+rb.back-projection=
+
+
+[function = run-sirt-full]
+cb.reconstruct-subarea=off
+cb.scale-retained-volumes-to-integers=on
+cb.delete-existing-reconstructions-after-starting-point=on
+tf.iteration-#'s-to-retain=1,2
+bn.run-sirt=
+wait.process.processchunks-tilt%{axis}_sirt=done
+[[if = test-gui]]
+  assert.cbb.go-back,-resume-from-iteration=2
+  assert.enabled.rb.resume-from-last-iteration=
+  assert.enabled.rb.go-back,-resume-from-iteration=
+  assert.exists.file=tilt%{axis}.com
+  assert.exists.file=sirtsetup%{axis}.com
+  assert.exists.file=tilt%{axis}_sirt-finish.com
+  if.var.run_sirt.assert.exists.file=tilt%{axis}_for_sirt.com
+  assert.exists.file=sirtsetup%{axis}.log
+  if.not.var.fidless.assert.exists.image-file=%{dataset}%{axis}.alilog10
+  assert.exists.file=tilt%{axis}_sirt.log
+  assert.exists.image-file=%{dataset}%{axis}%{full-ext}.sint01
+  assert.exists.image-file=%{dataset}%{axis}%{full-ext}.srec02
+  assert.exists.image-file=%{dataset}%{axis}%{full-ext}.sint02
+  assert.exists.file=tilt%{axis}_sirt-finish.log
+  assert.exists.file=processchunks%{axis}.out
+[[]]
+cb.delete-existing-reconstructions-after-starting-point=off
+tf.iteration-#'s-to-retain=3
+rb.resume-from-last-iteration=
+bn.run-sirt=
+wait.process.processchunks-tilt%{axis}_sirt=done
+[[if = test-gui]]
+  assert.cbb.go-back,-resume-from-iteration=3
+  assert.enabled.rb.resume-from-last-iteration=
+  assert.enabled.rb.go-back,-resume-from-iteration=
+  assert.exists.file=sirtsetup%{axis}.log~
+  assert.exists.file=tilt%{axis}_sirt.log~
+  assert.exists.image-file=%{dataset}%{axis}%{full-ext}.sint01
+  assert.exists.image-file=%{dataset}%{axis}%{full-ext}.sint02
+  assert.exists.image-file=%{dataset}%{axis}%{full-ext}.srec03
+  assert.exists.image-file=%{dataset}%{axis}%{full-ext}.sint03
+  assert.exists.file=processchunks%{axis}.out~
+[[]]
+cb.scale-retained-volumes-to-integers=off
+tf.iteration-#'s-to-retain=4
+rb.go-back,-resume-from-iteration=
+bn.run-sirt=
+wait.process.processchunks-tilt%{axis}_sirt=done
+[[if = test-gui]]
+  assert.cbb.go-back,-resume-from-iteration=3
+  assert.enabled.rb.resume-from-last-iteration=
+  assert.enabled.rb.go-back,-resume-from-iteration=
+  assert.enabled.cbb.go-back,-resume-from-iteration=
+  assert.exists.image-file=%{dataset}%{axis}%{full-ext}.sint01
+  assert.exists.image-file=%{dataset}%{axis}%{full-ext}.sint02
+  assert.exists.image-file=%{dataset}%{axis}%{full-ext}.sint03
+  assert.exists.image-file=%{dataset}%{axis}%{full-ext}.srec03
+  assert.exists.image-file=%{dataset}%{axis}%{full-ext}.srec04
+  mb.tilt-parameters=+
+  mb.tilt-parameters.1=A
+  assert.disabled.tf.linear-density-scaling-factor=
+  assert.disabled.tf.offset.1=
+  assert.enabled.tf.tomogram-thickness-in-z=
+  assert.enabled.tf.z-shift=
+  assert.enabled.tf.x-axis-tilt=
+  assert.enabled.tf.tilt-angle-offset=
+  assert.enabled.tf.extra-views-to-exclude=
+  if.not.var.fidless.assert.enabled.cb.use-local-alignments=
+  if.var.fidless.assert.disabled.cb.use-local-alignments=
+  if.not.var.fidless.assert.enabled.cb.use-z-factors=
+  if.var.fidless.assert.disabled.cb.use-z-factors=
+  mb.tilt-parameters.1=B
+  mb.tilt-parameters=-
+[[]]
+rb.start-from-beginning=
+
+
+[function = run-sirt-subarea]
+mb.tilt-parameters=+
+cb.use-local-alignments=off
+cb.use-z-factors=off
+mb.tilt-parameters=-
+cb.reconstruct-subarea=on
+tf.size-in-x-and-y=250,250
+cb.scale-retained-volumes-to-integers=on
+cb.delete-existing-reconstructions-after-starting-point=on
+tf.iteration-#'s-to-retain=1,2
+bn.run-sirt=
+wait.process.processchunks-tilt%{axis}_sirt=done
+[[if = test-gui]]
+  assert.cbb.go-back,-resume-from-iteration=2
+  assert.enabled.rb.resume-from-last-iteration=
+  assert.enabled.rb.go-back,-resume-from-iteration=
+  assert.exists.file=tilt%{axis}.com
+  assert.exists.file=sirtsetup%{axis}.com
+  assert.exists.file=tilt%{axis}_sirt-finish.com
+  if.var.run_sirt.assert.exists.file=tilt%{axis}_for_sirt.com
+  assert.exists.file=sirtsetup%{axis}.log
+  assert.exists.image-file=%{dataset}%{axis}_sub.ali
+  assert.exists.file=tilt%{axis}_sirt.log
+  assert.exists.image-file=%{dataset}%{axis}_sub.sint01
+  assert.exists.image-file=%{dataset}%{axis}_sub.srec02
+  assert.exists.image-file=%{dataset}%{axis}_sub.sint02
+  assert.exists.file=tilt%{axis}_sirt-finish.log
+  assert.exists.file=processchunks%{axis}.out
+[[]]
+cb.delete-existing-reconstructions-after-starting-point=off
+tf.iteration-#'s-to-retain=3
+rb.resume-from-last-iteration=
+bn.run-sirt=
+wait.process.processchunks-tilt%{axis}_sirt=done
+[[if = test-gui]]
+  assert.cbb.go-back,-resume-from-iteration=3
+  assert.enabled.rb.resume-from-last-iteration=
+  assert.enabled.rb.go-back,-resume-from-iteration=
+  assert.exists.file=sirtsetup%{axis}.log~
+  assert.exists.file=tilt%{axis}_sirt.log~
+  assert.exists.image-file=%{dataset}%{axis}_sub.sint01
+  assert.exists.image-file=%{dataset}%{axis}_sub.sint02
+  assert.exists.image-file=%{dataset}%{axis}_sub.srec03
+  assert.exists.image-file=%{dataset}%{axis}_sub.sint03
+  assert.exists.file=processchunks%{axis}.out~
+[[]]
+cb.scale-retained-volumes-to-integers=off
+tf.iteration-#'s-to-retain=4
+rb.go-back,-resume-from-iteration=
+bn.run-sirt=
+wait.process.processchunks-tilt%{axis}_sirt=done
+[[if = test-gui]]
+  assert.cbb.go-back,-resume-from-iteration=3
+  assert.enabled.rb.resume-from-last-iteration=
+  assert.enabled.rb.go-back,-resume-from-iteration=
+  assert.enabled.cbb.go-back,-resume-from-iteration=
+  assert.exists.image-file=%{dataset}%{axis}_sub.sint01
+  assert.exists.image-file=%{dataset}%{axis}_sub.sint02
+  assert.exists.image-file=%{dataset}%{axis}_sub.sint03
+  assert.exists.image-file=%{dataset}%{axis}_sub.srec03
+  assert.exists.image-file=%{dataset}%{axis}_sub.srec04
+[[]]
+rb.start-from-beginning=
+mb.tilt-parameters=+
+cb.use-local-alignments=on
+cb.use-z-factors=on
+mb.tilt-parameters=-
+
+
+[function = run-sirt-both]
+cb.reconstruct-subarea=off
+cb.scale-retained-volumes-to-integers=on
+cb.delete-existing-reconstructions-after-starting-point=on
+tf.iteration-#'s-to-retain=1,3
+bn.run-sirt=
+wait.process.processchunks-tilt%{axis}_sirt=done
+[[if = test-gui]]
+  assert.cbb.go-back,-resume-from-iteration=3
+  assert.enabled.rb.resume-from-last-iteration=
+  assert.enabled.rb.go-back,-resume-from-iteration=
+  assert.exists.file=tilt%{axis}.com
+  assert.exists.file=sirtsetup%{axis}.com
+  assert.exists.file=tilt%{axis}_sirt-finish.com
+  if.var.run_sirt.assert.exists.file=tilt%{axis}_for_sirt.com
+  assert.exists.file=sirtsetup%{axis}.log
+  if.not.var.fidless.assert.exists.image-file=%{dataset}%{axis}.alilog10
+  assert.exists.file=tilt%{axis}_sirt.log
+  assert.exists.image-file=%{dataset}%{axis}%{full-ext}.sint01
+  assert.exists.image-file=%{dataset}%{axis}%{full-ext}.srec03
+  assert.exists.image-file=%{dataset}%{axis}%{full-ext}.sint03
+  assert.exists.file=tilt%{axis}_sirt-finish.log
+  assert.exists.file=processchunks%{axis}.out
+[[]]
+cb.reconstruct-subarea=on
+tf.size-in-x-and-y=250,250
+[[if = test-gui]]
+  assert.disabled.rb.resume-from-last-iteration=
+  assert.disabled.rb.go-back,-resume-from-iteration=
+  assert.cbb.go-back,-resume-from-iteration=
+[[]]
+tf.iteration-#'s-to-retain=2
+rb.resume-from-last-iteration=
+bn.run-sirt=
+wait.process.processchunks-tilt%{axis}_sirt=done
+[[if = test-gui]]
+  assert.enabled.rb.resume-from-last-iteration=
+  assert.enabled.rb.go-back,-resume-from-iteration=
+  # only sees subarea output
+  assert.cbb.go-back,-resume-from-iteration=2
+  if.var.run_sirt.assert.exists.file=tilt%{axis}_for_sirt.com~
+  assert.exists.file=sirtsetup%{axis}.log~
+  assert.exists.file=tilt%{axis}_sirt.log~
+  # full output unchanged
+  assert.exists.image-file=%{dataset}%{axis}%{full-ext}.sint01
+  assert.exists.image-file=%{dataset}%{axis}%{full-ext}.srec03
+  assert.exists.image-file=%{dataset}%{axis}%{full-ext}.sint03
+  assert.exists.image-file=%{dataset}%{axis}_sub.srec02
+  assert.exists.image-file=%{dataset}%{axis}_sub.sint02
+  assert.exists.file=processchunks%{axis}.out~
+[[]]
+cb.reconstruct-subarea=off
+[[if = test-gui]]
+  assert.enabled.rb.resume-from-last-iteration=
+  assert.enabled.rb.go-back,-resume-from-iteration=
+  assert.cbb.go-back,-resume-from-iteration=3
+[[]]
+cb.scale-retained-volumes-to-integers=off
+cb.delete-existing-reconstructions-after-starting-point=off
+tf.iteration-#'s-to-retain=4
+rb.go-back,-resume-from-iteration=
+bn.run-sirt=
+wait.process.processchunks-tilt%{axis}_sirt=done
+[[if = test-gui]]
+  assert.cbb.go-back,-resume-from-iteration=3
+  assert.enabled.rb.resume-from-last-iteration=
+  assert.enabled.rb.go-back,-resume-from-iteration=
+  assert.enabled.cbb.go-back,-resume-from-iteration=
+  assert.exists.image-file=%{dataset}%{axis}%{full-ext}.sint01
+  assert.exists.image-file=%{dataset}%{axis}%{full-ext}.sint02
+  assert.exists.image-file=%{dataset}%{axis}%{full-ext}.sint03
+  assert.exists.image-file=%{dataset}%{axis}%{full-ext}.srec03
+  assert.exists.image-file=%{dataset}%{axis}%{full-ext}.srec04
+  # sub unchanged
+  assert.exists.image-file=%{dataset}%{axis}_sub.srec02
+  assert.exists.image-file=%{dataset}%{axis}_sub.sint02
+[[]]
+rb.start-from-beginning=
+

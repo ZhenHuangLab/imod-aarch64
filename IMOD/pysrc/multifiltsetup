@@ -1,0 +1,266 @@
+#!/usr/bin/env python
+# multifiltsetup - program to set up tilt command files for testing filter values
+#
+# Author: David Mastronarde
+#
+# $Id$
+#
+
+progname = 'multifiltsetup'
+prefix = 'ERROR: ' + progname + ' - '
+
+#### MAIN PROGRAM  ####
+#
+# load System Libraries
+import os, sys, math, re, glob, shutil
+
+#
+# Setup runtime environment
+if os.getenv('IMOD_DIR') != None:
+   sys.path.insert(0, os.path.join(os.environ['IMOD_DIR'], 'pylib'))
+   from imodpy import *
+   addIMODbinIgnoreSIGHUP()
+else:
+   sys.stdout.write(prefix + " IMOD_DIR is not defined!\n")
+   sys.exit(1)
+
+#
+# load IMOD Libraries
+from pip import *
+from pysed import *
+
+# Fallbacks from ../manpages/autodoc2man 3 1 multifiltsetup
+options = ["com:CommandFile:FN:", "fake:FakeSIRTiterations:LI:",
+           "exact:ExactObjectSizes:LI:", "hamming:HammingLikeStarts:FA:",
+           "cutoffs:GaussianCutoffs:FA:", "falloffs:GaussianFalloffs:FA:",
+           "width:WidthInX:I:", "ysize:SizeInY:I:", "thick:ThicknessInZ:I:",
+           "xshift:ShiftInX:F:", "yshift:ShiftInY:I:", "zshift:ShiftInDepth:F:",
+           "help:usage:B:"]
+
+(numOptArgs, numNonOptArgs) = PipReadOrParseOptions(sys.argv, options, \
+                                                    progname, 1, 1, 0)
+
+# Get the com file name, derive a com root name and full com file name, check exists
+comfile = PipGetInOutFile('CommandFile', 0)
+(comfile, comroot) = completeAndCheckComFile(comfile)
+
+# Get options
+width = PipGetInteger('WidthInX', 0)
+ysize = PipGetInteger('SizeInY', 0)
+thickness = PipGetInteger('ThicknessInZ', 0)
+xshift = PipGetFloat('ShiftInX', 0.)
+yshift = PipGetInteger('ShiftInY', 0)
+zshift = PipGetFloat('ShiftInDepth', 0.)
+zEntered = 1 - PipGetErrNo()
+if ysize < 0 or width < 0 or thickness < 0:
+   exitError('Entries for -width, -thick, and -ysize cannot be negative')
+
+# Count up filtering options, replace None with empty arrays for Gaussian
+iterString = PipGetString('FakeSIRTiterations', '')
+numFiltOpt = 1 - PipGetErrNo()
+objectString = PipGetString('ExactObjectSizes', '')
+numFiltOpt += 1 - PipGetErrNo()
+hammings = PipGetFloatArray('HammingLikeStarts', 0)
+numFiltOpt += 1 - PipGetErrNo()
+cutoffs = PipGetFloatArray('GaussianCutoffs', 0)
+falloffs = PipGetFloatArray('GaussianFalloffs', 0)
+if not cutoffs:
+   cutoffs = []
+if not falloffs:
+   falloffs = []
+
+if falloffs or cutoffs:
+   numFiltOpt += 1
+
+if not numFiltOpt:
+   exitError('One of the filtering options must be entered')
+if numFiltOpt > 1:
+   exitError('Only one of the filtering options can be entered')
+
+# Process lists of iterations or object sizes
+iterList = []
+if iterString or objectString:
+   if iterString:
+      iterList = parselist(iterString)
+      desc = 'iteration number '
+      recPrefix = 'slfi'
+   else:
+      iterList = parselist(objectString)
+      desc = 'object size '
+      recPrefix = 'efos'
+   if not iterList:
+      exitError('Illegal entry for ' + desc + 'list')
+   for num in iterList:
+      if num <= 0 or num > 9999:
+         exitError(desc + str(num) + ' is out of allowed range')
+   maxNum = max(iterList)
+   numFilts = len(iterList)
+
+# Check hamming entries
+elif hammings:
+   if min(hammings) < 0.0 or max(hammings) > 0.5:
+      exitError('Hamming filter start frequencies must be between 0 and 0.5')
+   numFilts = len(hammings)
+
+# Check Gaussian entries and figure out total number of filters
+else:
+   if cutoffs and (min(cutoffs) < 0. or max(cutoffs) > 0.5):
+      exitError('Gaussian filter cutoff frequencies must be between 0 and 0.5')
+   if falloffs and (min(falloffs) < 0. or max(falloffs) > 0.5):
+      exitError('Gaussian filter falloff frequencies must be between 0 and 0.5')
+   
+   numCuts = 0
+   numFalls = 0
+   if cutoffs:
+      numCuts = len(cutoffs)
+   if falloffs:
+      numFalls = len(falloffs)
+   numFilts = max(numCuts, numFalls)
+   if numCuts > 1 and numFalls > 1:
+      if numCuts < numFalls:
+         exitError('You must enter either one cutoff or the same number of ' + \
+                   'cutoffs as falloffs')
+      elif numCuts > numFalls:
+         exitError('You must enter either one falloff or the same number of ' + \
+                   'falloffs as cutoffs')
+
+
+# read com file and get options from it
+comlines = readTextFile(comfile, 'tilt command file')
+alifile = optionValue(comlines, 'inputproj', STRING_VALUE, True)
+binning = 1
+binningArr = optionValue(comlines, 'imagebinned', INT_VALUE, True)
+if binningArr:
+   binning = binningArr[0]
+
+# If no Z shift was entered, get the existing Z shift from the SHIFT entry if any
+if not zEntered:
+   shiftArr = optionValue(comlines, 'shift', FLOAT_VALUE, True)
+   if shiftArr:
+      zshift = shiftArr[1]
+
+# Get the RADIAL entry if only one Gaussian option entered
+if (cutoffs and not falloffs) or (falloffs and not cutoffs):
+   radialArr = optionValue(comlines, 'radial', FLOAT_VALUE, True)
+   if not radialArr:
+      exitError('Cannot find RADIAL entry, needed for default value of falloff or cutoff')
+   if len(radialArr) < 2:
+      exitError('The RADIAL entry in the command file does not have a falloff value')
+   if not cutoffs:
+      cutoffs.append(radialArr[0])
+
+# set up complete arrays of falloffs and cutoffs
+# Cutoffs take the same value fif 0 or 1 entered
+# Falloffs have a constant ratio if 0 or 1 entered
+if cutoffs or falloffs:
+   singleCutoff = numFilts > 1 and len(cutoffs) == 1
+   if not falloffs:
+      fallRatio = radialArr[1] / max(radialArr[0], 0.01)
+   else:
+      fallRatio = falloffs[0] / max(cutoffs[0], 0.01)
+   for ind in range(len(cutoffs), numFilts):
+      cutoffs.append(cutoffs[0])
+   for ind in range(numFalls, numFilts):
+      falloffs.append(round(fallRatio * cutoffs[ind], 3))
+      
+try:
+   (alix, aliy, aliz) = getmrcsize(alifile)
+except ImodpyError:
+   exitFromImodError(progname)
+
+(comExt, dualNum, rootname, typeExt, stackExt) = findRootAxisAndExtensions(useTilt = 
+                                                                           comfile)
+if not typeExt or typeExt not in standardTypeExtensions():
+   typeExt = 'mrc'
+
+axisLet = ''
+if dualNum > 0:
+   if comroot.endswith('a'):
+      axisLet = 'a'
+      comroot = comroot[0:-1]
+   elif comroot.endswith('b'):
+      axisLet = 'b'
+      comroot = comroot[0:-1]
+
+if dualNum < 0:
+   (rootname, aliext) = os.path.splitext(alifile)
+
+comroot += '_mulfil' + axisLet
+
+# Clean up existing coms and logs if any
+cleanChunkFiles(comroot)
+
+# Shifts are consistent
+shiftEntry = fmtstr('{} {}', xshift, zshift)
+
+# But slices need to decrease to shift the volume up in rotated view
+sliceEntry = ''
+if ysize > 0 or yshift != 0:
+   ubsize = aliy * binning
+   sliceStart = (ubsize - ysize) // 2 - yshift
+   sliceEnd = sliceStart + ysize - 1
+   if sliceStart < 0 or sliceEnd >= ubsize:
+      exitError('The combination of Y size and Y shift is outside the range of slices')
+   sliceEntry = fmtstr('{} {}', sliceStart, sliceEnd)
+
+# Loop on the output files
+for ind in range(numFilts):
+
+   # Set name of com file and tomogram file
+   comname = fmtstr('{}-{:03d}.{}', comroot, ind + 1, comExt)
+   if iterList:
+      ndec = 2
+      if maxNum > 99:
+         ndec = 3
+      if maxNum > 999:
+         ndec = 4
+      format = '{}{}_{}{:0' + str(ndec) + 'd}.{}'
+      outfile = fmtstr(format, rootname, axisLet, recPrefix, iterList[ind], typeExt);
+   elif hammings:
+      outfile = fmtstr('{}{}_hlfs{:.3f}.{}', rootname, axisLet, hammings[ind], typeExt);
+   else:
+      outfile = fmtstr('{}{}_gfc{:.3f}-f{:.3f}.{}', rootname, axisLet, cutoffs[ind], \
+                       falloffs[ind], typeExt);
+      
+   sedcom = [sedModify('OutputFile', outfile)] + \
+            sedDelAndAdd('SHIFT', shiftEntry, 'THICKNESS')
+
+   # Add the main filtering option
+   if iterString:
+      sedcom += ['/ExactFilterSize/d'] + \
+                sedDelAndAdd('FakeSIRTiterations', iterList[ind], 'THICKNESS')
+   elif objectString:
+      sedcom += ['/FakeSIRTiterations/d'] + \
+                sedDelAndAdd('ExactFilterSize', iterList[ind], 'THICKNESS')
+   elif hammings:
+      sedcom += ['/RADIAL/d'] + \
+                sedDelAndAdd('HammingLikeFilter', hammings[ind], 'THICKNESS')
+   else:
+      sedcom += ['/HammingLikeFilter/d'] + \
+                sedDelAndAdd('RADIAL', fmtstr('{} {}', cutoffs[ind], falloffs[ind]),
+                             'THICKNESS')
+
+   # Add the volume selection options
+   if width > 0:
+      sedcom += sedDelAndAdd('WIDTH', width, 'THICKNESS')
+   else:
+      sedcom.append('/WIDTH/d')
+
+   if thickness > 0:
+      sedcom += sedDelAndAdd('THICKNESS', thickness, 'OutputFile')
+      
+   if sliceEntry:
+      sedcom += sedDelAndAdd('SLICE', sliceEntry, 'THICKNESS')
+   else:
+      sedcom.append('/SLICE/d')
+
+   pysed(sedcom, comlines, comname)
+
+# Add cleanup file
+writeTextFile(comroot + '-finish.com', 
+              ['$b3dremove -g ' + comroot + '-[0-9][0-9][0-9]*.com* ' + \
+               comroot + '-[0-9][0-9][0-9]*.log* ' + comroot + '-finish.com '])
+
+prnstr(fmtstr('{} command files output and ready to run with', numFilts + 1))
+prnstr('   processchunks machine_list ' + comroot)
+sys.exit(0)

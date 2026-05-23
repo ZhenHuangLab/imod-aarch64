@@ -1,0 +1,18 @@
+.na
+.nh
+.TH scalemodel 1 4.6.34 IMOD
+.SH NAME
+scalemodel - rescale a model for changes in image origin, delta or tilt
+.P
+.SH SYNOPSIS
+scalemodel
+.SH DESCRIPTION
+  Scalemodel rescales a model for changes in image origin, delta or tilt, in
+  the volume that it was modeled on.  It will then load correctly on
+  the original volume with modified header values.  The actual coordinates stored
+  in the model are modified with this program, but none of the model
+  header information is changed.  The program has not been keep up to
+  date, and it is better to use the \fB-I\fR option to imodtrans(1) to
+  modify the image reference information in the model instead.
+.SH BUGS
+Email bug reports to mast@colorado.edu.

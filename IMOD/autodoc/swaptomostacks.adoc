@@ -1,0 +1,63 @@
+Version = 1.0
+Pip = 1
+
+[Field = FromRootname]
+short = from
+type = CH
+usage = Root name of file(s) to rename as data set files
+tooltip =
+manpage = Root name of the stack file (and other possible files) to rename as
+data set files.  The name should not include "a" or "b" for a dual-axis set,
+unless you want to rename files only for one axis.  If this option is not
+entered, the first non-option argument will be taken for this root name. One
+way or another, the entry is required.
+
+[Field = ToRootname]
+short = to
+type = CH
+usage = Root name to rename current data set file(s) to
+tooltip =
+manpage = Root name to rename current data set file(s) to.  Again, the name
+should not include "a" or "b" for a dual-axis set, unless swapping only one
+axis.  If this option is not entered, the second non-option argument will be
+taken for this root name. One way or another, the entry is required.
+
+[Field = SetRootname]
+short = root
+type = CH
+usage = Root name of data set (excluding a/b for dual axis)
+tooltip =
+manpage = Root name of the data set (excluding "a" or "b" for a dual-axis set.
+This option should not ordinarily be needed because the root name is
+determined by analyzing the command file for running Tilt.  The option would be
+needed if the command file is not present, or if you want to swap stacks for
+only one axis of a dual-axis data set.  The latter can be done by entering
+this option (plus \fB-from\fR and \fB-to\fR) with the rootname including "a" or
+"b", and also entering the \fB-single\fR option.
+
+[Field = SingleAxisSet]
+short = single
+type = B
+usage = Data set is single-axis; do not look for a/b files
+tooltip =
+manpage = This option can be used to force the program to consider the 
+data set as being single-axis.  There are two reasons the option might be
+needed: 1) to swap files only for one axis of a dual axis set, as described
+above; 2) if your alternative stack was named with the same rootname followed
+by "a" or "b".
+
+[Field = ExcludeType]
+short = excl
+type = I
+usage = Exclude intermediate files (1) or tomogram also (2)
+tooltip =
+manpage = Enter 1 to exclude intermediate files (currently just the
+"rootname.ali") or 2 to exclude the tomogram files also (including the
+tomograms before post-processing, even if the final processed volume is present).
+
+[Field = short]
+short = help
+type = B
+usage = Print help output
+tooltip = 
+manpage = 

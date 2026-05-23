@@ -1,0 +1,343 @@
+#!/usr/bin/env python
+# justblend - Runs blendmont on multiple files in parallel
+#
+# Author: David Mastronarde
+#
+# $Id$
+#
+
+progname = 'justblend'
+prefix = 'ERROR: ' + progname + ' - '
+
+# Responds to the result of checking the check file; issues message and exits or sets
+# finish flag as appropriate
+def processQuitAction(action, message):
+   global finishSetAndQuit
+   if not action:
+      return 
+   if action == 'Q':
+      if not message:
+         message = 'RECEIVED SIGNAL TO QUIT, JUST EXITING'
+      prnstr(message)
+      sys.exit(0)
+   if action == 'F' or action == 'P':
+      finishSetAndQuit = True
+
+      
+# Check for Q and F in the check file and process the result
+def checkForQuit(lookForPause, sendPauseForF):
+   action = checkForProChunksQuit(checkFile, proChunkCheckFile, lookForPause,
+                                  sendPauseForF)
+   processQuitAction(action, '')
+   
+
+# Runs a com file or com chunks using processchunks
+def runWithProcesschunks(comfiles, singleOrMult, resume, lookForPause, sendPauseForF,
+                         printOutput):
+   
+   # Check for quitting then compose the rest of the command array
+   checkForQuit(lookForPause, sendPauseForF)
+   if finishSetAndQuit:
+      return 0
+
+   comArray = []
+   if remoteDir:
+      comArray += ['-w', remoteDir]
+   if len(comFiles) > 1:
+      comArray.append('-m')
+      if resume:
+         comArray.append('-r')
+   elif singleOrMult:
+      comArray.append('-s')
+         
+   comArray.append(cpuList)
+   comArray += comfiles
+
+   # Run the process detached
+   (error, finished, topQuit, numDone, mess) = \
+       runProcesschunks(comArray, proChunkOutFile, checkFile, proChunkCheckFile,
+                        lookForPause = lookForPause, sendPauseForF = sendPauseForF,
+                        printOutput = printOutput)
+   if finished == -1:
+      prnstr(mess)
+   if finished == -2 and topQuit == '':
+      prnstr('Strangely, processchunks quit but Q was not detected in the check file')
+
+   processQuitAction(topQuit, mess)
+
+   # After the run, one last check for quit
+   checkForQuit(lookForPause, sendPauseForF)
+
+   # Try to return the number of files done; 0 or 1 for single name, numDone for multiple
+   if error < 0:
+      prnstr('ERROR: ' + mess)
+      return 0
+   if error:
+      prnstr(mess)
+      if len(comFiles) > 1:
+         return numDone
+      return 0
+
+   if len(comFiles) > 1:
+      return numDone
+   if finished < 0:
+      return 0
+   return 1
+
+
+#### MAIN PROGRAM  ####
+#
+# load System Libraries
+import os, sys, copy, time
+
+#
+# Setup runtime environment
+if os.getenv('IMOD_DIR') != None:
+   sys.path.insert(0, os.path.join(os.environ['IMOD_DIR'], 'pylib'))
+   from imodpy import *
+   addIMODbinIgnoreSIGHUP()
+else:
+   sys.stdout.write(prefix + " IMOD_DIR is not defined!\n")
+   sys.exit(1)
+
+#
+# load IMOD Libraries
+from pip import *
+from pysed import *
+from comchanger import *
+from prochunks import *
+
+# Fallbacks from ../manpages/autodoc2man 3 1 justblend
+options = ["input:InputFile:FNM:", "distort:DistortionField:FN:",
+           "imagebinned:ImagesAreBinned:F:", "very:VerySloppyMontage:B:",
+           "robust:RobustFitCriterion:F:", "cpus:CPUMachineList:CH:",
+           "remote:RemoteDirectory:FN:", "parallel:ParallelBlend:I:",
+           "resume:ResumeProcessing:B:", "fix:FixEdgesInMidas:B:",
+           "check:CheckFile:FN:", "change:ChangeParametersFile:FN:",
+           "one:OneParameterChange:CHM:", "help:usage:B:"]
+
+(opts, nonopts) = PipReadOrParseOptions(sys.argv, options, progname, 1, 0, 1)
+
+# some defaults
+comExt = '.com'
+checkFile = 'justblend.cmds'
+proChunkCheckFile = 'processchunks-jb.cmds'
+proChunkOutFile = 'processchunks-jb.out'
+finishSetAndQuit = False
+
+# Get input files
+inputFiles = []
+numOptIn = PipNumberOfEntries('InputFile')
+if numOptIn + nonopts == 0:
+   exitError('At least one input file must be entered')
+for ind in range(numOptIn):
+   inputFiles.append(PipGetString('InputFile', ''))
+for ind in range(nonopts):
+   inputFiles.append(PipGetNonOptionArg(ind))
+
+numFiles = len(inputFiles)
+
+# Make an array of root names; only allow 3 and 4 character extensions
+rootNames = []
+comNames = []
+for inFile in inputFiles:
+   (rootname, ext) = os.path.splitext(inFile)
+   if len(ext) > 5:
+      rootname = inFile
+   rootNames.append(rootname)
+   comName = os.path.basename(rootname + '_blend' + comExt)
+   comNames.append(comName)
+   if not os.path.exists(inFile):
+      exitError('Input file ' + inFile + ' does not exist')
+
+# If fixing edges, amle sure each com file exists already
+fixEdges = PipGetBoolean('FixEdgesInMidas', 0)
+if fixEdges:
+   for comName in comNames:
+      if not os.path.exists(comName):
+         exitError('Existing command file ' + comName + ' does not exist')
+
+# Otherwise get sloppyblend in as stock command file
+else:
+   comName = os.path.join(os.environ['IMOD_DIR'], 'com', 'sloppyblend.com')
+   if not os.path.exists(comName):
+      exitError('Stock command file ' + comName + ' does not exist')
+   comLines = readTextFile(comName)
+
+# Get control options
+cpuList = '1'
+parallel = PipGetInteger('ParallelBlend', 0)
+if parallel > 0:
+   cpuList = str(parallel)
+cpuList = PipGetString('CPUMachineList', cpuList)
+checkFile = PipGetString('CheckFile', checkFile)
+remoteDir = PipGetString('RemoteDirectory', '')
+resume = PipGetBoolean('ResumeProcessing', 0)
+if resume and parallel > 0:
+   exitError('You cannot use -resume with parallel blending of individual montages')
+         
+# Put blendmont options into one change list as they are read in
+# They are stored in a change list with the leading, type prefix omitted
+stockChanges = []
+sedcom = []
+prefix = ['b', 'blendmont']
+typePrefix = 'b'
+verySloppy = PipGetBoolean('VerySloppyMontage', 0)
+stockChanges.append(prefix + ['VerySloppyMontage', str(verySloppy)])
+robust = PipGetFloat('RobustFitCriterion', 0.)
+stockChanges.append(prefix + ['RobustFitCriterion', str(robust)])
+idfFile = PipGetString('DistortionField', '')
+if idfFile:
+   stockChanges.append(prefix + ['DistortionField', idfFile])
+binning = PipGetFloat('ImagesAreBinned', 0)
+if binning:
+   stockChanges.append(prefix + ['ImagesAreBinned', str(binning)])
+if fixEdges:
+   stockChanges.append(prefix + ['ReadInXcorrs', '1'])
+   
+# put change entries into another
+# For each simple input chnage, add the type prefix so it is recognized and the
+# other two prefix components, the second has to be blendmont to match the process
+changeList = []
+changeFile = PipGetString('ChangeParametersFile', '')
+if changeFile:
+   changeLines = readTextFile(changeFile)
+   for line in changeLines:
+      line = typePrefix + '.' + prefix[0] + '.' + prefix[1] + '.' + line
+      changeToAddToList(changeList, line, changeFile, typePrefix, 4, valNeeded = True)
+
+numOnes = PipNumberOfEntries('OneParameterChange')
+for ind in range (numOnes):
+   line = PipGetString('OneParameterChange', '')
+   line = typePrefix + '.' + prefix[0] + '.' + prefix[1] + '.' + line
+   changeToAddToList(changeList, line, None, typePrefix, 4, valNeeded = True)
+
+# Loop on files to create coms or run midas
+skipList = []
+for fileInd in range(numFiles):
+   comName = comNames[fileInd]
+   finalChanges = copy.deepcopy(stockChanges)
+   if fixEdges:
+
+      # Running midas: get the existing com file
+      comLines = readTextFile(comName, returnOnErr = True)
+      if isinstance(comLines, str):
+         prnstr(fmtstr('Skipping {}: {}', inputFiles[fileInd], comLines))
+         skipList.append(fileInd)
+         continue
+
+      # Run it
+      midasCom = fmtstr('midas -D -q -p "{0}.pl" "{1}" "{0}.ecd"', rootNames[ind],
+                        inputFiles[ind])
+      try:
+         runcmd(midasCom)
+      except ImodpyError:
+         trueError = True
+
+         # Test if there is an ERROR output AND see if it has a negative status
+         # to ignore a Qt crash on exit
+         errStr = getErrStrings()
+         for line in errStr:
+            if 'ERROR:' in line:
+               break
+            if 'with status' in line:
+               lsplit = line.strip().split()
+               try:
+                  status = int(lsplit[-1])
+                  if status < 0:
+                     trueError = False
+               except Exception:
+                  pass
+
+         if trueError:
+            prnstr('Skipping ' + inputFiles[fileInd] + ': Midas exited with error')
+            skipList.append(fileInd)
+            continue
+
+   else:
+
+      # Otherwise, set up full editing of com file
+      finalChanges.append(prefix + ['ImageInputFile', inputFiles[fileInd]])
+      finalChanges.append(prefix + ['ImageOutputFile', rootNames[fileInd] + '_blend.mrc'])
+      finalChanges.append(prefix + ['PieceListInput', rootNames[fileInd] + '.pl'])
+      finalChanges.append(prefix + ['RootNameForEdges', rootNames[fileInd]])
+
+      # Extract the piece list if it is not there
+      if not os.path.exists(rootNames[fileInd] + '.pl'):
+         try:
+            extractLines = runcmd(fmtstr('extractpieces "{}" "{}"', inputFiles[fileInd],
+                                         rootNames[fileInd] + '.pl'))
+            if not extractLines or 'no piece coordinates' in extractLines[-1]:
+               prnstr('Skipping ' + inputFiles[fileInd] +
+                      ': No piece coordinates are available')
+               skipList.append(fileInd)
+               continue
+         except ImodpyError:
+            errStrings = getErrStrings()
+            prnstr('Skipping ' + inputFiles[fileInd] +
+                   ': Extractpieces failed with this error output')
+            for line in errStrings:
+               prnstr('    ' + line)
+            skipList.append(fileInd)
+            continue
+
+   # Now edit and write the command file
+   outLines = modifyForChangeList(comLines, typePrefix, '', changeList + finalChanges)
+   
+   makeBackupFile(comName)
+   errString = writeTextFile(comName, outLines, returnOnErr = True)
+   if errString:
+      prnstr('Skipping ' + inputFiles[fileInd] + ': ' + errString)
+      skipList.append(fileInd)
+
+
+# Loop on files to do parallel blending, or run them all in one processchunks run
+comFiles = []
+numDone = 0
+startTime = time.time()
+cleanupFiles([checkFile])
+try:
+   for fileInd in range(numFiles):
+      if fileInd in skipList:
+         continue
+      comName = comNames[fileInd]
+      if parallel:
+
+         # Do the splitblend
+         comFiles = [comName[:-4]]
+         splitcom = 'splitblend -n ' + str(parallel)
+         if fixEdges:
+            splitcom += ' -r'
+         splitcom += ' "' + comName + '"'
+         try:
+            runcmd(splitcom)
+         except ImodpyError:
+            prnstr('Error running splitblend on ' + comName)
+            errStrings = getErrStrings()
+            for line in errStrings:
+               prnstr('    ' + line)
+            continue
+
+         # Run the chunks
+         prnstr('Blending ' + inputFiles[fileInd], flush = True)
+         if runWithProcesschunks(comFiles, False,  False, False, False, False):
+            numDone += 1
+         if finishSetAndQuit:
+            break
+
+      # Otherwise just add to the list of coms
+      else:
+         comFiles.append(comName)
+
+   # And run them all
+   if not parallel:
+      numDone = runWithProcesschunks(comFiles, True, resume, True, True, True)
+
+except KeyboardInterrupt:
+   pass
+      
+prnstr('')
+(minutes, seconds, frac) = elapsedTimeComponents(startTime)
+prnstr(fmtstr('{} OF {} SUCCESSFULLY BLENDED IN {:02d}:{:02d}.{}', numDone, numFiles,
+              minutes, seconds, frac))
+sys.exit(0)

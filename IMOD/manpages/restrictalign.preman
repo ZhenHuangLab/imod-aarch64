@@ -1,0 +1,68 @@
+.na
+.nh
+.TH restrictalign 1 4.8.7 IMOD
+.SH NAME
+restrictalign \- Restrict tilt alignment parameters for low number of fiducials
+.SH SYNOPSIS
+restrictalign  options  tiltalign_command_file
+.SH DESCRIPTION
+Restrictalign will modify the parameter settings in a command file for
+running Tiltalign so that they are appropriate for the number of
+fiducials available.  It does this by applying a series of restrictions
+- grouping a variable instead of solving at every tilt, or fixing it
+instead of grouping - in a specified order until an appropriate ratio
+of measured values to unknown variables is reached.  That ratio is
+picked based on two parameters, the minimum required ratio, and a
+target ratio.  When two restrictions both give more than the minimum
+ratio, the one closest to the target is chosen.  To have the program
+always pick the first restriction where the ratio is above the minimum,
+set the target ratio equal to the minimum ratio.
+.P
+The \fB-order\fR option controls the order in which restrictions will
+be applied by changes in the magnification, rotation, and tilt
+solutions, but these are not the only changes that can occur.  
+Before applying any of these restrictions, 
+the stretching solution (X-stretch and skew), local alignments, and
+variable X-axis tilt (except between two halves of a tilt series) will
+be turned off.  If these restrictions are sufficient, no further
+changes are made.  When there are fewer than 3 beads, the beam tilt
+solution, projection stretch, and variable X-axis tilt between two
+halves of a tilt series are turned off; all of these
+involve solving for a single variable.  The solution for one
+rotation angle is turned off with only one bead.  When the ratio of
+measurements to unknowns falls below the minimum, robust fitting is
+turned off.
+.P
+The program always changes parameters so as to solve for fewer
+variables than in the current file.  If the ratio is already greater
+than the minimum and closer to the target than with any restriction
+applied, no change will be made.
+.P
+To use the program with the default settings with a single-axis tilt
+series, simply enter:
+   restrictalign align.com
+.br
+The existing file will be renamed to align.com~ and the file with the
+changed parameters will be written as align.com.
+.SH OPTIONS
+Restrictalign uses the PIP package for input (see the manual page
+for pip(1)).  Options can be specified either as command line
+arguments (with the -) or one per line in a command file
+(without the -).  Options can be abbreviated to unique letters; the currently
+valid abbreviations for short names are shown in parentheses.
+INSERT OPTION TEXT HERE
+.TP
+.B -StandardInput
+Read parameter entries from standard input
+
+.SH FILES
+The input file is renamed by adding a ~ to the end of its name and
+replaced with the new file.
+.SH AUTHOR
+.nf
+David Mastronarde
+.fi
+.SH SEE ALSO
+tiltalign(1)
+.SH BUGS
+Email bug reports to mast@colorado.edu.

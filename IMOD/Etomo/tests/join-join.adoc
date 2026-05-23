@@ -1,0 +1,45 @@
+Version = 1.2
+
+[function = main]
+open.dialog.join=
+tf.section-table-1-final.1=46
+tf.section-table-2-final=5
+tf.section-table-2-final.1=62
+bn.get-max-size-and-shift=
+wait.process.finishjoin=done
+[[if = test-gui]]
+	assert.ge.tf.size-in-x=818
+	assert.le.tf.size-in-x=822
+	assert.ge.tf.y=585
+	assert.le.tf.y=596
+	assert.ge.tf.shift-in-x=-9
+	assert.le.tf.shift-in-x=-6
+	assert.ge.tf.y.1=-12
+	assert.le.tf.y.1=-7
+	assert.cb.reference-section-for-alignment=off
+  assert.sp.reference-section-for-alignment=1
+  assert.cb.do-local-linear-fits=off
+	#enabled
+	assert.enabled.cb.reference-section-for-alignment=
+	assert.disabled.sp.reference-section-for-alignment=
+	assert.enabled.cb.do-local-linear-fits=
+	#behavior
+	cb.reference-section-for-alignment=on
+	assert.enabled.sp.reference-section-for-alignment=
+	assert.disabled.cb.do-local-linear-fits=
+	cb.reference-section-for-alignment=off
+	#
+	cb.do-local-linear-fits=on
+	assert.disabled.cb.reference-section-for-alignment=
+	cb.do-local-linear-fits=off
+	#trial join
+	bn.trial-join=
+	wait.process.finishjoin=done
+[[]]
+bn.finish-join=
+wait.process.finishjoin=done
+bn.refine-join=
+[[if = test-gui]]
+  assert.exists.image-file=%{dataset}_trial.join
+  assert.exists.image-file=%{dataset}_modeled.join
+[[]]

@@ -1,0 +1,200 @@
+.na
+.nh
+.TH ctfphaseflip 1 3.10.18 IMOD
+.SH NAME
+ctfphaseflip \- correct tilt series for microscope CTF by phase flipping 
+.SH SYNOPSIS
+ctfphaseflip  options
+.SH DESCRIPTION
+This program will correct the CTF of an input tilt series by phase
+flipping, with an option to attenuate frequencies near the zeros of
+the CTF.  The user can select a subset of projection views of the input tilt
+series to correct and
+can specify a defocus value for each selected view through a text defocus
+file.
+The output file of Ctfplotter(1) is usually used as the defocus file.
+
+Ctfphaseflip corrects each view strip by strip.  A strip is defined as an
+image region whose defocus difference is less than a user specified value, the
+defocus tolerance.  Normally, the strips are vertically oriented and defocus is assumed
+to be the same along a vertical line.  Thus, the tilt series must be aligned
+so that the tilt axis is vertical before applying this correction.  The
+original thinking was that an image region with defocus difference less than
+the tolerance could be considered to have constant defocus and could be
+corrected as one strip.  However, the validity of the correction at the center
+of the strip probably does not depend on whether it contains material beyond
+this focus range, since only vertical lines near or at the center are used in
+the corrected image.  The program may limit the width further to reduce
+computation time, or expand it to retain enough resolution between successive
+zeros in the X direction of frequency space.
+
+Through most of the image, each strip is corrected based on
+the defocus at the center of the strip.  However, the strips at the left and
+right edges of the image may be corrected repeatedly, at different defocus
+values, in order to extend the correction close enough to the edges of the image.
+In fact, it is possible with the \fB-maxWidth\fR option to make the program
+correct only whole images, using the defocus value appropriate for successive
+positions across the image.
+
+Two entries can make the program correct along diagonals instead of vertical
+strips: a tilt around the X-axis (more specifically, the one orthogonal to the
+tilt axis), and a rotation of the tilt axis from vertical.  The latter would
+be entered if unaligned images are being corrected.  If only a tilt axis
+rotation is entered, the diagonal strips are at that angle.  If an X axis tilt
+is entered, the diagonals are at an angle that depends on the angle of tilt
+around the tilt axis.  In either case, full images will be corrected to obtain
+the diagonal strips at different defocus.
+
+Ctfphaseflip can be run in a parallel mode similiar to the Tilt(1) program by setting the
+\fB-TotalViews\fR option.  The script Splitcorrection(1) can be used to prepare 
+command files for running the program in parallel.  It can also be run
+on the GPU of an NVIDIA card.
+
+A sample command file for running the program with "subm" can be found in the
+IMOD/com directory (ctfcorrection.com).
+
+Originally, the program limited strip widths to 256, but the power
+spectra of low tilt images often showed rings of very low values right
+around the zeros of the CTF.  As of IMOD 4.8.17, the strip width is
+limited dynamically in a way that should minimize this effect.  Making
+the strips wider eliminates or reduces this effect, provided that the
+shift in the position of the first zero across the width of the strip
+is big enough.  At very low tilt, the maximum allowed width is
+increased to a value that would make the first zero shift by 0.6 pixel
+in the Fourier transform.  At higher tilts, the criterion shift is
+reduced by (1 - tan(tiltAngle)).  Near zero tilt, the strip width is
+simply half of the image size in X.  (However, if tilt is exactly zero, the
+program does only a single correction of the whole image.)  The spacing
+between adjacent strips is also adjusted to be larger for wider strips, to
+keep the computational time down (see the \fI-iWidth\fR option below).
+
+.SH OPTIONS
+Ctfphaseflip uses the PIP package for input (see the manual page
+for pip(1)).  Options can be specified either as command line
+arguments (with the -) or one per line in a command file
+(without the -).  Options can be abbreviated to unique letters; the currently
+valid abbreviations for short names are shown in parentheses.
+INSERT OPTION TEXT HERE
+.TP
+.B -StandardInput
+Read parameter entries from standard input
+.SS Defocus File Format
+The defocus file consists of a series of lines, each containing at
+least 5 numbers: starting and ending view numbers for the range of
+views fit to
+(numbered from 1), starting and ending tilt angles for the range of
+angles fit to,
+and the defocus value in nanometers (underfocus positive). The
+first line of the file can have a version number at the end.  For
+versions 1 and 2, the first line must have fitting data as well.  The
+typical file currently written by Ctfplotter thus starts with lines
+like
+.nf
+61      61      -58.94  -58.94    4376  2
+60      60      -56.94  -56.94    4599
+...
+.fi
+A version 3 file can have columns for astigmatism values, or the phase
+shift from a phase plate, including an optional cut-on frequency, or
+both.  Past version 2, the first line is a
+header line without data.  Thus a version 3 file should start with
+.nf
+  flags  0 0. 0. 0  3
+    where "flags" is the sum of:
+       1 if the file has astigmatism values
+       2 if the astigmatism axis angle is in radians, not degrees
+       4 if the file has phase shifts
+       8 if the phase shifts are in radians, not degrees
+      16 if tilt angles need to be inverted to match what the 
+          program expects (what Ctfplotter(1) would produce)
+          with the \fB-invert\fR option
+      32 if the file has cut-on frequencies attenuating the phase
+          at low frequencies
+.fi
+The other values on the header line could be used in the future but
+should be 0.  If there are astigmatism values, the convention is for the
+higher defocus value to be in the standard column for defocus, followed
+by the lower defocus value, then by the angle (counterclockwise
+positive) of the axis with the higher defocus (the short axis of the
+ellipse in an FFT).  However, either defocus value can be in the first
+column as long as the axis angle is that of the first defocus value.
+If the lower defocus is first, both Ctfphaseflip and Ctfplotter(1) will
+swap the two values and subtract 90 from the axis angle, so that
+astigmatism will always appear as a positive value.
+.P
+Either the astigmatism angles must be correct for the aligned stack, or
+the angles must be correct for the raw stack and the \fB-xform\fR
+option must be entered with the file of transforms used to produce the
+aligned stack from the raw one, so that the program can rotate these
+angles appropriately.
+A
+file with just astigmatism values could start with:
+.nf
+1  0 0. 0. 0  3
+61      61      -58.94  -58.94    4652    4376  -43.2
+...
+.fi
+
+If there are phase shifts, they go in a column at the end of the line.
+They can be positive or negative; only the absolute value will be used
+and equations using these shifts subtract the absolute value of the
+number.  A file with just phase shifts in radians could start with:
+.nf
+12  0 0. 0. 0  3
+61      61      -58.94  -57.94    4376  1.47
+...
+.fi
+while a file with both astigmatism and phase shifts could start with:
+.nf
+13  0 0. 0. 0  3
+61      61      -58.94  -57.94    4652    4376  -43.2  1.47
+...
+.fi
+If an expected phase shift is entered to Ctfplotter(1) (either through
+the user interface or with the \fB-phase\fR
+option) and phase is not searched for, it will put out a defocus file
+with a phase shift that
+is the same on every line.
+
+A cut-on frequency in reciprocal nanometers may be included in the file
+only if it includes phase shifts.  This value goes on the end of each
+line after the phase
+shift.  Whenever a file contains cut-on frequencies, the phase values
+read in from the file are interpreted differently: they are treated as
+being the phase at a particular frequency, 0.3/nm.  The model applied
+is
+   phase(freq) = phaseAtInfinity * (1. - exp(-freq / cuton))
+.br
+where
+   phaseAtInfinity = phaseInFile  / (1. - exp(-0.3 / cuton))
+
+The reason for this convention is that cut-on frequency is difficult to
+find accurately, and the implied phase at infinity will vary
+considerably because of the random variations in cut-on frequency.
+The phase at this higher frequency will be much more stable and allows
+a better assessment of how accurately phase has been found.
+
+As for phase, if a cut-on on frequency is entered to Ctfplotter(1)
+through either the user interface of the \fB-cuton\fR option, the it
+will put out a defocus file with the same cut-on frequency on each
+line.  A file with astigmatism, phase in degrees, and cut-on frequency
+could start with:
+.nf
+37   0    0.0     0.0     0.0     3
+1    1   -50.00  -50.00   3665    3472   -62.10    118.54  0.1686
+...
+.fi
+.SH AUTHORS
+.nf
+Quanren Xiong and David Mastronarde
+.fi
+.SH SEE ALSO
+ctfplotter(1)
+.SH BUGS
+Prior to IMOD 4.0.29, Ctfplotter had a bug in which the view numbers written
+to the defocus file were numbered from 0, not 1.  When Ctfphaseflip reads in
+the defocus file, it will do its best to detect this situation
+and adjust all the view numbers up by 1.  If it does detect an inconsistency
+between view numbers and angular ranges, it will issue a warning.
+.P
+Email bug reports to mast@colorado.edu.

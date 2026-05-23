@@ -1,0 +1,442 @@
+Key:  [] is a checkbox
+       o is a radio button
+      [     ]   is a text box
+      n[-] is a spin button field
+      [ text ] is a button
+      ---  title  ---- is a group box
+      {chooser} is a file chooser
+
+-----------------------------------------
+
+[Load starting com file]
+
+START BOX
+----Input file specification---
+LEFT SIDE
+o Metadata (.mdoc) file   {chooser}
+o Text file with list of files   {chooser}
+o Selected files   {chooser}
+
+RIGHT SIDE
+Directory:  [             ] (not-editable)
+Input file(s): [             ] (vert & horizontal scroll)
+               [             ] (about 4 visible lines)
+               [             ]
+               [             ]
+END BOX
+   
+Root name for output files: [        ]
+
+Other Directory with frames {chooser}  (Advanced?)  (Enabled if mdoc file)
+
+--- Other source of metadata ---   (All disabled if mdoc file)
+[] Matching tilt series file  {chooser} \  These two are mutually exclusive 
+[] Text file with tilt angles {chooser} /
+[] Tilt angles in filenames
+    Delimiting character at start [  ] and end [  ]   (Enabled if angles in filenames)
+Tilt axis rotation  [    ]   
+---
+
+[] Gain normalize from reference and defect file in header
+Gain reference file [           ]  {chooser}             (Advanced)
+Reference rotation and flip  o Value in title  o n[-]    (Advanced)
+
+Defect file         [           ]  {chooser}             (Advanced)
+
+[] Truncate values above  o [  ] input counts   o[  ] SDs from mean
+
+---  Fit pairwise shifts ----
+ o Fit to sets of n[-] frames
+ o Fit to sets of half the frames
+ o One fit to all frames
+---
+
+--- Binning (reduction) for alignment
+o Default
+o Reduce by n [-]
+o Reduce to about xx [-] pixels
+o Test multiple binnings: [      ]    (Advanced mode)
+---
+
+Filter cutoff [   ] unbinned pixels
+Other cutoffs [      ]   [] Use hybrid shifts     (Advanced mode)
+
+Maximum shift between frames [    ] unbinned pixels   (Advanced mode)
+
+[] Group frames by n[-]
+
+--- Refinement ---
+[] Refine alignment with up to []n iterations
+[] Refine in groups   Filter cutoff for refining [     ]    (Advanced)
+Refine until changes are below [    ] unbinned pixels   (Advanced)
+---
+
+[] Spline smoothing of shifts if more than n[-] frames
+
+Align subsets of frames from [   ]  to [   ]   (Advanced)
+
+(All Enabled only if mdoc file or just angles in filenames)  (All advanced)
+---  Dose weighting  ---      
+[] Do dose weighting
+[] Use fixed dose/image of [     ] e/A2
+[] Normalize within each set of frames
+Voltage [   ] kV
+Optimal dose scaling [    ]
+[ ] Non-dose weighted output also  (Enable if not normalize?)
+
+Scale output by  o Default  o Factor: [   ]          (Advanced)
+
+Output file mode  o 16-bit integers   o Floating point   (Advanced)
+
+Rotation and flip value for output n[-]   (Advanced)
+
+Reduce output size by n[-]
+
+Output file name [                   ]   
+(When mdoc or tilt series given, default to rootname_af.mrc or rootname_af_dw.mrc 
+depending on if doing non-normalized dose weighting.)
+(If making non-dose weighted, make it ..._af_nodw.mrc if output ends in _af_dw.mrc,
+or add _nodw to rootname otherwise)
+
+[] Use GPU
+
+[Run Alignframes]  [Plot All Results]  [Open Output Tilt Series]
+
+[Start Reconstruction]    (Opens Etomo setup page)
+
+Right click menu would also have
+Plot Shifts
+Plot Mean Residuals
+Plot Max of Max Residuals
+Alignframes log
+Alignframes man page
+
+
+BASIC MODE:
+
+[Load starting com file]
+
+----Input file specification---
+o Metadata (.mdoc) file   {chooser}
+o Text file with list of files   {chooser}
+o Selected files   {chooser}
+   (x files selected) (OR maybe a scrollable box with frame files)
+   
+Root name for output files: [        ]
+
+--- Other source of metadata ---   (All disabled if mdoc file)
+[] Matching tilt series file  {chooser}
+[] Text file with tilt angles {chooser}
+[] Tilt angles in filenames
+    Delimiting character at start [  ] and end [  ]  
+Tilt axis rotation  [    ]   
+
+[] Gain normalize from reference and defect file in header
+
+--- Truncate values ---
+  o None
+  o Above [  ] input counts
+  o More than [  ] SDs above mean
+
+---  Fit pairwise shifts ----
+ o Fit to sets of n[-] frames
+ o Fit to sets of half the frames
+ o One fit to all frames
+
+--- Binning (reduction) for alignment
+o Default
+o Reduce by n [-]
+o Reduce to about xx [-] pixels
+
+Filter cutoff [   ] unbinned pixels
+
+[] Group frames by n[-]
+
+[] Refine alignment with up to [-]n iterations
+
+[] Spline smoothing of shifts if more than n[-] frames
+
+Reduce output size by n[-]
+
+Output file name [                   ]   
+
+[] Use GPU
+
+[Run Alignframes]  [Plot All Results]  [Open Output Tilt Series]
+
+[Start Reconstruction]
+
+
+=============================
+Implementation notes
+
+Get defaults from the align frames and sorttiltframes autodocs when available!
+
+[Load starting com file]
+<File chooser should allow .com and .pcm
+There may be some options in a .pcm file from SerialEM that aren't in the
+interface, so you will need a sample
+Keep it simple, not like "starting batch".  Just load it and forget it.>
+(Load a com file from wherever they choose into the dialog.  We don't keep track of the
+original com file.  They can load a file that has the name of the output file.  Treat a
+reload the same way.
+Throw away the input file specification whatever it is, throw away the outputImageFile,
+leave the root name for output blank)
+
+START BOX
+----Input file specification---
+LEFT SIDE
+o Metadata (.mdoc) file   {chooser}
+<Option MetadataFile>
+o Text file with list of files   {chooser}
+<Option ListOfInputFiles see HOW TO set this below)>
+o Selected files   {chooser}
+
+RIGHT SIDE
+Directory:  [             ] (not-editable)
+Input file(s): [             ] (vert & horizontal scroll)
+               [             ] (about 4 visible lines)
+               [             ] (not-editable)
+               [             ]
+END BOX
+
+<Each file can be entered with InputFile option, or a list
+could be written and entered with ListOfInputFiles
+Given the need to use a list from sorttiltframes if that is run (see below)
+it might be best to use a list.
+The current directory for running
+alignframes should be the one where theinput file(s) came from>
+(Directory - right side - comes from the location of the .mdoc,text file, or selected
+files.  This directory is the location of the dataset!  Input file(s) should be displayed
+without the directory.  Must extract the paths of the files from the text file.)
+
+
+Root name for output files: [        ]
+(Filled in if an .mdoc input file chosen.  Alwasy required.  Might have more fill-in rules
+- based on what users want.)
+
+Other Directory with frames {chooser}  (Advanced)  (Enabled if mdoc file)
+<This is needed in case the mdoc file is not in the frame directory
+Option: PathToFramesInMdoc>(Frames - means the image files.  And this location doesn't
+effect the dataset location.)
+
+--- Other source of metadata ---   (All disabled if mdoc file)
+[] Matching tilt series file  [        ] {chooser} \  
+<Option CorrespondingStack>                         > These two are mutually exclusive 
+[] Text file with tilt angles [        ] {chooser} /
+<Option TiltAngleFile  >
+[] Tilt angles in filenames
+  < Example : tomo-1_1_024[-46.00]-0085-0002.mrc  from FEI software>*angle is -46.00.)
+              <TS_001_002_3.0.tif    from SerialEM >(angle is 3.0.)
+  <The first two toggle each other, the third is independent, but what happens
+  when "angles in filenames" is selected
+  depends on whether one of the others is checked.  If neither of the first
+  two are checked, this is referred to as "just angles in filenames"
+  When matching tilt series or text files is checked, the goal is to get the input files
+  in the same order as the tilt series or those tilt angles.  This is done by running
+  sorttiltframes, which returns a list of the input files in the right order:
+   run sorttiltframes with
+       TiltSeriesFile  stackname   OR   TiltAngleFile  anglefile
+       ListOfInputFiles  listFileFromUser OR rootname_templist.txt
+           (the file list is one filename per line in the order they were selected)
+       Delimiters  se     (the starting and ending delimiter characters)
+       OutputFileList  rootname_inlist.txt
+   and that output file would be given to alignframes with ListOfInputFiles
+   and Etomo has to make rootname_templist.txt from browser-selected files
+
+  When neither tilt series nor angles is checked (just angles in names), the goal is
+  to tell aignframes the tilt angles in same order as the list of files:
+    run sorttiltframes with
+       ListOfInputFiles  listFileFromUser OR rootname_inlist.txt
+       Delimiters  se
+       UnsortedOutput 1
+       OutputTiltAngleFile   rootname_matching.tlt
+
+           PLUS if dose weighting with fixed dose is selected below
+       FixedImageDose   fixedDose
+       DoseOutputFile   rootname_dose.txt
+
+   sorttiltframes is a Python script
+   and Etomo >
+
+    Delimiting character at start [  ] and end [  ]  (Enabled if angles in
+    filenames - characters to the left and right of the angle in the file name
+    The defaults are "[" and "]" )
+      <Option Delimiters to sorttiltframes as just described, takes two characters>
+
+Tilt axis rotation  [    ]      <This might end up in Advanced>
+<Option AxisRotationAngle>
+
+[] Gain normalize from reference and defect files in frame file header
+<Option RefAndDefectFromTitles
+The following options override what is in the frame file header if this is selected>
+
+Gain reference file [           ]  {chooser}             (Advanced)
+<Option GainReferenceFile>
+
+Reference rotation and flip  o Value in title   o n[0-7]    (Advanced)
+<Option RotationAndFlip   If "Value in title" checked: -1.  Otherwise the value of the spinner.
+Translate the value after the spinner, e.g. 3 = 270 no flip  to the right
+the description string is a multiple of 90 and "flip or "no flip"  
+   (value % 4) * 90  and  "no flip" if < 4 or "flip" if >= 4>
+   
+Defect file         [           ]  {chooser}             (Advanced)
+<Option CameraDefectFile>
+
+--- Truncate values ---
+  o None
+  o Above [  ] input counts
+  o Above [  ] SDs from mean
+<Option TruncateAbove  IF "input counts" selected, use the value
+If "SDs from mean" selected, use the negative of the value>
+
+---  Fit pairwise shifts ----
+ o Fit to sets of [7-99] frames
+ o Fit to sets of half the frames
+ o One fit to all frames
+<Option PairwiseFrames If "File to sets of n frames" selected, enter spinner value.  If "Fits to sets of half the frames" selected,
+enter -2.   If "One fit to all frames" selected, enter -1>
+
+--- Binning (reduction) for alignment
+o Default
+o Reduce by [1-16]
+o Reduce to about [250-4000 (default:1250, Step:50)] pixels
+<Option TargetAlignSize the value of the selected spinner.
+o Test multiple binnings: [      ]    (Advanced mode)
+<Option TestBinnings and comma-separated list of up to 4 binnings>
+<Option AlignAndSumBinning (not displayed) (comma-separated pair of numbers)
+If "Reduce by" is selected:the spinner value and value for
+reduction of output described way below
+In the other 3 cases AlignAndSumBinning is entered with -1 and value for
+reduction of output described way below>
+
+Filter cutoff [   ] (reciprocal unbinned pixel) (default 0.06)
+Other cutoffs [      ]    (Advanced mode)
+<"Other cutoffs can take a comma-separated list of up to 5 filters.>
+<Option VaryFilter is always entered with the first "filter cutoff".
+If "Other cutoffs:" are entered:  make a list of the two values: firstCutoff,listOfOtherCutoffsIfAny>  
+
+[] Use hybrid shifts     (Advanced mode, on same line as "Filter cutoffs")
+<Option UseHybridShifts for the "Use hydrid shifts" checkbox>
+
+
+Maximum shift between frames [    ] unbinned pixels   (Advanced mode)
+<Option ShiftLimit
+Default is 20 pixels.  Get this default from the adoc>
+
+[] Group frames by [2-20]
+<Option GroupFrames.>
+
+
+[] Refine alignment with up to [1-10 (default 5] iterations
+<Option RefineAlignment  spinner value if selected>
+
+[] Refine in groups          (Advanced)
+<Option RefineWithGroupSums  for "Refine in groups"
+"refine in groups" is enabled only if "Refine alignment" AND "group frames by" selected.
+
+Filter cutoff for refining [     ]   (Advanced, suggest on same line as "Refine in groups")
+<Option RefineRadius2  for "Filter cutoff for refining" entry.  
+This is enabled only if "Refine alignment" selected>
+
+Refine until changes are below [    ] unbinned pixels   (Advanced)
+<Option StopIterationsAtShift, default 0.1, enabled if "Refine alignment" selected>
+
+[] Spline smoothing of shifts if more than [10-30, default 15] frames
+<Option MinForSplineSmoothing. >       
+
+Align subsets of frames from [   ]  to [   ]   (Advanced)
+<Option StartingEndingFrames 
+Validation: first one >=0  second one > first one>
+
+(All Enabled only if mdoc file or angles just in filenames*)  (All advanced)
+---  Dose weighting  ---      
+  o No dose weighting
+  o Dose weighting with fixed dose/image of [    ] e/A2
+  o Dose weighting with doses from .mdoc file (enabled if mdoc file)
+---
+  
+If "Dose weighting with fixed dose/image" is selected and there are 
+angles just in names*, then  Option TypeOfDoseFile is entered with a 2 and
+DoseWeightingFile is entered with rootname_dose.txt from sorttiltframes
+Otherwise, if there not angles just in names*, Option TypeOfDoseFile is NOT entered and 
+Option FixedTotalDose is entered with the value of the "fixed dose/image"
+
+*See: HOW TO GET THE Alignframes parameter ListOfInputFiles.
+
+If "Dose weighting with doses from .mdoc file" is selected, enter 
+Option TypeOfDoseFile with 4 and no entry for DoseWeightingFile>
+
+[] Normalize within each set of frames
+<Option NormalizeDoseWeighting>
+
+[] Microscope voltage is 200 kV
+<Option Voltage 200 if checked, leave it out otherwise >
+
+Optimal dose scaling [    ]
+<Option OptimalDoseScaling   
+Validation: greater than 0.1, less than 10 >
+
+[ ] Non-dose weighted output also  (Enable if "Normalize within each set of frames" NOT checked)
+<Option UnweightedOutputFile  with name based on output name, see below>
+
+Scale output by  o Default  o Factor: [   ]          (Advanced)
+<Option ScalingOfSum
+validation > 0 >
+
+Output file mode  o 16-bit integers   o Floating point   (Advanced)
+<Option ModeToOutput   1 for 16-bit integers, 2 for floating point>
+
+Rotation and flip value for output n[0-7, default 0]   (Advanced)
+<Option SumRotationAndFlip
+add the same description string as or for RotationAndFlip to the right of spinner>
+
+Reduce output size by n[-]
+<This provides second value in option AlignAndSumBinning, see above on first value>
+
+Output file name [                   ]   
+<Option OutputImageFile
+(When mdoc or tilt series given, default to rootname_af.mrc or rootname_af_dw.mrc 
+depending on if doing non-normalized dose weighting.)
+(If making non-dose weighted, make it ..._af_nodw.mrc if output ends in _af_dw.mrc,
+or add _nodw to rootname otherwise)
+
+[] Use GPU
+<Option UseGPU 0  for best available>
+
+[Run Alignframes]  [Plot All Results]  [Open Output Tilt Series]
+
+[Start Reconstruction]    (Opens Etomo setup page)
+
+Right click menu would also have
+Plot Shifts
+Plot Mean Residuals
+Plot Max of Max Residuals
+Alignframes log
+Alignframes man page
+
+
+HOW TO GET THE Alignframes parameter ListOfInputFiles
+
+User enters list  file      
+listFileFromUser
+
+No angles in names  Angles in names and in other file      Angles just in names
+                      sorttiltframes                          sorttiltframes makes
+                      just makes an angle file                 rootname_inlist.txt                      
+                                                              
+
+Run with:
+listFileFromUser           listFileFromUser                   rootname_inlist.txt
+
+=========================
+
+                        User selects files
+ No angles in names  Angles in names and in other file      Angles just in names
+ etomo makes              etomo makes                         etomo makes
+ rootname_inlist.txt     rootname_templist.txt               rootname_inlist.txt
+                         sorttiltframes makes               sorttiltframes makes
+                         rootname_inlist.txt                   an angle file
+Run with
+ rootname_inlist.txt     rootname_inlist.txt                rootname_inlist.txt                
+ 

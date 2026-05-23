@@ -1,0 +1,91 @@
+Version = 1.0
+Pip = 1
+
+[Field = StackName]
+short = stack
+type = FN
+usage = Name of image stack (rootname and extension)
+tooltip = 
+manpage = Name of the image stack to operate on, from which a rootname and
+extension can be derived.  However, if restoring with the \fB-orig\fR option,
+this should be the rootname and extension without the "_orig".  This is a
+required entry; if it is not entered with this option is not entered, the
+first non-option argument will be taken as the image stack name.
+
+[Field = ViewsToExclude]
+short = views
+type = LI
+usage = List of views to exclude, numbered from 1
+tooltip = 
+manpage = List of views to exclude, numbered from 1.  This entry is required
+unless \fB-restore\fR is entered.  When restoring a stack,
+it is not necessary to enter the view list, and it is better not to, if an
+info file is present from when the views were first excluded.  However, if
+there is no info file, a view list is needed; this would be the original list
+of views given for the exclusion.
+
+[Field = MontagedImages]
+short = montage
+type = B
+usage = Image stack contains montaged images
+tooltip = 
+manpage = The image stack consists of montaged images.  If this option is not
+entered, the program will detect whether a file is a montage automatically, if
+the piece coordinates are contained in the header
+of an MRC file, the attributes of an HDF file, or an associated ".mdoc" file
+(one whose name consists of the stack name plus ".mdoc").  Thus, this entry is
+not needed unless the piece coordinates are contained only in a piece list
+file.  It is also not needed when restoring a stack if there is an info file
+present.
+
+[Field = DeleteOldFiles]
+short = delete
+type = B
+usage = Delete existing stack file(s) rather than keeping them
+tooltip = 
+manpage = Delete the redundant image and associated files after an operation
+is successfully completed instead of retaining them.  Specifically, after
+excluding views, the original image stack and any associated files that are
+replaced are renamed with "_allviews#" by default (where "#" is the iteration 
+number), and will be deleted with this option.  After restoring excluded
+views, the existing files are renamed with "_keptviews#" by default; whereas
+with this option, both these files and the ones for excluded views named
+with "_cutviews#" will be deleted.
+
+[Field = RestoreFullStack]
+short = restore
+type = B
+usage = Combine removed and retained views to restore full stack
+tooltip = 
+manpage = Combine retained views in the current stack file with excluded views
+in the latest "_cutviews#" file to restore the full stack present before the
+last iteration.  If an info file is present, the \fB-views\fR and
+\fB-montage\fR options should not be entered.  If \fB-views\fR is entered, the
+info file is ignored and \fB-montage\fR will be needed if piece coordinates
+are only in a piece list file.  If multiple iterations of exclusion have been
+run, the program needs to be run with this option that number of times to get
+back to a stack with all of the original views.
+
+[Field = OriginalStack]
+short = orig
+type = B
+usage = Restore excluded views into original stack (setname_orig.ext)
+tooltip = 
+manpage = Restore excluded views into the original stack before X-ray removal.
+By default, the current file entered with \fB-stack\fR will be combined with
+the excluded views; with this option, the original file "rootname_orig.ext"
+will be combined with the excluded views and the combined file will be given
+that name.
+
+[Field = PID]
+type = B
+usage = Print process ID
+tooltip =
+manpage = 
+
+[Field = usage]
+short = help
+type = B
+usage = Print help output
+tooltip = 
+manpage = 

@@ -1,0 +1,57 @@
+.na
+.nh
+.TH preNID 1 4.8.32 IMOD
+.SH NAME
+preNID \- 2D non-linear isotropic diffusion filter for tilt projections
+.SH SYNOPSIS
+preNID [options]
+.SH DESCRIPTION
+preNID is a pre-reconstruction non-conservative non-linear isotropic
+diffusion (NID) filter that automatically identifies and reduces local
+irregularities in the tilt projections (see Maiorca M., Millet C.,
+Hanssen E., Abbey B., Kazmierczak E., Tilley L., J Struct Biol. 2014
+Apr;186(1):28-37). In particular, the filter targets highly electron
+dense regions, such as gold nanoparticles, that can hide proximal
+biological structures and degrade the overall quality of the
+reconstructed tomograms.
+.P
+Notes from David Mastronarde: The names of the options below correspond
+to the various factors referred to in the paper: sigma for initial
+Gaussian smoothing, alpha as a scaling factor of sigma for smoothing a
+difference between initially smoothed and original images, tau as a
+threshold for a normalized gradient value, beta as a sigma for Gaussian
+smoothing of areas above threshold during diffusion iterations.  The
+effectiveness of sigma, alpha, and tau for selecting the gold versus
+other regions can be assessed by outputting a mask file with the
+\fB-mask\fR option and comparing it to the original data.
+.P
+With the unbinned IMOD tutorial data set, most gold can be masked with
+a sigma of 5, alpha of 0.5, tau of 0.1 - 0.12, beta of 5 to 8, and 10
+to 15 iterations.  Failure to mask the gold at high angles leaves some
+streaking artifacts around the gold.  There is some slight masking of the
+basal body microtubules near zero tilt.
+.P
+The options for entering sigma, alpha, beta, tau, and iterations all
+allow multiple values to be entered, which is why they are shown as
+"array" entries.  The same number of values must be
+entered for each.  Consult the source code or experiment to see what
+effect these multiple entries would have.
+.P
+.SH OPTIONS
+preNID uses the PIP package for input (see the manual page
+for pip(1)).  Options can be specified either as command line
+arguments (with the -) or one per line in a command file
+(without the -).  Options can be abbreviated to unique letters; the currently
+valid abbreviations for short names are shown in parentheses.
+INSERT OPTION TEXT HERE
+.TP
+.B -StandardInput
+Read parameter entries from standard input
+.SH AUTHOR
+.nf
+Mauro Maiorca
+.fi
+.SH SEE ALSO
+preNAD(1), nad_eed_3d(1)
+.SH BUGS
+Email bug reports to mast@colorado.edu.

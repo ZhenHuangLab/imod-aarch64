@@ -1,0 +1,155 @@
+Version = 1.0
+Pip = 1
+
+[Field = RootName]
+short = root
+type = CH
+usage = Root name of dataset, including a or b if dual axis (required)
+tooltip =
+manpage = Root name of dataset.  For one axis of a dual-axis data set,
+include the "a" or "b" in this name.  This option is required.
+
+[Field = VolumeModeled]
+short = volume
+type = FN
+usage = Volume that was modeled or on which points were picked (required)
+tooltip =
+manpage = Name of the volume in which points were selected.  If a model file
+is supplied, this should be the volume that was modeled.  If a point
+coordinate file is supplied, the coordinates must correspond to pixel
+positions in this file.  This option is required.
+
+[Field = CenterPositionFile]
+short = center
+type = FN
+usage = Name of IMOD model or text file with desired center positions
+tooltip =
+manpage = Name of an IMOD model file or a point coordinate file with the
+desired center positions in the modeled volume.  A point coordinate file
+should have one point per line, with its X, Y, and Z coordinates separated by
+spaces, not commas.  These coordinates should correspond to pixels in the full
+file specified with \fB-volume\fR, where the first pixel in any dimension
+spans coordinates from 0 to 1. This option is required. 
+
+[Field = ObjectsToUse]
+short = objects
+type = LI
+usage = List of model objects with desired point positions
+tooltip =
+manpage = If only a subset of objects in the model contain points of interest,
+this option can be used to enter a list of those objects
+(comma-separated ranges are allowed).
+
+[Field = OutputModel]
+short = output
+type = FN
+usage = Name of output model with positions in raw tilt series
+tooltip = 
+manpage = Name of output model with positions in raw tilt series.  If this
+option is not entered, the first non-option argument will be taken as the
+output model name.
+
+[Field = AngleOutputFile]
+short = angle
+type = FN
+usage = Name of text file for output of projection angles at each position
+tooltip = 
+manpage = Name of text file to receive a list of the projection angles at each
+position in the tilt series, as well as defocus values if the \fB-defocus\fR
+option is entered.  This file is produced by Tilt(1); see the corresponding
+option in that man page for a full description of the output.
+
+[Field = DefocusFile]
+short = defocus
+type = FN
+usage = File with list of defocus values, or root name of ctfphaseflip file
+tooltip = 
+manpage = With this entry, the file of projection angles specified by
+\fB-angle\fR will also have defocus values for each point.  The entry must be
+one of two forms: either the file name of a file with a list of defocus
+values in nanometers, one per line, underfocus positive; or the root name of
+.com and .log files for a run of Ctfphaseflip(1).  In the latter case,
+typically the entry will just be "ctfcorrection", with "a" or "b" added if
+necessary.  The program will read the .com file to determine the pixel size
+used for CTF correction, and whether tilt angles were inverted; and it will
+read the .log file to find the defocus values for each view.
+
+[Field = PixelSize]
+short = pixel
+type = F
+usage = Pixel size of raw stack
+tooltip = 
+manpage = The pixel size of the raw stack; this entry is needed only when
+entering a defocus file that is a list of defocus values, and only if the
+pixel size in the aligned stack is not correct.
+
+[Field = InvertTiltAngles]
+short = invert
+type = B
+usage = Invert tilt angles for defocus computations
+tooltip = 
+manpage = Invert tilt angles for defocus computations; this entry is needed 
+only when entering a defocus file that is a list of defocus values.
+
+[Field = FullReconstruction]
+short = full
+type = CH
+usage = Name of full original reconstruction
+tooltip = 
+manpage = Name of full original reconstruction.  The default is
+"rootname_full.rec" with the old naming style, or "rootname_full_rec.mrc" with
+"mrc" naming style, so this entry is needed if that file does not exists or if
+the reconstruction has a different name.  Only the header is read from this
+file.
+
+[Field = AlignedStack]
+short = ali
+type = CH
+usage = Name of aligned stack file
+tooltip = 
+manpage = Name of aligned stack file.  The default is "rootname.ali" with old
+naming style, or "rootname_ali.mrc" with ".mrc" naming style, so this
+entry is needed if that file does not exists or if the aligned stack has a
+different name.  Only the header is read from this file.
+
+[Field = CommandFile]
+short = com
+type = FN
+usage = Tilt command file used to make the reconstruction (default tilt.com)
+tooltip = 
+manpage = Tilt command file used to make the reconstruction. The
+default is to use "tilt.com", so this option is needed for a dual-axis data
+set or to use a copy of the file.
+
+[Field = ReorientionType]
+short = reorient
+type = I
+usage = -1, 1, or 0 if volume was reoriented by rotation around X, swapping Y
+and Z, or not at all
+tooltip = 
+manpage = This option can be used to specify the type of reorientation that
+was applied to the original reconstruction to obtain the modeled volume, in
+the unlikely event that the program cannot detect which was used.
+Reorientation by rotation around the X axis can be detected by the tilt
+angles in the volume header; swapping of Y and Z can be detected
+only if the "clip: flipyz" title is still present.  If necessary, the program
+will assume that swapping occurred if the Y dimension is more than twice the Z
+dimension, or that no reorientation occurred if the Z dimension is more than
+twice the Y dimension.  If the program makes a wrong assumption or insists
+that this option be used, enter a 0 for no reorientation, 1 for swapping of Y
+and Z, or -1 for rotation around X.
+
+[Field = SkipBackTransform]
+short = skip
+type = B
+usage = Produce output model that fits on aligned rather than raw stack 
+tooltip = 
+manpage = Skip the back-transformation to the raw stack and output a
+model that fits the aligned stack instead.
+
+[Field = usage]
+short = help
+type = B
+usage = Print help output
+tooltip = 
+manpage = 

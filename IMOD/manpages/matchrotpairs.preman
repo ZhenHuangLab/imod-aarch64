@@ -1,0 +1,58 @@
+.na
+.nh
+.TH matchrotpairs 1 2.8.2 IMOD
+.SH NAME
+matchrotpairs \- find transform between best matching pair of rotated views
+.SH SYNOPSIS
+matchrotpairs [options] file_a file_b output_transform
+.SH DESCRIPTION
+Matchrotpairs will find the best-matching pair of images between two
+sets of tilted images rotated by
+about 90 degrees from each other and output the transformation between
+that pair of images.  The program was first developed for
+the analysis of image distortion fields.  The transformation is supplied to
+Finddistort(1), which will use it to compute the absolute stretch component of
+an image distortion field.  However, the stretch cannot be computed accurately
+if one of the images is of a tilted specimen, because a tilt will shrink
+the image slightly perpendicular to the tilt axis.  Also, the specimen cannot
+be assumed to be horizontal at zero tilt.  The solution to these problems is
+to use a specimen with some features distributed at different heights, take a
+small tilt series of the specimen (e.g., at -4, -2, 0, 2, and 4 degrees),
+rotate it by 90 degrees, and take another such tilt series.
+Matchrotpairs can then be used to search for the pair of views from the two
+series that match the best, using essentially the same procedure as in
+Transferfid(1).  The difference between these images can then be
+assumed to be the result of the rotation alone, even if the specimen is tilted
+in each of these two views.
+
+The recommended procedure would be to run Finddistort(1) first to find a
+zero-stretch distortion field, and to supply this field to Matchrotpairs.
+The two best matching images will be undistorted and these undistorted images
+should then differ only by a stretch, allowing the stretch to be determined
+with the greatest accuracy.
+
+Matchrotpairs is a Python script that uses a module shared with
+Transferfid(1) for most of its operations
+
+.SH OPTIONS
+Matchrotpairs uses the PIP package for input (see the manual page for pip(1)).
+Options can be specified either as command line arguments (with the -)
+or one per line in a command file (without the -).  Options can be abbreviated
+to unique letters; the currently valid abbreviations for short names are shown
+in parentheses.
+INSERT OPTION TEXT HERE
+.TP
+.B -StandardInput
+Read parameter entries from standard input
+.SH FILES
+The best matching pair will be undistorted if the 
+.B -d
+option is given and stacked into a file with the root name of the
+output file and the extension ".stack".
+If the output file already exists, a backup image
+of the original is created
+with the ~ extension.
+.SH AUTHOR
+David Mastronarde  <mast@colorado.edu>
+.SH SEE ALSO
+finddistort(1), transferfid(1), midas(1)

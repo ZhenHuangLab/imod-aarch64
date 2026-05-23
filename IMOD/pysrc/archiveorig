@@ -1,0 +1,215 @@
+#!/usr/bin/env python
+# archiveorig - script to get compressed file for archiving original stack
+#
+# Author: David Mastronarde
+#
+# $Id$
+#
+
+progname = 'archiveorig'
+prefix = 'ERROR: ' + progname + ' - '
+
+xrayname = ''
+origname = ''
+compname = ''
+
+# cleanup after error or interrupt: call with 1 for restore or 2 for archive
+def cleanup(which):
+   try:
+      if xrayname:
+         os.remove(xrayname)
+      if which == 1 and origname:
+         os.remove(origname)
+   except Exception:
+      pass
+
+def spoolGzip(which):
+   chunksize = 10000000
+   try:
+      if which == 1:
+         errstr = 'Uncompressing ' + compname
+         infile = gzip.open(compname, 'rb')
+         outfile = open(xrayname, 'wb')
+         inname = compname + '.old'
+      else:
+         errstr = 'Compressing ' + xrayname
+         outfile = gzip.open(compname, 'wb')
+         infile = open(xrayname, 'rb')
+         inname = xrayname
+
+      prnstr(errstr + ' ...')
+
+      while True:
+         data = infile.read(chunksize)
+         lendata = len(data)
+         if not lendata:
+            break
+         outfile.write(data)
+         if lendata < chunksize:
+            break
+
+      infile.close()
+      outfile.close()
+   except KeyboardInterrupt:
+      cleanup(which)
+      sys.exit(1)
+   except Exception:
+      cleanup(which)
+      exitError(errstr)
+
+   try:
+      if which == 1:
+         makeBackupFile(inname)
+         os.rename(compname, inname)
+      else:
+         os.remove(inname)
+   except Exception:
+      if which == 1:
+         prnstr('WARNING: ' + progname + ' - Failed to rename ' + compname + ' to ' +\
+                   inname)
+      else:
+         prnstr('WARNING: ' + progname + ' - Failed to remove ' + inname)
+
+
+#### MAIN PROGRAM  ####
+#
+# load System Libraries
+import os, sys, gzip, glob
+
+#
+# Setup runtime environment
+if os.getenv('IMOD_DIR') != None:
+   sys.path.insert(0, os.path.join(os.environ['IMOD_DIR'], 'pylib'))
+   from imodpy import *
+   addIMODbinIgnoreSIGHUP()
+else:
+   sys.stdout.write(prefix + " IMOD_DIR is not defined!\n")
+   sys.exit(1)
+os.environ['PIP_PRINT_ENTRIES'] = '0'
+
+#
+# load IMOD Libraries
+from pip import *
+
+options = ['r::B:Restore setname_orig.ext from setname.st and setname_xray.ext.gz',
+           'd::B:Delete setname_orig.ext after computing difference',
+           'n::I:Number of levels of archives to restore', ':PID:B:Print process ID',
+           'h::B:Print usage and exit']
+
+PipExitOnError(False, prefix)
+(numOpts, numNonOpts) = PipParseInput(sys.argv, options)
+
+doPID = PipGetBoolean('PID', 0)
+printPID(doPID)
+
+if numNonOpts < 1 or PipGetBoolean('h', 0):
+   PipPrintHelp(progname, 0, 1, 0)
+   sys.exit(0)
+
+restore = PipGetBoolean('r', 0)
+delete = PipGetBoolean('d', 0)
+numLevels = PipGetInteger('n', 1)
+passOnKeyInterrupt(True)
+
+stack = PipGetNonOptionArg(0)
+if not os.path.exists(stack):
+   exitError('File ' + stack + ' does not exist')
+
+(setname, stackExt) = os.path.splitext(stack)
+origname = setname + '_orig' + stackExt
+xrayname = setname + '_xray' + stackExt
+compname = xrayname + '.gz'
+
+# For Restores
+if restore:
+   if not os.path.exists(compname):
+      exitError('File ' + compname + ' does not exist')
+      
+   # Get the collection of existing files (Python 2.3 does not have sort(reverse))
+   compList = [compname]
+   for suffix in ('[0-9][0-9]', '[0-9]'):
+      compSuff = glob.glob(compname + suffix)
+      compSuff.sort()
+      compSuff.reverse()
+      compList += compSuff
+
+   numLevels = max(1, numLevels)
+   if numLevels > len(compList):
+      exitError('There are not enough xray' + stackExt + '.gz files to restore ' + \
+                str(numLevels) + ' levels')
+
+   nextLevel = 1
+   if numLevels > 1:
+      numList = []
+      for ind in range(1, len(compList)):
+         numList.append(int(os.path.splitext(compList[ind])[1][1:]))
+      nextLevel = numList[0] + 1
+      for ind in range(1, numLevels - 1):
+         if numList[ind - 1] - numList[ind] != 1:
+            exitError('There is not a complete sequence of _xray' + stackExt +\
+                      '.gz.N files; N = ' +  str(numList[ind] - 1) + ' is missing')
+
+   # Loop on the levels, create an _origN for each _xrayN
+   realStack = stack
+   for ind in range(numLevels):
+      if ind:
+         compname = setname + '_xray' + stackExt + '.gz.' + str(nextLevel)
+      origname = setname + '_orig' + stackExt
+      if ind < numLevels - 1:
+         origname += '.' + str(nextLevel)
+         
+      prnstr('Restoring ' + origname + ' ...')
+      spoolGzip(1)
+      try:
+         runcmd(fmtstr('subimage "{}" "{}" "{}"', stack, xrayname, origname))
+      except ImodpyError:
+         cleanup(1)
+         exitFromImodError(progname)
+      except KeyboardInterrupt:
+         cleanup(1)
+         sys.exit(1)
+
+      # Clean up the difference file, and the previous orig file after the first round,
+      # and prepare for the next round where this orig file is stack
+      cleanupFiles([xrayname])
+      if ind and realStack != stack:
+         cleanupFiles([stack])
+      stack = origname
+      nextLevel -= 1
+         
+   prnstr('DONE')
+   sys.exit(0)
+
+# Archiving
+if not os.path.exists(origname):
+   exitError('File ' + origname + ' does not exist')
+
+if os.path.exists(xrayname):
+   try:
+      os.remove(xrayname)
+   except Exception:
+      prnstr('WARNING: ' + progname + ' - Could not remove existing ' + xrayname)
+
+makeBackupFile(compname)
+prnstr("Getting difference image ...")
+try:
+   runcmd(fmtstr('subimage -mode 2 "{}" "{}" "{}"', stack, origname, xrayname))
+except ImodpyError:
+   cleanup(2)
+   exitFromImodError(progname)
+
+spoolGzip(2)
+          
+statinfo = os.stat(compname)
+prnstr(fmtstr('Compressed difference file  {}  has size {:.2f} MB', compname,
+              statinfo.st_size / (1024. * 1024.)))
+if delete:
+   prnstr('Deleting ' + origname + ' ...')
+   try:
+      os.remove(origname)
+   except Exception:
+      prnstr('WARNING: ' + progname + ' - Could not remove ' + origname)
+else:
+   prnstr('It is now safe to delete ' + origname)
+prnstr('To restore it, enter:   ' + progname + ' -r ' + stack)
+sys.exit(0)

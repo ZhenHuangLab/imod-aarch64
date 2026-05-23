@@ -1,0 +1,789 @@
+#!/usr/bin/env python
+# tomostitch - program to perform tasks in final stitching of a supermontage:
+# running findwarp, warpvol, densmatch, newstack, and blendmont
+#
+# Author: David Mastronarde
+#
+# $Id$
+#
+
+# FUNCTIONS
+
+# Run densmatch 
+def runDensmatch(args):
+   denscom = 'densmatch -report ' + args
+   if verbose:
+      prnstr(denscom)
+   try:
+      densout = runcmd(denscom, None)
+   except ImodpyError:
+      exitFromImodError(progname)
+            
+   for l in densout:
+      if l.find('SD =') >= 0:
+         prnstr(l, end = '')
+      indcolon = l.find(':')
+      if indcolon >= 0 and l.startswith('Scale factor'):
+         scaling = l[indcolon + 1:].split()
+         if len(scaling) != 2:
+            exitError("Could not find two numbers on Scale factor line")
+         return scaling
+
+   exitError("No Scale factor line found in output")
+
+
+# Take product of scaling between volumes and scaling of reference volume
+def scalingProduct(scale1, scale2):
+   return (scale1[0] * scale2[0], scale1[0] * scale2[1] + scale1[1])
+
+
+# Take inverse of a scaling
+def scalingInverse(scale):
+   return (1. / scale[0], -scale[1] / scale[0])
+
+
+# round to an integer value
+def mynint(value):
+   return (int(floor(value + 0.5)))
+
+
+# Determine limits of overlap zone for densmatch in short and long directions
+def densmatchLimits(shortSize, spacing, shortEcd, matchWidth, longSize, longEcd,
+                   matchLength):
+   overlap = shortSize - spacing - shortEcd
+   width = matchWidth
+   if width < 0:
+      width = int(matchWidthFrac * overlap)
+   elif applyScale:
+      width = mynint(matchWidth * scaleFactor)
+   shortMin = int(spacing + shortEcd + overlap / 2 - width / 2)
+   shortMax = int(shortMin + width - 1)
+   length = matchLength
+   if matchLengthY <= 0:
+      length = int(matchLengthFrac * (longSize - fabs(longEcd)))
+   elif applyScale:
+      length = mynint(matchLength * scaleFactor)
+   longMin = int(longSize / 2 + longEcd / 2 - length / 2)
+   longMax = int(longMin + length - 1)
+   return (shortMin, shortMax, longMin, longMax)
+
+
+# Look up the shift needed in blendmont for the given edge
+def findEdgeCorrDisp(ix, iy):
+   (ecdx, ecdy) = (0, 0)
+   for edge in edges:
+      if edge[kLower] == [ix, iy, zrun] and kBlendShift in edge:
+         ecdx = mynint(edge[kBlendShift][0] * scaleFactor)
+         ecdy = mynint(edge[kBlendShift][1] * scaleFactor)
+   return (ecdx, ecdy)
+
+
+#### MAIN PROGRAM  ####
+#
+# load System Libraries
+import os, sys
+from math import *
+
+progname = 'tomostitch'
+prefix = 'ERROR: ' + progname + ' - '
+
+#
+# Setup runtime environment
+if os.getenv('IMOD_DIR') != None:
+   sys.path.insert(0, os.path.join(os.environ['IMOD_DIR'], 'pylib'))
+   from imodpy import *
+   addIMODbinIgnoreSIGHUP()
+else:
+   sys.stdout.write(prefix + " IMOD_DIR is not defined!\n")
+   sys.exit(1)
+
+#
+# load IMOD Libraries
+from pip import *
+from supermont import *
+
+setSMErrorPrefix(prefix)
+
+# Initializations
+targets = '0.1,0.2,0.3'
+discount = 0.5
+numMatchIter = 100
+matchWidthFrac = 0.3
+matchLengthFrac = 0.7
+clipsize = 600
+
+# Fallbacks from ../manpages/autodoc2man 3 1 tomostitch
+options = ["info:InfoFile:FN:", "xrun:XRunStartEnd:IP:",
+           "yrun:YRunStartEnd:IP:", "zrun:ZRun:I:",
+           "thickness:ThicknessToOutput:I:", "find:FindWarping:B:",
+           "warp:WarpVolumes:B:", "stack:StackVolumes:B:",
+           "blend:BlendVolumes:B:", "verbose:VerboseOutput:I:",
+           "target:TargetMeanResidual:FA:",
+           "measured:MeasuredRatioMinAndMax:FP:",
+           "discount:DiscountIfZeroVectors:F:",
+           "tempdir:TemporaryDirectory:CH:",
+           "density:DensityReferenceFrame:IPM:",
+           "match:MatchingWidthXandY:IP:", "length:MatchingLengthXandY:IP:",
+           "xminmax:StartingAndEndingX:IP:",
+           "yminmax:StartingAndEndingY:IP:", "bin:BinByFactor:I:",
+           "oldedge:OldEdgeFunctions:B:", "goodedge:GoodEdgeLowAndHighZ:IP:",
+           "onegood:OneGoodEdgeLimits:IAM:",
+           "exclude:ExcludeFillFromEdges:B:", "width:BlendingWidthXandY:IP:",
+           "boxsize:BoxSizeShortAndLong:IP:"]
+
+(numOpts, numNonOpts) = PipReadOrParseOptions(sys.argv, options, progname, 1, \
+                                              1, 0)
+infofile = PipGetInOutFile('InfoFile', 0)
+if not infofile:
+   exitError("Info file name must be entered")
+
+
+predata = {}
+pieces = []
+edges = []
+slices = []
+readMontInfo(infofile, predata, slices, pieces, edges)
+(xmin, xmax, ymin, ymax, zmin, zmax, zlist) = montMinMax(pieces)
+
+# Get the extent in X and Y
+xrunStart, yrunStart = -10000, -10000
+xrunEnd, yrunEnd = 10000, 10000
+
+xrunStart, xrunEnd = PipGetTwoIntegers('XRunStartEnd', xrunStart, xrunEnd)
+yrunStart, yrunEnd = PipGetTwoIntegers('YRunStartEnd', yrunStart, yrunEnd)
+xrunStart = max(xrunStart, xmin)
+yrunStart = max(yrunStart, ymin)
+xrunEnd = min(xrunEnd, xmax)
+yrunEnd = min(yrunEnd, ymax)
+
+# Get the section to do in Z
+if len(zlist) > 1:
+   zrun = PipGetInteger('ZRun', 0)
+   if PipGetErrNo() == 1:
+      exitError("Z value to run must be specified")
+
+   for z in zlist:
+      if z == zrun:
+         break
+   else:
+      exitError("the Z value entered is not in the info file")
+else:
+   zrun = zlist[0]
+
+# Find the section data for this z
+ecdStubName = ''
+ecdName = ''
+for i in range(len(slices)):
+   if int(slices[i][kZvalue]) == zrun:
+      slice = slices[i]
+      indSlice = i
+      if not (kSpacing in slice and kOutsize in slice and \
+              kSample in slice):
+         exitError("The info file is missing spacing, output size, " \
+               + " or interval factor data for this section")
+      xoutSize = slice[kOutsize][0]
+      youtSize = slice[kOutsize][1]
+      zoutSize = slice[kOutsize][2]
+      xSpacing = slice[kSpacing][0]
+      ySpacing = slice[kSpacing][1]
+      sampleFac = float(slice[kSample])
+      slicename = slice['name']
+      if kEcdStub in slice:
+         ecdStubName = slice[kEcdStub]
+         ecdName = slicename + '.ecd'
+                                  
+      break
+else:
+   exitError("There is no section data for this Z in the info file")
+
+# Get thickness and a bunch of other parameters
+zoutSize = PipGetInteger('ThicknessToOutput', zoutSize)
+zEntered = PipGetErrNo() == 0
+if zoutSize < 1:
+   exitError("Illegal thickness value")
+refFrameX, refFrameY = PipGetTwoIntegers('DensityReferenceFrame', -1, -1)
+minRatio = 4. / (sampleFac * sampleFac * sampleFac)
+maxRatio = 12. / (sampleFac * sampleFac * sampleFac)
+minRatio, maxRatio = PipGetTwoFloats('MeasuredRatioMinAndMax', minRatio, \
+                                     maxRatio)
+targets = PipGetString('TargetMeanResidual', targets)
+discount = PipGetFloat('DiscountIfZeroVectors', discount)
+tempdir = PipGetString('TemporaryDirectory', " ")
+goodLowZ, goodHiZ = PipGetTwoIntegers('GoodEdgeLowAndHighZ', -1, -1)
+blendWidthX, blendWidthY = PipGetTwoIntegers('BlendingWidthXandY', -1, -1)
+boxShort, boxLong = PipGetTwoIntegers('BoxSizeShortAndLong', -1, -1)
+indentShort, indentLong = PipGetTwoIntegers('IndentShortAndLong', -1, -1)
+binFactor = PipGetInteger('BinByFactor', 1)
+oldedges = PipGetBoolean('OldEdgeFunctions', 0)
+excludeFill = PipGetBoolean('ExcludeFillFromEdges', 0)
+matchWidthX, matchWidthY = PipGetTwoIntegers('MatchingWidthXandY', -1, -1)
+matchLengthX, matchLengthY = PipGetTwoIntegers('MatchingLengthXandY', -1, -1)
+scaleFactor = PipGetFloat('SizeScalingFactor', 1.)
+scaleEntered = PipGetErrNo() == 0
+applyScale = PipGetBoolean('ApplyScaleToEntries', 0)
+if applyScale and not scaleEntered:
+   exitError('If you enter -apply, you must enter a scale factor with -scale')
+verbose = PipGetInteger('VerboseOutput', 0)
+
+# X/Y start and end converted to a string down below
+xblst, xblnd = PipGetTwoIntegers('StartingAndEndingX', 0, 0)
+xblDefault = PipGetErrNo()
+yblst, yblnd = PipGetTwoIntegers('StartingAndEndingY', 0, 0)
+yblDefault = PipGetErrNo()
+
+numOneGood = PipNumberOfEntries('OneGoodEdgeLimits')
+oneGoods = []
+if numOneGood:
+   for i in range(0, numOneGood):
+      oneGood = PipGetIntegerArray('OneGoodEdgeLimits', 5)
+      oneGoods.append(oneGood)
+
+# Find out what operations to do
+dofind = PipGetBoolean('FindWarping', 0)
+dowarp = PipGetBoolean('WarpVolumes', 0)
+doblend = PipGetBoolean('BlendVolumes', 0)
+dostack = PipGetBoolean('StackVolumes', 0)
+if not (dofind + dowarp + doblend + dostack):
+    dofind, dowarp, doblend, dostack = 1, 1, 1, 1
+if dofind and ((doblend and not (dowarp and dostack)) or \
+               (dostack and not dowarp)):
+    exitError('If you run findwarp you must run each following step in ' \
+              'sequence')
+if dowarp and doblend and not dostack:
+    exitError('If you run Warpvol you need to stack the data before blending')
+
+PipDone()
+
+# Build a piece map 
+xdim = xmax + 1 - xmin
+maxPieces = xdim * (ymax + 1 - ymin)
+if xdim <= 0 or maxPieces <= 0:
+    exitError(" Illegal range of pieces to run specified")
+
+pieceMap = []
+for i in range(maxPieces):
+   pieceMap.append(-1)
+for i in range(len(pieces)):
+   fxyz = pieces[i][kFrame]
+   if fxyz[2] == zrun:
+      pieceMap[fxyz[0] - xmin + xdim * (fxyz[1] - ymin)] = i
+
+# Run findwarp
+if dofind:
+   failed = []
+   prnstr('Running findwarp with min and max ratios of measured to unknowns' +\
+         fmtstr(' of: {:.1f}  {:.1f}', minRatio, maxRatio))
+   for y in range(yrunStart, yrunEnd + 1):
+      for x in range(xrunStart, xrunEnd + 1):
+         ind = pieceMap[x - xmin + xdim * (y - ymin)]
+         if ind >= 0:
+            if not (kVectors in pieces[ind] and \
+                    kMatxf in pieces[ind]):
+               exitError(fmtstr('Frame {} {} is missing an initial transform'+\
+                     ' or warping vectors', x, y))
+            patname = pieces[ind][kVectors]
+            xfname = pieces[ind][kMatxf]
+            warpname = changeExtension(xfname, '.warpxf')
+            resname = changeExtension(xfname, '_res.patch')
+            resmod = changeExtension(xfname, '_res.mod')
+
+            # First check and see if input patch file needs updating
+            if os.path.exists(patname) and os.path.exists(resmod) and \
+                   os.path.getmtime(resmod) > os.path.getmtime(patname):
+               updatePatchFromModel(patname, resmod)
+            
+            volz = zoutSize
+            if scaleEntered and zEntered and not applyScale:
+               volz = mynint(zoutSize / scaleFactor)
+            input = [fmtstr('VolumeOrSizeXYZ {} {} {}', xoutSize, youtSize, \
+                            volz),
+                     'TargetMeanResidual ' + targets,
+                     fmtstr('DiscountIfZeroVectors {:f}', discount),
+                     fmtstr('MeasuredRatioMinAndMax {:f} {:f}', minRatio, \
+                            maxRatio),
+                     'PatchFile ' + patname,
+                     'OutputFile ' + warpname,
+                     'InitialTransformFile ' + xfname,
+                     'ResidualPatchOutput ' + resname]
+            try:
+               prnstr(fmtstr('\nRunning findwarp on frame {} {}\n', x, y))
+               fwout = runcmd('findwarp -StandardInput', input, 'stdout')
+
+               prnstr(" ")
+            except ImodpyError:
+               failed.append((x, y))
+
+            if os.path.exists(resname):
+               patchcom = fmtstr('patch2imod -s 5 -f -d -c {} -n  ', clipsize) +\
+                          '"Values are residuals; clip planes exist" ' + \
+                          fmtstr('-z {} {}', resname, resmod)
+               runcmd(patchcom, None)
+
+   if len(failed):
+      prnstr('\n\nTo summarize, Findwarp failed on frames:')
+      for frames in failed:
+         prnstr(fmtstr('      x {}  y {}', frames[0], frames[1]))
+      exitError('Findwarp did not succeed on all frames')
+
+# Run warpvol
+if dowarp:
+   (outx, outy, outz) = (xoutSize, youtSize, zoutSize)
+   if scaleEntered:
+      outx = mynint(xoutSize * scaleFactor)
+      outy = mynint(youtSize * scaleFactor)
+      if applyScale or not zEntered:
+         outz = mynint(zoutSize * scaleFactor)
+
+   # This is the one point at which the output thickness of these volumes is known,
+   # so take care of expanding the ecd file now
+   if ecdStubName:
+      stublines = readTextFile(ecdStubName, 'file with edge displacements')
+      if len(stublines) == 0 or len(stublines[0].split()) != 2:
+         exitError('Stub file with edge displacements does not start properly')
+      nsplit = stublines[0].split()
+      numXedge = convertToInteger(nsplit[0], 'number of X edges in stub file')
+      numYedge = convertToInteger(nsplit[1], 'number of Y edges in stub file')
+      if len(stublines) < numXedge + numYedge + 1:
+         exitError('Stub file with edge displacements does not have enough lines')
+      ecdlines = [fmtstr('{}  {}', outz * numXedge, outz * numYedge)]
+      for stubstnd in ([1, numXedge + 1], [numXedge + 1, numXedge + numYedge + 1]):
+         for i in range(outz):
+            ecdlines += stublines[stubstnd[0] : stubstnd[1]]
+      writeTextFile(ecdName, ecdlines)
+
+   # Now loop on volumes
+   for y in range(yrunStart, yrunEnd + 1):
+      for x in range(xrunStart, xrunEnd + 1):
+         ind = pieceMap[x - xmin + xdim * (y - ymin)]
+         if ind >= 0:
+            if not kMatxf in pieces[ind]:
+               exitError('No initial transform has been computed for ' + \
+                     fmtstr('frame {} {}', x, y))
+            xfname = pieces[ind][kMatxf]
+            warpname = changeExtension(xfname, '.warpxf')
+            aliname = changeExtension(xfname, '.warped')
+            if not os.path.exists(warpname):
+               exitError('No warping transform file is found for ' + \
+                     fmtstr('frame {} {}', x, y))
+
+            input = [fmtstr('OutputSizeXYZ {} {} {}', outx, outy, outz),
+                     'InputFile ' + pieces[ind]['file'],
+                     'OutputFile ' + aliname,
+                     'TransformFile ' + warpname]
+            if tempdir != ' ':
+               input.append('TemporaryDirectory ' + tempdir)
+            if scaleEntered:
+               input.append(fmtstr('ScaleTransforms {:f}', scaleFactor))
+            if verbose:
+               for li in input:
+                  prnstr(li)
+            try:
+               prnstr(fmtstr('\nRunning warpvol on frame {} {}\n', x, y))
+               runcmd('warpvol -StandardInput', input)
+
+            except ImodpyError:
+               exitFromImodError(progname)
+
+# Densmatch and stack volumes and make piece list: first check size and number
+if dostack:
+   numStack = 0
+   refNum = -1
+   aliList = []
+   plist = []
+   listMap = { }
+   if scaleEntered:
+      xSpacing = mynint(xSpacing * scaleFactor)
+      ySpacing = mynint(ySpacing * scaleFactor)
+   for y in range(yrunStart, yrunEnd + 1):
+      for x in range(xrunStart, xrunEnd + 1):
+         ind = pieceMap[x - xmin + xdim * (y - ymin)]
+         if ind >= 0:
+            if not kMatxf in pieces[ind]:
+               exitError('No initial transform has been computed for ' +\
+                     fmtstr('frame {} {}', x, y))
+            xfname = pieces[ind][kMatxf]
+            aliname = changeExtension(xfname, '.warped')
+            if not os.path.exists(aliname):
+               exitError('No aligned volume is found for ' + \
+                    fmtstr('frame {} {}', x, y))
+            
+            try:
+               xstmp, ystmp, zstmp = getmrcsize(aliname)
+            except ImodpyError:
+               exitFromImodError(progname)
+
+            # First stack, record size and reference if not specified,
+            # otherwise check for size match
+            if not numStack:
+               xsize = xstmp
+               ysize = ystmp
+               zsize = zstmp
+               if refFrameX == -1 and refFrameY == -1:
+                  refNum = 0
+            elif xsize != xstmp or ysize != ystmp or zsize != zstmp:
+               exitError('All aligned volumes are not the same size')
+
+            listMap[ind] = len(aliList)
+            aliList.append(aliname)
+            if refFrameX == x and refFrameY == y:
+               refNum = numStack
+            numStack += 1
+
+            # Add lines to piece list array.  Start coordinates at 0
+            xcoord = (x - xrunStart) * xSpacing
+            ycoord = (y - yrunStart) * ySpacing
+            for i in range(zsize):
+               line = fmtstr('{}  {}  {}\n', xcoord, ycoord, i)
+               plist.append(line)
+
+   if refNum < 0:
+      exitError('The reference frame is not in the range being blended')
+
+   if numStack < 2:
+      exitError('There is only one frame in the given range and no ' \
+            'need to stack and blend')
+
+   # Run densmatch; first do old global matching if either width is 0
+   sclList = []
+   if matchWidthX == 0 or matchWidthY == 0:
+      for i in range(numStack):
+         if i != refNum:
+            prnstr('Running densmatch on ' + aliList[i])
+            scaling = runDensmatch(aliList[refNum] + ' ' + aliList[i])
+            sclList.append(scaling[0] + ',' + scaling[1])
+         else:
+            sclList.append('1,0')
+
+   else:
+
+      # Analyze all the overlaps in the range being run
+      # First build arrays to get to lower and upper pieces
+      lowerPcX = []
+      lowerPcY = []
+      upperPcX = []
+      upperPcY = []
+      lowerSclX = []
+      lowerSclY = []
+      pcScalings = []
+      for y in range(yrunStart, yrunEnd + 1):
+         for x in range(xrunStart, xrunEnd + 1):
+            ind = pieceMap[x - xmin + xdim * (y - ymin)]
+            if ind >= 0:
+               pcInd = listMap[ind]
+               pcScalings.append(None)
+
+               # Look up lower piece in X and run densmatch on overlap
+               loInd = -1
+               loScl = (1., 0.)
+               if x > xrunStart:
+                  ind = pieceMap[x - 1 - xmin + xdim * (y - ymin)]
+                  if ind >= 0:
+                     loInd = listMap[ind]
+                     (ecdx, ecdy) = findEdgeCorrDisp(x - 1, y)
+                     (ixmin, ixmax, iymin, iymax) = \
+                         densmatchLimits(xsize, xSpacing, ecdx, matchWidthX, ysize, ecdy,
+                                         matchLengthY)
+                     args = fmtstr('-xminmax {},{} -yminmax {},{} -offset ' +
+                                   '{},{},0 {} {}', ixmin, ixmax, iymin, iymax,
+                                   -xSpacing - ecdx, -ecdy, aliList[loInd], 
+                                   aliList[pcInd])
+                     prnstr('Running densmatch in overlap between piece'\
+                           + fmtstr(' {} {} and piece {} {}', x-1, y, x, y))
+                     prnstr(args)
+                     scaling = runDensmatch(args)
+                     loScl = (float(scaling[0]), float(scaling[1]))
+                     
+               lowerPcX.append(loInd)
+               lowerSclX.append(loScl)
+
+               # Look up upper piece in X
+               upInd = -1
+               if x < xrunEnd:
+                  ind = pieceMap[x + 1 - xmin + xdim * (y - ymin)]
+                  if ind >= 0:
+                     upInd = listMap[ind]
+               upperPcX.append(upInd)
+
+               # Look up lower piece in Y and run densmatch
+               loInd = -1
+               loScl = (1., 0.)
+               if y > yrunStart:
+                  ind = pieceMap[x - xmin + xdim * (y - 1 - ymin)]
+                  if ind >= 0:
+                     loInd = listMap[ind]
+                     (ecdx, ecdy) = findEdgeCorrDisp(x, y - 1)
+                     (iymin, iymax, ixmin, ixmax) = \
+                         densmatchLimits(ysize, ySpacing, ecdy, matchWidthY, xsize, ecdx,
+                                         matchLengthX)
+                     args = fmtstr('-xminmax {},{} -yminmax {},{} -offset ' +
+                                   '{},{},0 {} {}', ixmin, ixmax, iymin, iymax,
+                                   -ecdx, -ySpacing - ecdy, aliList[loInd],
+                                   aliList[pcInd])
+                     prnstr('Running densmatch in overlap between piece'\
+                           + fmtstr(' {} {} and piece {} {}', x, y-1, x, y))
+                     scaling = runDensmatch(args)
+                     loScl = (float(scaling[0]), float(scaling[1]))
+
+               lowerPcY.append(loInd)
+               lowerSclY.append(loScl)
+
+               # Look up upper piece in Y
+               upInd = -1
+               if y < yrunEnd:
+                  ind = pieceMap[x - xmin + xdim * (y + 1 - ymin)]
+                  if ind >= 0:
+                     upInd = listMap[ind]
+               upperPcY.append(upInd)
+
+      # Start with the reference piece defined and then analyze pieces
+      # adjacent to ones with scaling defined on first iteration
+      # Thereafter, just compute a scale from all neighbors to distribute the
+      # error equally between the pieces
+      pcScalings[refNum] = (1., 0.)
+      for iter in range(numMatchIter):
+         addedScale = True
+         verbout = (verbose and (iter < 4 or iter >= numMatchIter - 2)) or \
+                 verbose == 2
+         if verbout:
+            prnstr(fmtstr('\nIteration {}:', iter + 1))
+         while addedScale:
+            addedScale = False
+            newScalings = { }
+            for i in range(numStack):
+               if (iter == 0 and pcScalings[i] != None) or i == refNum:
+                  continue
+               numScales = 0
+               multsum = 0.
+               addsum = 0.
+               loInd = lowerPcX[i]
+               if loInd >= 0 and pcScalings[loInd] != None:
+                  netscl = scalingProduct(pcScalings[loInd], lowerSclX[i])
+                  multsum += netscl[0]
+                  addsum += netscl[1]
+                  numScales += 1
+                  if verbout:
+                     if numScales == 1:
+                        prnstr('')
+                     prnstr(fmtstr('Piece {} from lower X, net scale {:.5f}' +\
+                                   ' {:.2f}', i, netscl[0], netscl[1]))
+
+               loInd = lowerPcY[i]
+               if loInd >= 0 and pcScalings[loInd] != None:
+                  netscl = scalingProduct(pcScalings[loInd], lowerSclY[i])
+                  multsum += netscl[0]
+                  addsum += netscl[1]
+                  numScales += 1
+                  if verbout:
+                     if numScales == 1:
+                        prnstr('')
+                     prnstr(fmtstr('Piece {} from lower Y, net scale {:.5f}' +\
+                                   ' {:.2f}', i, netscl[0], netscl[1]))
+
+               upInd = upperPcX[i]
+               if upInd >= 0 and pcScalings[upInd] != None:
+                  invscl = scalingInverse(lowerSclX[upInd])
+                  netscl =  scalingProduct(pcScalings[upInd], invscl)
+                  multsum += netscl[0]
+                  addsum += netscl[1]
+                  numScales += 1
+                  if verbout:
+                     if numScales == 1:
+                        prnstr('')
+                     prnstr(fmtstr('Piece {} from upper X, net scale {:.5f}' +\
+                                   ' {:.2f}', i, netscl[0], netscl[1]))
+
+               upInd = upperPcY[i]
+               if upInd >= 0 and pcScalings[upInd] != None:
+                  invscl = scalingInverse(lowerSclY[upInd])
+                  netscl =  scalingProduct(pcScalings[upInd], invscl)
+                  multsum += netscl[0]
+                  addsum += netscl[1]
+                  numScales += 1
+                  if verbout:
+                     if numScales == 1:
+                        prnstr('')
+                     prnstr(fmtstr('Piece {} from upper Y, net scale {:.5f}' +\
+                                   ' {:.2f}', i, netscl[0], netscl[1]))
+
+               if numScales:
+                  newScalings[i] = (multsum / numScales, addsum / numScales) 
+                  addedScale = True
+                  if numScales > 1 and verbout:
+                     prnstr(fmtstr('Piece {} mean scale {:.5f}  {:.2f}', \
+                                   i, newScalings[i][0], newScalings[i][1]))
+
+            # Now if any were added, set them into the array of scales
+            if addedScale:
+               for i in newScalings.keys():
+                  pcScalings[i] = newScalings[i]
+            if iter > 0:
+               addedScale = False
+
+
+      # Now just convert the scalings into strings
+      for i in range(numStack):
+         sclList.append(fmtstr('{:f},{:f}', pcScalings[i][0], pcScalings[i][1]))
+
+
+   # Compose the newstack command, report scaling, and run newstack
+   newstcom = 'newstack'
+   prnstr('')
+   for y in range(yrunStart, yrunEnd + 1):
+      for x in range(xrunStart, xrunEnd + 1):
+         ind = pieceMap[x - xmin + xdim * (y - ymin)]
+         if ind >= 0:
+            i = listMap[ind]
+            scaling = sclList[i].split(',')
+            prnstr(fmtstr('Piece {} {}: multiply by {:.5f}, add {:.2f}', \
+                          x, y, float(scaling[0]), float(scaling[1])))
+            newstcom += ' -multadd ' + sclList[i] + ' ' + aliList[i] 
+
+   newstcom += ' ' + slicename + '.st'
+   prnstr('\nStacking the volumes into ' + slicename + '.st')
+   if verbose:
+      prnstr(newstcom)
+   try:
+      newstout = runcmd(newstcom, None)
+   except ImodpyError:
+      exitFromImodError(progname)
+   l = newstout[len(newstout) - 1]
+   if l.find('TRUNCATIONS') >= 0:
+      prnstr(l)
+   
+   # Make the piece list file
+   try:
+      plname = slicename + '.pl'
+      makeBackupFile(plname)
+      plfile = open(plname, 'w')
+      plfile.writelines(plist)
+      plfile.close()
+   except:
+      exitError('Opening or writing to piece list file ')
+      
+   slices[indSlice][kXstacked] = [xrunStart, xrunEnd]
+   slices[indSlice][kYstacked] = [yrunStart, yrunEnd]
+
+# Now is a good time to write the info file
+if dofind or dowarp or dostack:
+   writeMontInfo(infofile, predata, slices, pieces, edges)
+
+# Blend!
+if doblend:
+   if applyScale:
+      blendWidthX = mynint(blendWidthX * scaleFactor)
+      blendWidthY = mynint(blendWidthY * scaleFactor)
+      boxShort = mynint(boxShort * scaleFactor)
+      boxLong = mynint(boxLong * scaleFactor)
+      indentShort = mynint(indentShort * scaleFactor)
+      indentLong = mynint(indentLong * scaleFactor)
+      xblst = mynint(xblst * scaleFactor)
+      xblnd = mynint(xblnd * scaleFactor)
+      yblst = mynint(yblst * scaleFactor)
+      yblnd = mynint(yblnd * scaleFactor)
+      if goodLowZ > 0 and goodHiZ > 0:
+         goodLowZ = mynint((goodLowZ - 1) * scaleFactor) + 1
+         goodHiZ = max((1, mynint(goodHiZ * scaleFactor)))
+      
+   if xblDefault:
+      xstnd = '/'
+   else:
+      xstnd = fmtstr('{} {}', xblst, xblnd)
+   if yblDefault:
+      ystnd = '/'
+   else:
+      ystnd = fmtstr('{} {}', yblst, yblnd)
+      
+   input = ['ImageInputFile\t' + slicename + '.st',
+            'PieceListInput\t' + slicename + '.pl',
+            'ImageOutputFile\t' + slicename + '.bl',
+            'RootNameForEdges\t' + slicename,
+            fmtstr('OldEdgeFunctions\t{}', oldedges),
+            'StartingAndEndingX\t' + xstnd,
+            'StartingAndEndingY\t' + ystnd,
+            fmtstr('ExcludeFillFromEdges\t{}', excludeFill)]
+   if binFactor > 1:
+      input.append(fmtstr('BinByFactor\t {}', binFactor))
+   if blendWidthX > 1 and blendWidthY > 1:
+      input.append(fmtstr('BlendingWidthXandY\t{} {}', blendWidthX, \
+                          blendWidthY))
+   if boxShort > 1 and boxLong > 1:
+      input.append(fmtstr('BoxSizeShortAndLong\t{} {}', boxShort, boxLong))
+   if indentShort > 1 and indentLong > 1:
+      input.append(fmtstr('IndentShortAndLong\t{} {}', indentShort,indentLong))
+   if goodLowZ > 0 and goodHiZ > 0:
+      input.append(fmtstr('GoodEdgeLowAndHighZ\t{} {}', goodLowZ - 1, \
+                          goodHiZ - 1))
+   if ecdName:
+      input += ['SloppyMontage 1',
+                'ReadInXcorrs 1',
+                'SameEdgeShifts',
+                fmtstr('BinningForEdgeShifts {}', scaleFactor)]
+
+   # Get range of slices to look over for edge limits
+   xlo = xmin
+   xhi = xmax
+   ylo = ymin
+   yhi = ymax
+   if kXstacked in slices[indSlice]:
+      xlo = slices[indSlice][kXstacked][0]
+      xhi = slices[indSlice][kXstacked][1]
+   if kYstacked in slices[indSlice]:
+      ylo = slices[indSlice][kYstacked][0]
+      yhi = slices[indSlice][kYstacked][1]
+
+   # Loop on all edges
+   for edge in edges:
+      zlo = -1
+      zhi = -1
+      xpc = edge[kLower][0]
+      ypc = edge[kLower][1]
+      xory = 1
+      if edge[kXorY] == 'Y':
+         xory = 2
+      if edge[kLower][2] == zrun and xpc >= xlo and xpc <= xhi and \
+         ypc >= ylo and ypc <= yhi:
+
+         
+         # If and edge has lower piece in range and has a limit, take it
+         if kGoodlim in edge:
+            zlo = edge[kGoodlim][0]
+            zhi = edge[kGoodlim][1]
+
+         # Then search entries for overriding values for this edge
+         for i in range(numOneGood):
+            if oneGoods[i][0] == xpc and oneGoods[i][1] == ypc and \
+               oneGoods[i][2] == xory:
+               zlo = oneGoods[i][3]
+               zhi = oneGoods[i][4]
+
+         # Add to input if any found
+         if zlo > 0 and zhi > 0:
+            if applyScale:
+               zlo = mynint((zlo - 1) * scaleFactor) + 1
+               zhi = max((1, mynint(zhi * scaleFactor)))
+               
+            input.append(fmtstr('OneGoodEdgeLimits\t{} {} {} {} {}', \
+                         xpc + 1 - xlo, ypc + 1 - ylo, xory, zlo - 1, zhi - 1))
+
+   # Output a command file before running it
+   sys.stdout.flush()
+   comlist = ['$blendmont -StandardInput\n']
+   for l in input:
+      comlist.append(l + '\n')
+   comname = 'blend_' + slicename + '.com'
+   makeBackupFile(comname)
+   try:
+      comfile = open(comname, 'w')
+      comfile.writelines(comlist)
+      comfile.close()
+      prnstr('Command file to run blendmont output to ' + comname)
+   except:
+      prnstr('WARNING: unable to open or write new command file' + comname)
+
+   prnstr('Running blendmont to build ' + slicename + '.bl')
+   try:
+      runcmd('blendmont -StandardInput', input, 'stdout')
+   except ImodpyError:
+      exitFromImodError(progname)
+
+sys.exit(0)

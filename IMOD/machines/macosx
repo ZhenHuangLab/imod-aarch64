@@ -1,0 +1,598 @@
+#!/bin/csh
+#############################################################################
+#
+set c_includes = ''
+set Lfftwlib = ''
+set Lhdflib = ""
+set uint64          = "uint64_t"
+echo "#include <sys/unistd.h>" >> $hconfigure
+echo "#include <stdint.h>" >> $hconfigure
+#
+#   default is to assume tifflib does exist
+#
+if ($tifflibs == default) set tifflibs = true
+
+if ($tifflibs == true) set c_includes = "$c_includes"' -I/usr/local/include'
+
+# If FFTW exists and no -mkl option, adjust include path and set library variables
+#
+if ($?FFTW3_DIR && $useMKL == false) then
+    set c_includes = "$c_includes -I${FFTW3_DIR}/include"
+    set Lfftwlib = "-L${FFTW3_DIR}/lib"
+    set lifft = "-lifft -lfftw3f_omp -lfftw3f"
+endif
+
+# If HDF exists, adjust variables
+#
+if ($?HDF5_DIR) then
+    set c_includes = "$c_includes -I${HDF5_DIR}/include"
+    set Lhdflib = "-L${HDF5_DIR}/lib"
+    set lhdf = "-lhdf5"
+endif
+
+# Set defaults for using gcc
+#
+set openmpFlags = ""
+set ccompFlags = ""
+set dynamicOpt = ""
+
+set ccomp = "gcc"
+set cxx = "g++"
+set libmt = ""
+set clang = 0
+setenv QMAKESPEC macx-g++
+gcc -v >&! gcc.tmp
+set gccvers = `sed -n '/gcc version/s/.*sion \([0-9\.]*\).*/\1/p' gcc.tmp |sed '/\./s// /g'`
+if ("$gccvers" == "") then
+    set gccvers = `sed -n '/clang version/s/.*sion \([0-9\.]*\).*/\1/p' gcc.tmp |sed '/\./s// /g'`
+    if ("$gccvers" != "") set clang = 1
+endif
+\rm -f gcc.tmp
+if ($#gccvers < 2) set gccvers = (3 0)
+@ minorvers = $gccvers[2]
+
+set release = `echo $URELEASE | sed 's/\./ /g'`
+@ majorrel = $release[1]
+
+# Set default fortran compiler to intel for intel, but only if it exists and 
+# its true location has been put on the path
+#
+if ($compiler == default && $intel == true) then
+    set ifortout = `which ifort`
+    if ($status || "$ifortout:h" == "/usr/bin") then
+	set compiler = gfortran
+        if ($minorvers < 2 || $majorrel > 11) set openmp = false
+    else
+	set compiler = ifort
+    endif
+endif
+if ($compiler == gnu) set compiler = gfortran
+
+# If using intel fortran compiler, check for C compiler too
+# Let an intel entry force use of C++ compiler if possible
+#
+set mixed = 0
+if ($compiler == gcc-ifort) set mixed = 1
+if ($compiler == ifort || $compiler == intel || $mixed) then
+    set compiler = ifort
+
+    # Get the fortran version, they changed libraries
+    #
+    ifort -v >&! ifort.tmp
+    set ifortnum = `sed -n -e '/\./s// /g' -e '/ersion/s/.*ersion \([0-9 ]*\).*/\1/p' ifort.tmp`
+    \rm -f ifort.tmp
+    @ ifortversion = 9
+    if ("$ifortnum" != "") @ ifortversion = $ifortnum[1]
+    set fortdir = `which ifort`
+
+    # Resolve the link if any, the hard way
+    while (1)
+        set longlist = `ls -l $fortdir | sed -n '/^.*-> /s///p'`
+        if ("$longlist" == "") break
+        set fortdir = $longlist
+    end
+    set openmplib = "libguide"
+    if ($ifortversion > 10) set openmplib = "libiomp5"
+    if ($ifortversion < 15) then
+	set openmpOpt = "-openmp"
+	set dynamicOpt = "-i-dynamic"
+	set vecrepOpt = '-vec-report0'
+    else
+	set openmpOpt = "-qopenmp"
+	set dynamicOpt = "-shared-intel"
+	set vecrepOpt = ""
+    endif
+
+    set iccout = `which icc`
+    if (! $status && ! $mixed && ("$iccout:h" != "/usr/bin" || $compiler == intel)) then
+        set ccomp = "icc"
+        set cxx = "icpc"
+        setenv QMAKESPEC macx-icc
+	set ccompFlags = $vecrepOpt
+        if ($ifortversion >= 15) set qt_flags = "-std=c++11 $qt_flags"
+        if ($openmp == true) then
+            set openmpFlags = $openmpOpt
+            set openmpfFlags = $openmpOpt
+            set libmt = "mt"
+        endif
+        set nnvulnflags = '-fp-model source'
+    else
+        if ($gccvers[1] <= 4 && $minorvers < 2) set openmp = false
+    endif
+endif
+
+if ($compiler == gfortran && ($majorrel > 11 || $minorvers < 2)) set openmp = false
+
+# If using gcc, assume that version 4.2 has openmp for C and fortran
+if ($ccomp == gcc) then
+    if ($gccvers[1] == 3) then
+        echo "IMOD can no longer be compiled with g77/gcc 3"
+        exit 1
+    endif
+    if (($gccvers[1] > 4 || $minorvers >= 2) && $openmp == true) then
+        if (! $clang) set openmpFlags = "-fopenmp"
+        set openmpfFlags = "-fopenmp"
+        set libmt = "mt"
+
+        # For mixed compilation, the library must be libiomp, and need to
+        # specify this before version 11 where it became default
+        if ($compiler == ifort) then
+            set openmpfFlags = "-openmp --openmp-lib compat"
+            set openmplib = "libiomp5"
+            if ($ifortversion > 10) set openmpfFlags = $openmpOpt
+        endif
+    endif
+
+endif
+
+if ($useMKL == true) then
+    if ($compiler != ifort) then
+        echo "The -mkl option can only be used with Intel compilers"
+        exit 1
+    endif
+    set mkldir = `\find $fortdir:h:h -name mkl -depth 1 -print`
+    if ("$mkldir" == "") set mkldir = `\find $fortdir:h:h:h -name mkl -depth 1 -print`
+    if ("$mkldir" == "") set mkldir = `\find $fortdir:h:h:h:h -name mkl -depth 1 -print`
+    if ("$mkldir" == "") then
+        echo "Cannot find Intel MKL directory"
+        exit 1
+    endif
+    set c_includes = "$c_includes -I${mkldir}/include/fftw"
+
+    # If not doing static link to libifft, need to build with this option
+    #set Lfftwlib = "-mkl"
+endif
+
+if ($?MACOSX_DEPLOYMENT_TARGET) then
+    set sdkpath = `\find /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs -depth 1 -name "*${MACOSX_DEPLOYMENT_TARGET}*" -print`
+    if (! $#sdkpath && -e /Developer/SDKs) set sdkpath = `\find /Developer/SDKs -depth 1 -name "*${MACOSX_DEPLOYMENT_TARGET}*" -print`
+    if ($#sdkpath == 1) then
+        set macsdkFlags = "-isysroot $sdkpath"
+	if ($?MACOSX_VERSION_MIN) then
+	    set macsdkFlags = "$macsdkFlags -mmacosx-version-min=$MACOSX_VERSION_MIN"
+	endif
+	echo "Setting compile flag  $macsdkFlags"
+    endif
+endif
+
+# DNM 1/1/9/03: remove the defines for FILE_OFFSET_BITS=64 here and in the
+# qconfigures - it doesn't work anymore on OS 10.3
+
+echo "CC        = $ccomp"              >> $configure
+echo "CXX       = $cxx"              >> $configure
+
+# Figure out if 64-bit from Qt moc program and set name of LD_LIBRARY variable
+# Set -m32 as a default for gcc compiles (m32/m64 could be set for Intel too?)
+# Since setup puts out DYLD_FRAMEWORK_PATH, only DYLD_LIBRARY_PATH is needed
+#
+set filetext = `file $QTDIR/bin/moc | grep 64-bit`
+set m64flags = ""
+set ld_lib_var      = DYLD_LIBRARY_PATH
+set tiffa = libtiff.a
+set jpega = libjpeg.a
+if ($ccomp == gcc) set m64flags = '-m32'
+if ("$filetext" != "") then
+    set m64bit = true
+    set m64notIA = true
+    if ($ccomp == gcc) set m64flags = '-m64'
+    if (-e /usr/local/lib/libtiff64.a) set tiffa = libtiff64.a
+    if (-e /usr/local/lib/libjpeg64.a) set jpega = libjpeg64.a
+endif
+
+# If there are frameworks, do not add QtOpenGl for midas
+if (-d $QTDIR/lib/QtOpenGL.framework) set midasGL = ""
+
+# Set the TIFF libs.  libiimod needs to have all of them; now that they are statically
+# linked the executables do not need them.  And jpeg has to be in front
+# The 64 and 32-bit libraries can coexist...
+if ($tifflibs == true) then
+    set ltiff = "-lz"
+    set tiffdef = "/usr/local/lib/$tiffa -lz"
+    if (-e /usr/local/lib/$jpega) then
+        set tiffdef = "/usr/local/lib/$jpega $tiffdef"
+    else
+        set jpeglib = false
+    endif
+else
+    set jpeglib = false
+    set ltiff = ""
+endif
+
+if ($majorrel > 10) \cp sysdep/mac/stdarg.h include
+
+# -read_only_relocs warning is not supposed to be used with 64-bit OS 10.6
+#
+set ldread_only = "-read_only_relocs warning"
+set wlread_only = "-Wl,-dynamic -Wl,-read_only_relocs,warning"
+if ($m64bit == true && $majorrel > 9) then
+    set ldread_only = ""
+    set wlread_only = ""
+endif
+
+echo "LDFLAGS = $m64flags"' -L$(LIBDIR) '"$dynamicOpt $openmpFlags $Lhdflib $Lfftwlib $ldread_only" >> $configure
+
+if ($compiler == ifort) then
+    set fcomp = "ifort"
+    set fcompFlags = "-132 -assume bscc $vecrepOpt -heap-arrays 100"
+
+    echo "      parameter (nbytes_recl_item=4)" >! $endian_dir/recl_bytes.inc
+    set ldfflags = '-L$(LIBDIR) '"$dynamicOpt $openmpfFlags $Lhdflib $Lfftwlib $wlread_only"
+    set fcmpldFlags = "$dynamicOpt"
+    set exefflags = "-mdynamic-no-pic"
+    set onelib = `\find $fortdir:h:h -name libimf.dylib -print`
+    if ("$onelib" == "") set onelib = `\find $fortdir:h:h:h -name libimf.dylib -print`
+    if ("$onelib" == "") set onelib = `\find $fortdir:h:h:h:h -name libimf.dylib -print`
+    if ("$onelib" == "") echo "CANNOT FIND INTEL LIB DIR"
+    echo "DLLSOURCEDIR1 = $onelib:h" >> $configure
+    set dllstocopy1 = "libifcore$libmt libifport$libmt libimf libsvml"
+
+    # As usual, we don't know where this started being needed between 15 and 19
+    if ($ifortversion <= 9 || $ifortversion >= 19) set dllstocopy1 = "$dllstocopy1 libirc"
+    if ($ifortversion > 9) set dllstocopy1 = "$dllstocopy1 libintlc"
+    if ($ifortversion >= 13) set dllstocopy1 = "$dllstocopy1 libirng"
+    if ($openmp == true) set dllstocopy1 = "$dllstocopy1 $openmplib"
+else
+
+    set fcompFlags = "-ffixed-line-length-0"
+    set exefflags = ""
+    set fcmpldFlags = $ldfflags
+
+    set dllsourcedir1 = "/usr/local/lib"
+    #
+    # gfortran needs unlimited fixed format, and date and time subroutines
+    # also needs -fbackslash starting at 4.3 
+    gfortran -v >&! gfortran.tmp
+    set gfortvers = `sed -n '/gcc version/s/.*sion \([0-9\.]*\).*/\1/p' gfortran.tmp |sed '/\./s// /g'`
+    \rm -f gfortran.tmp
+    if ("$gfortvers" == "") then
+        set gfortvers = (4 2)
+        echo "Warning: no gfortran found"
+    endif
+    @ minorvers = $gfortvers[2]
+    if ($gfortvers[1] != 4 || $minorvers > 2) set fcompFlags = "-fbackslash $fcompFlags"
+    set fcomp = "gfortran"
+
+    # Sometimes this is needed, sometimes not, just put it in
+    set lapack_flibs = "-lgfortran"
+    echo "DATESRC   = compat/datetime.f" >> $configure
+    echo "DIRDATEOBJ  = compat/datetime.o" >> $configure
+    echo "DATEOBJ  = datetime.o" >> $configure
+    set dllstocopy1 = "libgfortran"
+    if (-e /usr/lib/libgfortran.dylib) set dllsourcedir1 = "/usr/lib"
+    if (-e /usr/local/gfortran/lib) then
+        set dllstocopy1 = "libgfortran libgcc_s.1.dylib libquadmath libstdc++"
+        set dllsourcedir1 = "/usr/local/gfortran/lib"
+    endif
+    echo "DLLSOURCEDIR1 = $dllsourcedir1" >> $configure
+endif
+echo "DLLSTOCOPY1 = $dllstocopy1" >> $configure
+
+if ($wrapintel == true && $compiler == ifort) then
+    echo "DLLDESTDIR = qtlib" >> $configure
+else
+    echo "DLLDESTDIR = lib" >> $configure
+endif
+@ dllnum = 2
+
+# Needed under tcsh 6.12 in RH 8.0 to avoid getting two \ out
+cat << EOF >> $configure
+CP        = \\cp
+FIND      = \\find
+EOF
+
+#set shared_libs = false
+
+if ($shared_libs != false) then
+    if ($ccomp == icc) then
+        echo "AR      = icc"                 >> $configure
+        echo "ARCPP   = icpc"                 >> $configure
+        set far = 'ifort'
+        set fardynamic = "$dynamicOpt"
+    else
+	echo "AR      = c++"                 >> $configure
+	echo "ARCPP   = c++"                >> $configure
+        set fardynamic = ''
+    endif
+    echo "ARFLAGS = $flags $openmpFlags $m64flags $dynamicOpt -dynamiclib -Wl,-single_module -Wl,-flat_namespace -Wl,-undefined,suppress $wlread_only -o "    >> $configure
+    set farflags = "$flags $openmpfFlags $m64flags $fardynamic -dynamiclib -Wl,-single_module -Wl,-flat_namespace -Wl,-undefined,suppress $wlread_only -o "
+    echo "RANLIB    = true"                     >> $configure
+    echo "LIBEXT  = dylib"                 >> $configure
+    if ($majorrel > 7) then
+        set far = $fcomp
+        set makestaticlib = "ar -sruv "
+        set makenmcar = '$(MAKESTATICLIB)'
+        set nmcarext = "a"
+        set systubs = "-lSystemStubs"
+        if ($majorrel > 11) set systubs = ""
+        if ($tifflibs == true) echo "LIBIIMODDEF = $tiffdef $systubs" >> $configure
+    endif
+else
+    echo "AR      = ar"                 >> $configure
+    echo "ARCPP   = ar"                 >> $configure
+    echo "ARFLAGS = ruv "                >> $configure
+    echo "RANLIB    = ranlib"            >> $configure
+    echo "LIBEXT  = a"                  >> $configure
+endif
+
+echo 'MAKELIB   = $(AR) $(ARFLAGS)' >> $configure
+echo 'MAKELIBCPP = $(ARCPP) $(ARFLAGS)' >> $configure
+
+# Simplified 7/26/10 since there is no gcc 3 compile any more
+set fort_cpplibs = "-lstdc++.6"
+if ($compiler == ifort) set fort_cpplibs = "-lstdc++ -lgcc_s.1"
+
+echo "CLIBS   = -lc -lm" >> $configure
+echo 'LIBS    = $(CLIBS)'  >> $configure
+echo 'FORTCLIBS = '  >> $configure
+
+# Removed FLCC and F77LIBS since clip no longer needs fortran
+
+# 
+# tell the C routines which way to swap floats
+#
+echo '#define SWAP_IEEE_FLOATS' >> $hconfigure
+
+# 
+# tell the C and fortran routines to swap the bytes for INTEL
+#
+if ($intel == true) then
+    echo '#define B3D_LITTLE_ENDIAN' >> $hconfigure
+    \cp $endian_dir/little_endian.inc $endian_dir/endian.inc
+endif
+
+#
+# Fork does not work
+# Originally: Clipboard works WITHOUT the timer hack and not with it
+# But in 10.8-10.13 it needs the timer hack and sendevents needs its hack too
+# GLU quadric objects seem to be context specific
+# Clipboard is unreliable so resend events at given interval
+#
+echo '#define NO_IMOD_FORK' >> $hconfigure
+echo '#define GLU_QUADRIC_HACK' >> $hconfigure
+echo '#define SENDEVENT_RETRY_HACK 300' >> $hconfigure
+echo '#define MAC103_BIGFILE' >> $hconfigure
+echo '#define CLIPBOARD_TIMER_HACK 100' >> $hconfigure
+
+# Set the GLU_CALLBACK for OS 10.4 with gcc 4
+if ($majorrel < 9 && $ccomp == gcc) echo '#define GLU_CALLBACK GLvoid (*)(...)' >> $hconfigure
+
+set optimization = "-O3 -w"
+# 12/9/05: hurt more than helped on G5
+#if ($fortvers[1] != 3) set optimization = "-O3 -w -ftree-vectorize -maltivec"
+if ($compiler == ifort) set optimization = "-O2"
+if ($debug == true) set optimization = "-g -O0"
+
+set cflags = "$flags $m64flags $ccompFlags $optimization $defines $include_flags $c_includes $macsdkFlags"
+set fflags = "$flags $m64flags $fcompFlags $fcmpldFlags $optimization $include_flags $macsdkFlags"
+
+echo "CFLAGS  = $cflags" >> $configure
+echo "CXXFLAGS = $cflags" >> $configure
+echo "FFLAGS  = $fflags $exefflags" >> $configure
+echo "TILTFFLAGS  = $fflags $exefflags" >> $configure
+echo "NOOPFFLAGS = $fflags $exefflags -O0" >> $configure
+echo "LIBCFLAGS  = $cflags" >> $configure
+echo "LIBFFLAGS  = $fflags" >> $configure
+
+# RAPTOR on ppc64: The safest course for getting it to compile
+if ($intel != true && $m64bit == true) echo "EIGENFLAGS = -DEIGEN_DONT_VECTORIZE" >> $configure
+
+# 7/6/05: took out the fallbacks; no longer needed on SGI
+#
+
+# make extra fortran libs
+if ($compiler == ifort) then
+    echo 'LINUXFLIBS = ' >> $configure
+    echo "IMLIBS     = -lhvem -lmrcim -liimod -lcfshr -limxml $ltiff $lhdf" >> $configure
+else
+    echo 'LINUXFLIBS = $(LIBCOMPAT)' >> $configure
+    echo "IMLIBS     = -lhvem -lmrcim -liimod -lcfshr -limxml -lb3dcmpt $ltiff $lhdf" >> $configure
+endif
+
+# Adjust variables for CUDA.  Libraries are hardcoded to user's installed 
+# copies but we still have to pack libraries for users without CUDA
+#
+if ($?CUDA_DIR) then
+    set cudavers = `nvcc --version | sed -n -e '/[,.]/s// /g' -e '/^.*release/s///p'`
+    @ cudamajor = $cudavers[1]
+    if ($cudamajor >= 4) set cuda_arch_opts = '-arch sm_20'
+    if ($cudamajor >= 9) set cuda_arch_opts = '-arch sm_30'
+    if ($cudamajor > 2) then
+        set nvcc_flags = "$cuda_arch_opts $nvcc_flags -m64 -DUNIX -Xcompiler -fno-strict-aliasing -O3"
+    else
+        set nvcc_flags = "$cuda_arch_opts $nvcc_flags -DUNIX -Xcompiler -fno-strict-aliasing -O3 --host-compilation C"
+    endif
+    if ("$macsdkFlags" != "") set nvcc_flags = "$nvcc_flags -Xcompiler "'"'"$macsdkFlags"'"'
+    set cudalibs = "-L$CUDA_DIR/lib -Wl,-rpath,/usr/local/cuda/lib -lcudart -lcufft"
+    set cudadlls = "libcudart libcufft"
+    #
+    # We don't know if this is present in 5 or not
+    if ($cudamajor < 6) then
+        set cudalibs = "$cudalibs -ltlshook"
+        set cudadlls = "$cudadlls libcuda libtlshook"
+    endif
+    if ($m64bit == true) set cudalibs = "$cudalibs -lstdc++"
+    echo "DLLSTOCOPY$dllnum = $cudadlls" >> $configure
+    echo "DLLSOURCEDIR$dllnum = $CUDA_DIR/lib" >> $configure
+    @ dllnum++
+endif
+
+# Set up to copy MKL libraries or output static libs: switch to first lines
+# to use all dylibs
+if ($useMKL == true) then
+#    echo "DLLSTOCOPY$dllnum = libmkl_core libmkl_intel_lp64 libmkl_intel_thread libmkl_avx2.dylib libmkl_mc.dylib" >> $configure
+#    echo "DLLSOURCEDIR$dllnum = $mkldir/lib" >> $configure
+#    @ dllnum++
+
+    # One of these might have been needed with a static link, but they aren't
+#    echo "DLLSTOCOPY$dllnum = libmkl_avx2 libmkl_mc" >> $configure
+    echo MKL_STATICS = "$mkldir/lib/libmkl_intel_lp64.a $mkldir/lib/libmkl_intel_thread.a $mkldir/lib/libmkl_core.a" >> $configure
+    
+# Otherwise set up to copy FFTW library
+#
+else if ($?FFTW3_DIR) then
+    echo "DLLSTOCOPY$dllnum = libfftw3f_omp libfftw3f" >> $configure 
+    echo "DLLSOURCEDIR$dllnum = $FFTW3_DIR/lib" >> $configure
+    @ dllnum++
+endif    
+
+# Set up to copy HDF library
+#
+if ($?HDF5_DIR) then
+    echo "DLLSTOCOPY$dllnum = libhdf5" >> $configure 
+    echo "DLLSOURCEDIR$dllnum = $HDF5_DIR/lib" >> $configure
+    @ dllnum++
+endif    
+
+# Set the string for the "ctrl" key
+#
+set ctrl_string = Apple
+
+# 5/11/05: removed libdl.a and dlfcn.h copying, no longer needed
+# set up strip to use -x flag (needed for 10.4)
+# 9/23/08: Intel compiler 10.1, strip -x needed for mtk.  So it is safest
+# to make this unconditional, not gnu compiler only
+set strip = "strip -x"
+
+#
+# Set up things for Qt include files
+#
+
+# get target executable name pattern from sendevent
+# This is just enough in qconfigure to keep it happy
+#
+echo target.path = $inst_bin_dir >! $sendevent_qconf
+(cd $sendevent_dir ; qmake imodsendevent.pro)
+set send_target = `sed -n '/^TARGET *= */s///p' $sendevent_dir/Makefile`
+set imod_target = `echo $send_target | sed '/imod/s/imodsendevent/3dmod/g'`
+set midas_target = `echo $send_target | sed '/imod/s/imodsendevent/midas/g'`
+set assist_target = `echo $send_target | sed '/imod/s/imodsendevent/imodqtassist/g'`
+set mrc2tif_target = `echo $send_target | sed '/imod/s/imodsendevent/mrc2tif/g'`
+set ctf_target = `echo $send_target | sed '/imod/s/imodsendevent/ctfplotter/g'`
+set prochunk_target = `echo $send_target | sed '/imod/s/imodsendevent/processchunks/g'`
+set sourcedoc_exe = `echo $send_target | sed '/imod/s/imodsendevent/sourcedoc/g'`
+
+set dyldLibrary = 'export DYLD_LIBRARY_PATH="${IMOD_QTLIBDIR}:${IMOD_DIR}/lib:$DYLD_LIBRARY_PATH"'
+set dyldFrame = 'export DYLD_FRAMEWORK_PATH="${IMOD_QTLIBDIR}:$DYLD_FRAMEWORK_PATH"'
+set errFilter = '2>&1 1>&3 | grep --line-buffered -v "CoreText performance\|modalSession has been exited\|invalid drawable\|QScreen\|QNSView mouseDragged\|QOpenGLContext::swapBuffers\|GetInputSourceEnabledPrefs\|<CFString\|FIFinderSyncExtensionHost\|SW vertex\|<CFBasicHash\|QGLWidgetClassWindow\|entries =\|^)}\|^}" 1>&2; } 3>&1'
+
+# Make some more lists for looping: the filter is needed for ctfplotter but can't
+# be used because it gives non-zero exit status
+#
+set qrun = (runsendevent runqtassist runctfplotter runprocesschunks runmrc2tif runmidas)
+set qtarget = ($send_target $assist_target $ctf_target $prochunk_target $mrc2tif_target)
+set qfilter = ('; }' '; }' '; }' '; }' '; }')
+
+# make script files to run programs
+# Set DYLD_LIBRARY_PATH with qtlib before running program
+#
+@ i = 0   # Loop on imodsendevent imodqtassist ctfplotter processchunks mrc2tif
+while ($i < 5)
+    @ i++
+cat <<EOF >! $qdir[$i]/$qrun[$i]
+#!/bin/bash
+$dyldLibrary
+$dyldFrame
+{ "\$IMOD_DIR/bin/${qtarget[$i]}" "\$@" ${qfilter[$i]}
+EOF
+chmod a+x $qdir[$i]/$qrun[$i]
+end
+
+# Make the scripts with background/foreground options
+#
+set qbrun = (runimod runimodv runmidas)
+set qtarget = ($imod_target "$imod_target"'" "-view' $midas_target)
+set qbdir = ($imod_dir $imod_dir $midas_dir)
+set bkg3dmod = '"$i" == "-D" || "$i" == "-W" || "$i" == "-L"'
+set bkgTest = ("$bkg3dmod" "$bkg3dmod" '"$i" == "-D"')
+@ i = 0
+while ($i < 3)
+    @ i++
+cat <<EOF >! $qbdir[$i]/$qbrun[$i]
+#!/bin/bash
+$dyldLibrary
+$dyldFrame
+background=1
+for i
+do
+    if [[ ${bkgTest[$i]} ]] ; then
+        background=0
+    fi
+done
+if [[ \$background == "0" ]] ; then
+    { "\$IMOD_DIR/bin/${qtarget[$i]}" "\$@" $errFilter
+else
+    { "\$IMOD_DIR/bin/${qtarget[$i]}" "\$@" $errFilter &
+fi
+EOF
+chmod a+x $qbdir[$i]/$qbrun[$i]
+end
+
+
+cat << EOF  >! $midas_qconf
+INCLUDEPATH += $QTDIR/include/QtOpenGL
+LIBS += $Lhdflib $Lfftwlib
+EOF
+
+# 3/33/04: removed -ldl from the second LIBS line because it is in libqt now
+# 6/4/04: removed -ldtrigs because track is rewritten not to need it
+cat << EOF >! $imod_qconf
+SOURCES += linegui.cpp
+HEADERS += linegui.h
+LIBS += -L$lib_dir $Lhdflib $Lfftwlib -liimod -limesh -limod -ltrack $lifft -lcfshr -limxml -ldiaqt $ltiff $lhdf
+LIBS += -lm
+RC_FILE = b3dicon.icns
+EOF
+
+# 3/30/10: Start this file, it is now expected to be started
+echo "LIBS += $Lhdflib $Lfftwlib" >! $ctfplot_qconf
+echo " " >! $prochunk_qconf
+echo "LIBS += $Lhdflib" >! $mrc2tif_qconf
+
+# Make run scripts for the fortran Qt programs
+# They have to be named run... because the programs install in bin first
+#
+set fortqtprogs = (mtk nda sda genhstplt mtoverlap mtpairing avgstatplot filterplot)
+set gen_scripts = ()
+foreach i ($fortqtprogs)
+    set gen_scripts = ($gen_scripts run$i)
+    cat <<EOF >! $scripts_dir/run$i
+#!/bin/sh
+export DYLD_LIBRARY_PATH="\${IMOD_QTLIBDIR}:\${IMOD_DIR}/lib:\$DYLD_LIBRARY_PATH"
+export DYLD_FRAMEWORK_PATH="\${IMOD_QTLIBDIR}:\$DYLD_FRAMEWORK_PATH"
+"\$IMOD_DIR/bin/$i.app/Contents/MacOS/$i" "\$@"
+EOF
+    chmod a+x $scripts_dir/run$i
+end
+
+#
+# Set up to copy qt lib for a distribution, 
+echo 'QTINSTLIBDIR = qtlib' >> $configure
+echo "MACAPPS = $fortqtprogs" >> $configure
+set qtapp_path  = '$1.app/Contents/MacOS/'
+echo 'INSTALL_FILES = IMOD-mac.csh mac.cshrc IMOD-mac.sh mac.profile linklibs-mac fixMacInstall' >> $configure
+if ($distname == "") then
+    set distname = _osx_ppc
+    if ($intel == true) set distname = _osx 
+    if ($m64bit == true) set distname = ${distname}64
+endif
+

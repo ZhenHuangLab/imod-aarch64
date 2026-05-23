@@ -1,0 +1,41 @@
+<html><head><title>IMOD Library libcfshr</title>
+<body>
+<A NAME = "TOP"></A>
+<H2  align="center">IMOD Library libcfshr</H2>
+The libcfshr library contains various utility functions, the PIP and Autodoc
+modules, and also functions
+easily callable from C and Fortran.  It includes some image processing
+functions, but excludes model-related ones, which are in libimod.
+Modules shared with SerialEM are also maintained in this library.
+<P>
+Whenever the documentation indicates that a function returns a
+non-zero number for an error, it returns 0 for success.
+<UL>
+<LI> <A HREF="ilist.html#TOP">List functions</A> for working with an
+Ilist, a structure for holding arrays of arbitrary items.
+<LI><A HREF="b3dutil.html#TOP">Utility functions</A> for version and
+copyright, getting stripped program name, making a backup file, doing
+large-file I/O, and handling errors from library functions.
+<LI><A HREF="taperpad.html#TOP">Functions for tapering and padding images</A>
+<LI><A HREF="filtxcorr.html#TOP">Functions for Fourier correlation,
+    filtering, and image transformation</A>
+<LI><A HREF="interpbin.html#TOP">Functions for interpolation, reduction, and
+    linear transforms</A>
+<LI><A HREF="simplestat.html#TOP">Simple statistics and statistical functions</A>
+
+<LI><A HREF="robuststat.html#TOP">Functions for sorting and robust statistics</A>
+<LI><A HREF="minimization.html#TOP">Functions for regression, fitting, and
+    minimization</A>
+<LI><A HREF="cfutils.html#TOP">Other utility functions</A>, defined in
+separate files.
+<LI><A HREF="../man/pip.html#TOP">PIP package</A> for parsing input
+parameters.
+<LI><A HREF="autodoc.html#TOP">Autodoc functions</A> for accessing and manipulating
+an autodoc-like file.
+<LI><A HREF="extraheader.html#TOP">Extra header functions</A> for getting
+  values from MRC file extended headers or corresponding values from autodoc
+  files, and manipulating extended headers.
+<LI> <A HREF="mrcslice.html#TOP">Slice functions</A> for doing the most basic
+operations on Islice structures (most slice functions are in libiimod).
+</UL>
+</body>

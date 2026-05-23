@@ -1,0 +1,24 @@
+#!/bin/csh -f
+#############################################################################
+# $Id$
+# Set up initialization file for building BL3DEMC Software.
+# See setup2 for the real action
+#
+
+#
+# Just get the system name for cygwin test
+#
+set USYSTEM  = `uname -s`
+#
+# Convert the real setup file under cygwin and source it
+#
+switch ($USYSTEM)
+    case CYGWIN*:
+        od -N 40 -b setup2 | grep 015 >& /dev/null
+        if (! $status) dos2unix setup2 >& /dev/null
+        breaksw
+    default:
+        breaksw
+endsw
+
+source setup2

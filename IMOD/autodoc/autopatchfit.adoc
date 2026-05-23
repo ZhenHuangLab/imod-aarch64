@@ -1,0 +1,54 @@
+Version = 1.0
+Pip = 1
+
+[Field = FinalPatchTypeOrXYZ]
+short = final
+type = CH
+usage = Final, largest patch size to try (S, M, L, E or size in X, Y, and Z)
+tooltip =
+manpage = Largest patch size to try.  Enter a letter to indicate the
+size of patches, or three numbers for the desired size in X, Y, and Z.  The
+sizes available by letter are S for small (64x32x64), M for medium (80x40x80),
+L for large (100x50x100), or E for extra large (120x60x120).  
+
+[Field = ExtraResidualTargets]
+short = extra
+type = CH
+usage = Extra target residual values for Findwarp in final trial
+tooltip =
+manpage = Extra target residual values for Findwarp in final trial.  These
+values should be higher than any of the ones present on the \fB-warplimit\fR
+entry in matchorwarp.com.  However, if they are already present at the end of
+the existing list, they will be removed for the earlier trials.
+
+[Field = HighDensityFinalTrial]
+short = high
+type = I
+usage = 1 to do a final trial with much higher patch density , or -1 not to
+tooltip =
+manpage = Enter -1 to prevent a higher density final trial even when
+"patchcorr.com" has initial shifts, or 1 to make it happen even without
+the initial shifts.
+
+[Field = TrialMode]
+short = trial
+type = B
+usage = Run Matchorwarp with -trial option to stop before Matchvol/Warpvol
+tooltip =
+manpage =
+
+[Field = SkipFirstPatchcorr]
+short = skip
+type = B
+usage = Skip the first run of patchcorr and work from existing patches
+tooltip =
+manpage = Skip the first run of patchcorr and work from existing patches.
+There is no check that the existing patch.out is based on the correct patch
+size; this option is purely for testing.
+
+[Field = usage]
+short = help
+type = B
+usage = Print help output
+tooltip = 
+manpage = 

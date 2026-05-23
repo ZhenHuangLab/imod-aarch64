@@ -1,0 +1,64 @@
+<html><head><title>Extra Header Module</title></head>
+<body>
+<A NAME = "TOP"></A>
+<H2  align="center">Extra Header Module</H2>
+The extraheader module contains functions for working with information in MRC
+file extended headers and with comparable information in metadata autodoc
+files.  It does not have any functions for manipulating file headers.
+<P>
+MRC header members relevant to this are <I>next</I>, the total number of
+extra bytes, <I>extType</I>, a four-character stamp for the type of header, 
+<I>nint</I> and <I>nreal</I>, which are the number of integers and
+reals per section in Agard/old FEI style headers, or the number of bytes and
+flags for SerialEM headers.  Some of the functions here expect
+"modified" <I>nint</I> and <I>nreal</I> values for other kinds of headers,
+namely the negative of MRC_EXT_TYPE_... codes in mrcfiles.h and a possible
+version number.  These modified values are returned directly when appropriate by 
+<A HREF="unitIO.html#iiuRetExtendedType">iiuRetExtendedType</A>, whereas 
+<A HREF="mrcfiles.html#mrcGetExtendedType">mrcGetExtendedType</A> just returns
+an MRC_EXT_TYPE_ value and the version.
+<P>
+If all images are being transferred from one file to another, then the
+extended header can be copied in its entirety with 
+<A HREF="mrcfiles.html#mrcCopyExtraHeader">mrcCopyExtraHeader</A>, 
+<A HREF="unitIO.html#iiuTransHeader">iiuTransHeader</A>, or 
+<A HREF="unitIO.html#iiuTransExtendedData">iiuTransExtendedData</A>.  All
+fields will be managed appropriately.
+<P>
+If it is necessary to transfer data only for some sections, then the sequence
+of operations would be:
+<OL>
+<LI> Get the extent and type of the extended header from
+<I>next></I>, </I>nint></I> and <I>nreal</I> members and results from
+<A HREF="mrcfiles.html#mrcGetExtendedType">mrcGetExtendedType</A>, or with
+<A HREF="unitIO.html#iiuRetNumExtended">iiuRetNumExtended</A> and
+<A HREF="unitIO.html#iiuRetExtendedType">iiuRetExtendedType</A>.
+<LI> Get the extended header into a buffer with 
+<A HREF="mrcfiles.html#mrcReadExtraHeader">mrcReadExtraHeader</A> or 
+<A HREF="unitIO.html#iiuRetNumExtended">iiuRetExtendedData</A>.
+<LI> Determine the total bytes needed for the extended header from the number
+of output sections and the maximum size returned by
+<A HREF="#getExtraHeaderMaxSecSize">getExtraHeaderMaxSecSize</A>.
+<LI> Set up the output header <B>before writing data</B> by setting <I>next</I> and 
+<I>headerSize</I> (to 1024 + <I>next</I>),
+transferring <I>nint></I> and <I>nreal</I> if they are meaningful, and
+transferring the extended header type stamp with 
+<A HREF="mrcfiles.html#mrcCopyValidExtendedType">mrcCopyValidExtendedType</A>;
+or with 
+<A HREF="unitIO.html#iiuAltNumExtended">iiuAltNumExtended</A>,
+<A HREF="unitIO.html#iiuAltExtendedType">iiuAltExtendedType</A> if the
+incoming values of "nintOrBytes" and "nrealOrFlags" were non-negative, and
+<A HREF="unitIO.html#iiuTransValidExtType">iiuTransValidExtType</A>.
+<LI> Copy data for individual sections from the input buffer to the output
+buffer with <A HREF="#copyExtraHeaderSection">copyExtraHeaderSection</A>.
+<LI> Write the extended header at the end with 
+<A HREF="mrcfiles.html#mrcWriteExtraHeader">mrcWriteExtraHeader</A> or
+<A HREF="unitIO.html#iiuAltExtendedData">iiuAltExtendedData</A>.
+</Ol>
+<P>
+Header to include: cfsemshare.h
+<P>
+LIST FUNCTIONS FROM extraheader.c
+<P>
+DESCRIBE FUNCTIONS FROM extraheader.c
+</body>

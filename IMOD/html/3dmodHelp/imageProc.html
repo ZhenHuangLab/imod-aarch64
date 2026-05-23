@@ -1,0 +1,270 @@
+<head>
+<title>Image Processing</title>
+</head>
+<A NAME = "TOP"><H3>Image Processing</H3></A>
+<P>
+
+
+Various kinds of simple filters can be applied with these 
+controls.  The filter will always be applied to the current 
+section.  A sequence of filters can be applied.  The program keeps a list of
+the applied filters so that it is easy to perform the same operation on a different
+section or on the data as a whole.
+<P>
+Note that many of these filters can be applied to a whole image
+stack through the <A HREF = "../man/clip.html#TOP">Clip</A> and 
+<A HREF = "../man/mtffilter.html#TOP">Mtffilter</A> programs. The <B>List</B>
+button can be used to get a list of the current command(s) in the 
+<A HREF="infowin.html#TOP">Information window</A>, and 
+<B>Process File...</B> in the File menu can be used to apply the command(s)
+(if possible) to
+the whole image file or to the subvolume delineated by the rubber band in the
+Zap window.  This menu item is available when data are loaded unbinned and
+when this dialog is open.
+<P>
+Image data are always analyzed as 8-bit bytes, even when they have been loaded
+into the program as 16-bit integers.  In the latter case, the current setting
+of the <B>Low</B> and <B>High</B> sliders in
+the <A HREF="infowin.html#TOP">Information window</A> determines how data are
+scaled to bytes.  For best results, be sure that the <B>Low</B>
+and <B>High</B> sliders are set so that images have a good contrast with a
+fairly wide range between the <B>Black</B> and <b>White</b> sliders.
+Using the autocontrast function generally leaves the sliders in positions that
+will allow good scaling when processing.
+
+<P>
+<BR><A HREF = "#General">General Controls</A>
+<BR><A HREF = "#FourierFilter">Fourier Filtering</A>
+<BR><A HREF = "#FFT">Fourier Transforms</A>
+<BR><A HREF = "#Smoothing">Smoothing</A>
+<BR><A HREF = "#Median">Median Filtering</A>
+<BR><A HREF = "#Diffusion">Anisotropic Diffusion</A>
+<BR><A HREF = "#EdgeSharpen">Edge and Sharpen</A>
+<BR><A HREF = "#Threshold">Threshold</A>
+<P>
+<A NAME = "General"><H4>General Controls</H4></A>
+<UL>
+<LI>Single-click in the list of filters to select the current filter 
+to be applied to the data; in most cases there will be further 
+parameters to select.
+<LI>
+<B>Apply:</B> This button or the <B>A</B> hot key will apply the
+current filter to the ORIGINAL image data.  Double-clicking in the filter list
+is the same as pressing the <B>Apply</B> button.  The program initializes the
+list of applied filters with the selected operation.
+<LI>
+<B>More:</B> This button or the <B>B</B> hot key will apply the filter
+to the CURRENT image data, as modified by previous filter operations.  The
+program adds this new operation to the list of applied filters.  If you
+change sections away from modified data, this button acts like <B>Apply</B> instead.
+<LI>
+<B>Less:</B> removes the last operation from the list of applied
+filters and reprocesses the current section without that operation.
+<LI>
+<B>Do Same:</B> applies the current list of filters to the current section.  If
+the parameters of the current filter are modified, those new parameters are
+applied.  Thus, this button can be used in two ways: to apply the same
+sequence of filters to a new section, or to reapply the filters to the current
+section with a change of parameters in the last operation.
+<LI>
+<B>Toggle:</B> lets you toggle between the original and modified image by pressing 
+and releasing the button.
+<LI>
+<B>Reset:</B> Pressing this button, applying a filter to a different 
+section, closing the window with <B>Done</B>, or flipping the data 
+volume will all restore the original image data for a section, 
+unless you press the <B>Save</B> button first.  
+<LI>
+<B>Save:</B> will permanently replace the image data in memory with the
+processed data.  If necessary, the data can be restored with
+Edit-Image-Reload.  Also, if image data are loaded into a cache of limited
+size, processed images will disappear if those sections get reloaded from the
+file.
+<LI>
+<B>List:</B> will output to the Information Window the list of commands that
+could be applied to the image file to achieve the current result.  If an
+operation cannot be done at the command line for whatever reason, the list
+includes "Cannot...".  The commands will include file data mode changes as
+necessary to prevent truncation of the data for the particular sequence of
+operations.
+<LI>
+<B>Autoapply:</B> If this is checked, the program will automatically apply the
+current filter(s) to a new section when the section is changed.  This will happen
+only if the section being left has been filtered.
+<LI>
+<B>Autosave:</B> If this is checked, the program will automatically save the
+modified data into program memory when the section is changed.  <I>Use this
+feature with caution.</I>  There is no protection against filtering the same
+section twice if you reverse directions.  Moreover, you need to wait until you
+see a processed slice before moving to the next slice.
+</UL>
+<P>
+<A NAME = "FFT"><H4>Fourier Transforms</H4></A>
+To take a Fourier transform (FFT), the program will pad the image 
+into a square array slightly larger than the original image, taper 
+the image at its edges to minimize edge artifacts, take the FFT, 
+apply log scaling, and clip out the portion that fits into the 
+original image size.  For a non-square image, the FFT will thus be 
+isotropic (X and Y scales the same) but truncated in one dimension.  
+The panel will show the range of frequencies that appear in the X 
+and Y dimensions.  Binning can be used to see the whole transform for 
+a non-square image, and also to reduce noise and execution time.  
+With binning, the smaller FFT will be embedded into a black 
+background.
+<P>
+To do an FFT of a subregion, turn on <B>Use Zap window subarea</B>.  If 
+the rubber band is on in the active Zap window, the FFT will be taken 
+of the area inside the rubber band.  Otherwise, the area used will be 
+the portion of the image showing in the window.
+<P>
+The <B>Compute frequency</B> button can be used to 
+determine the frequency at a particular location in the FFT.  First, click on
+that location with the first mouse button, or deposit a model point there,
+then press the button.  If you are in model mode and there is a current
+model point, its position will be used; otherwise the current image
+position is used.  The current image position is rounded to the nearest pixel
+while a model point can provide subpixel accuracy if needed.
+The program will compute the frequency in reciprocal
+pixels then divide by the pixel size in the model header to get the frequency
+that is show (e.g., reciprocal nanometers).  The inverse of this value is also
+shown to provide a resolution value in real space units.
+<P>
+The panel also shows the scale that is used to convert from pixels 
+in the FFT to frequency units.  
+<P>
+<A NAME = "FourierFilter"><H4>Fourier Filtering</H4></A>
+The Fourier filter is done by taking Fourier transforms and its 
+parameters are the <B>radius</B> and <B>sigma</B> parameters used in 
+many other IMOD programs.  Namely, the <B>Low frequency sigma</B> is 
+the sigma of an inverted Gaussian starting at the origin, used to 
+attenuate low frequencies.  Low pass filtering is done with a 
+Gaussian starting at the <B>High-frequency cutoff</B> and  
+with a sigma given by the <B>High-frequency falloff</B>.  The units are 
+cycles per pixel, ranging from 0 to 0.5.  The slider for the low frequency
+sigma only goes up to 0.2, and when you click the slider to move it by one
+step, the step increases from 0.0001
+at 0/pixel to 0.001 at 0.005/pixel.  The same filtering can be
+done
+at the command line with "mtffilter -high sigma -low cutoff,falloff", where
+"sigma", "cutoff", and "falloff" are the values used in this panel.
+<P>
+If <B>Filter Slicer image instead</B> is checked, this filtering will no
+longer be done on the image data for the current section, but instead on the
+image being displayed in any Slicer windows that are open.  The filtering is
+the last operation applied to the Slicer image before display, so it can be used to
+filter a Fourier transform for a Slicer where "FT" is on.  While it is
+possible to combine this Slicer filter with one or more other filters on the
+image data for the current section, there are several limitations.  The Slicer
+filter will always be applied at the end regardless of where it is added in
+the sequence of filters.  It will only be applied once, using the last
+parameters set for it.  Fourier filtering of the current section cannot be
+combined with Slicer filtering in a sequence of filters; the current setting
+of this checkbox determines what operations occur.
+<P>
+<A NAME = "Smoothing"><H4>Smoothing</H4></A>
+Smoothing replaces each pixel by a weighted sum of neighboring pixels.
+The image is multiplied by a small square matrix of weighting values, called a
+kernel.  The standard 2D smoothing filter uses a 3x3 kernel with weights:
+<pre>
+    1  2  1
+    2  4  2
+    1  2  1
+</Pre>
+A Gaussian function can be used for the weights if
+a standard deviation for the Gaussian is set in the <B>Kernel sigma</B> spin
+box.  Initially this box shows <B>None</B>, which means that the standard
+kernel will be used.  The latter gives the same result as a
+kernel sigma of 0.85 pixel.  The lowest sigma value available is 0.5 pixel, 
+since values
+below this give insignificant filtering.  Note that this sigma specifies
+pixels in real space, unlike the sigmas in Fourier filtering.
+For 2D filtering, the program uses a 3x3 kernel for sigma up to 1.0, a 5x5
+kernel for sigma up to 2.0, and a 7x7 kernel for higher sigma values.  The
+computation will take longer with the larger kernels.
+<P>
+Select <B>Filter in 3D cube</B> to filter isotropically, in Z as well as in
+X and Y.  The kernel will be 3x3x3, 5x5x, or 7x7x7 depending on sigma.  In
+<A HREF = "../man/clip.html#TOP">Clip</A>, 3D filtering is specified by
+entering a negative value for the "-n" option, the iteration number.
+<P>
+The <B>Rescale to match min/max</B> makes the rescaling that happens after
+many kinds of filtering optional for smoothing.  This rescaling may make the
+intensities vary from section to section, since it is based on the minimum and
+maximum rather than a more robust measure like standard deviation.  Such
+variation can be a problem when using the <A HREF = "autox.html#TOP">
+Edit - Contour - Auto window</A> because it would make the threshold vary
+unpredictably, so it is recommended that this option be turned off if
+smoothing is used with autocontouring.
+<P>
+<A NAME = "Median"><H4>Median Filtering</H4></A>
+Median filtering replaces each pixel by the median value of neighboring
+pixels, where the <B>Size</B> parameter determines the size of the block of
+pixels.  The default is to do the filtering in 3D, and take the median in a
+cube of voxels.  Filtering in 2D, considering only the pixels on the current
+section, can be done if you turn off <B>Compute median in 3D cube</B>.  With
+2D filtering, you can iterate by pressing <B>More</B>.  However, with 3D
+filtering, pressing <B>More</B> will not have much effect and will not be the
+same as iterative filtering in 3D, because only the central slice has been
+filtered.
+<P>
+<A NAME = "Diffusion"><H4>Anisotropic Diffusion</H4></A>
+This panel provides parameters for running a simple anisotropic diffusion
+algorithm using the Perona and Malik filtering
+method, based on a program by Alejandro Canterero.  The gradients in this
+method are simply pixel-to-pixel differences.  The ratio between these
+pixel-to-pixel differences and the threshold <B>K</B> determines how much
+diffusion is allowed between pixels.  Note that much better results will
+generally be achieved with <A HREF = "../man/nad_eed_3d.html#TOP">Nad_eed_3d</A>,
+There is an interface for using that method in Etomo, available
+through the <B>File-Parallel Processing</B> menu entry.
+<P>
+The <B>Edge Stopping Function</B> radio buttons allow you to choose
+between the <B>Rational edge</B> stopping function and the <B>Tukey
+biweight</B> stopping function, which correspond to options <B>-cc 2</B> and
+<B>-cc 3</B>, respectively, in <A HREF = "../man/clip.html#TOP">Clip</A>.
+The Tukey biweight will preserve more
+local structure than the rational edge stopping function.
+<P>
+The <B>Iterations</B> value controls how many iterations are run when
+<B>Apply</B> or <B>More</B> is pressed.  The total number of iterations done
+is also reported.  The routine will give the identical result if a certain
+number of iterations are done with multiple steps
+using <B>More</B> rather than all at once.
+<P>
+The <B>K</B> entry sets a threshold for the edge stopping function; when the
+number is too low virtually nothing will happen.  The rational edge function
+may require smaller values than the Tukey biweight.  The <B>unscaled</B>
+value is the number that should be specified with the <B>-k</B> option
+in <A HREF = "../man/clip.html#TOP">Clip</A> to achieve the same filtering on the
+raw data from the image file as is seen on the scaled byte data in 3dmod.
+<P>
+The <B>Lambda</B> value controls the so-called time-step; if images become
+noisier this probably needs to be reduced.
+<P>
+<A NAME = "EdgeSharpen"><H4>Edge and Sharpen</H4></A>
+The 5 different edge-enhancing filters and the Sharpen filter all work the
+same as the operations by the same name in 
+<A HREF = "../man/clip.html#TOP">Clip</A>.
+<P>
+<A NAME = "Threshold"><H4>Threshold</H4></A>
+This filter will convert an image to black and white for intensities below and
+above the threshold selected by the slider.  Below the slider, a text line
+will show the corresponding threshold value that could be applied to the
+image file, for example with "clip threshold".  <B>Grow thresholded area</B> will
+increase the white area by about a pixel on all sides, and <B>Shrink
+  thresholded area</B> will decrease it by about a pixel.  These two options
+can be used together to achieve some smoothing of the thresholded
+area.  <B>Apply changes automatically</B> will make the image be reprocessed
+after every change in the threshold value, which is more convenient than
+pressing <B>Do Same</B> repeatedly.  If your image data are loaded as integers
+(there are 4 sliders in the <A HREF="infowin.html#TOP">Information
+  window</A>), turn off the <B>Float</B> button there to prevent the Low and
+High sliders from being changed, which will result in a gray image.
+<P>
+Although thresholding can done in <A HREF = "../man/clip.html#TOP">Clip</A>,
+the grow and shrink operations are not available there.  Also, because other
+filter operations make it difficult to relate the threshold to a value in a file,
+it is possible to include thresholding when processing the file with the File-Process
+menu item only if thresholding is the first operation.
+<P>
+<A HREF="index.html#TOP">Help Index<A>

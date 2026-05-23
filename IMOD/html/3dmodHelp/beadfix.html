@@ -1,0 +1,321 @@
+<head>
+<title>Bead Fixer</title>
+</head>
+<A NAME = "TOP"><H2>Bead Fixer Special Module</H2></A>
+<P>
+This module provides several functions to help generate tilt series fiducial 
+models.  It has an autocentering capability, so that an added point
+will be centered
+on the nearest fiducial.  It has an option when generating the seed model which
+will automatically start a new contour for each point when appropriate. 
+It has a function for finding the next 
+gap or untracked place in the model and making that be the 
+current point.  It also will read the log file from running 
+Tiltalign and move to points with high residuals, or to contours with high
+mean residuals.  In addition, this module
+can be used to examine contours with values, adjust a threshold, and delete
+contours below the threshold.
+<P>
+<H3>Hot Key Summary</H3>
+<UL>
+<LI> <B>spacebar</B> &nbsp;goes to next gap.
+<LI> <B>' (apostrophe)</B> &nbsp;goes to next big residual (point or contour).
+<LI> <B>&quot; (double quote)</B> &nbsp;Backs up to last point or contour.
+<LI> <B>; (semicolon)</B> &nbsp;Moves point by residual.
+<LI> <B>U</B> &nbsp;Undoes move of current point.
+<LI> <B>: (colon)</B> &nbsp;Moves all points in current local area by residual.
+<LI> <B>Ctrl+: (Ctrl+colon)</B> &nbsp;Moves all points in current and
+following local areas by residual.
+<LI> <B>/ (slash)</B> &nbsp;Toggles color overlay of two views in seed mode.
+</UL>
+<P>
+<H3>Controls</H3>
+Toggle the <B>pin</B> button on to keep the Bead Fixer window on top of 
+other windows.
+<P>
+The <B>Operation</B> radio buttons select the mode of operation; only
+the controls relevant to an operation will be shown.  The three modes
+of operation are making a seed model, filling gaps in a tracked model,
+and fixing big residuals.
+<P>
+<H4>Autocentering</H4>
+Autocentering is available when making a seed model, where it can be
+quite useful.  It is also available when filling gaps but is much less
+likely to be useful there, except when tracking a long sequence of
+missing points.
+Turn on <B>Autocenter</B> and set the <B>Diameter</B> spin box to the average
+bead diameter (in pixels) to use autocentering.  In this mode:
+<UL>
+<LI> When you press the second mouse button or the Insert key on the numeric
+keypad, the module will search up to 3
+bead diameters away (but no more than 50 pixels) for a bead and position the
+new point at the center of gravity of the bead.
+<LI> The center of gravity is computed the same as in Beadtrack and will
+be thrown off by adjacent density in just the same way.
+<LI> When you press the third mouse button and the Shift key, the module will
+use autocentering to modify the position of the current point.  
+<LI> Turn on <B>Light</B> to use autocentering with beads that are
+lighter rather than darker than the background.
+</UL>
+<P>
+<H4>Seed Model Mode</H4>
+This mode has the following features:
+<UL>
+<LI> Autocentering is available and should be tried.
+<LI> Points can be inserted with the Insert key on the numeric keypad.
+<LI> If you turn on <B>Automatic new contour</B>, the module will
+start a new contour when you insert a point.  It will always do this if the
+current contour already has a point on the current view.  Otherwise, it will
+decide whether to start a new contour based on the distance between the new
+point and the point in the current contour on the nearest view.  If this
+distance is less than two bead diameters, it will add the point to the same
+contour; otherwise it will start a new contour.
+<LI> If you turn on <B>Overlay</B>, the current section will be
+displayed along with a different view in a color overlay mode, with
+one view shown in magenta and the other in green.  The colors are
+managed so that the beads on the current view are in magenta and those
+on the other view are green,
+regardless of whether the beads are light rather than dark.
+You will then be
+able to tell if a bead is on the top or the bottom surface by whether
+it appears to the right or the left in the other view.  Use the
+<B>view</B> spin box to adjust the interval between the views;
+negative numbers can be entered.  You can also use the slash hot key
+to toggle the overlay on and off.
+<LI> Overlay mode has in independent contrast setting, so you can
+adjust the Black and White sliders to give the best definition of the
+beads in overlay and this will not affect the contrast setting in
+normal display.  Select <B>Reverse overlay contrast</B> to show
+the overlay in reverse contrast, which can make dark beads show up better
+in a color overlay.  The colors are exchanged in reverse contrast so
+that the beads on the current section are still magenta.
+<LI> When you add a point to a contour, the program will automatically
+keep the points in order by Z.
+</UL>
+<P>
+<H4>Gap Filling Mode</H4>
+This mode provides controls for finding the gaps in the model, so that
+you can fill them if appropriate.
+<UL>
+<LI> Autocentering is available.
+<LI> Points can be inserted with the Insert key on the numeric keypad.
+<LI> Press the <B>Go to Next Gap</B> button or hit the space bar key to 
+move to the next gap or incomplete place in the model.  If there is a gap, the
+point BEFORE the gap will be displayed and a upward pointing arrow will be
+shown.  If a contour does not start on the first section, the first 
+point in the contour (which is AFTER the gap) will be displayed, a message
+will be printed, and a downward pointing arrow will be shown.  To get to the
+view with the missing point, press PageUp when the arrow points up and
+PageDown when it points down.
+<LI> Use the <B>Go to Previous Gap</B> button to go backwards to a
+previous gap.
+<LI> If you accidentally detach from the model point before the gap and lose
+track of it, you can reattach to it with the 
+<B>Reattach to Gap Point</B> button.
+<LI> The program starts at the
+beginning of the model and, after each gap, it 
+searches forward from where it left off, even if you change contours
+or detach from the current point.
+Press <B>Start from Beginning</B> to start the search at the 
+beginning of the model again.  To start the search from a chosen
+place, make that point be the current point and press
+<B>Start from Current Point</B>.
+<LI> When you add a point at the beginning of a contour, the point will
+automatically become the first point of the contour, thus keeping the 
+contour points in order by Z.
+<LI> If you skipped views when tracking and you do not want to go to those
+views when filling gaps, make sure <B>Ignore gaps at views</B> is turned on and
+insert the list of skipped views in the text box.  Turn this option off if you
+want to fill gaps in all the skipped views, or remove specific views from the 
+list if you want to fill gaps just on those views.
+</UL>
+<P>
+<H4>Residual Fixing Mode</H4>
+This mode lets you correct bead positions that give large alignment
+arrows.
+It has the following features and controls:
+<UL>
+<LI> Press the <B>Open Tiltalign Log File</B> button to open a log 
+file.  The Info window will show the mean residuals from global and local
+tracking, if any, and the number of points to be examined with big residuals.
+<LI> Press the <B>Go to Next Big Residual</B> button or hit the 
+apostrophe key to move to the next point in the log file 
+with a big residual.  The Info window shows the residual length and X and Y
+  components of the residual length; these are always in pixels even when
+  mean residual values are shown in nanometers.
+<LI> The X and Y displacements implied by the residual are printed 
+in the Info window.  Also, the Zap window will draw an arrow 
+corresponding to these displacements.  If the arrow ends at the place 
+where the point should be located (i.e., the center of the bead), 
+then press the <B>Move Point by Residual</B> button or push the semicolon key 
+to move the point by those amounts in X and Y.
+<LI> After moving a point by its residual, press the <B>Undo Move</B> 
+button or push the U key to undo the move.
+<LI> Press the <B>Reread Log File</B> button to reread the file, or a 
+new version of it after rerunning Tiltalign.
+<LI> Press the <B>Save & Run Tiltalign</B> button to save the model, rerun 
+Tiltalign, and read in the new log file.  Most buttons will be disabled 
+while Tiltalign is running and reenabled when it is done, so you will 
+be able to tell that something is happening.  If you change the 
+alignment parameters in Etomo, be sure to compute the next alignment 
+using the button in Etomo rather than this button.
+<LI> Press the <B>Go to Next Local Set</B> button if you have a log file 
+with a series of local alignments and want to skip to the 
+residuals from the next local alignment.
+<LI> When local alignments were used, the next button is labeled
+<B>Move All in Local Area</B> and can
+be used to move all remaining points with big residuals in the current local 
+area.  Without local alignments, the button is labeled <B>Move All Points by
+Residual</B> and will move all remaining points in the big residual list
+by their residuals.  In this case, holding down the Shift key while pressing
+this button will cause the program to iterate on this operation by saving the
+model, running Tiltalign, reloading the log, and moving points by their
+residual; this process repeats until there are no points left to move or you
+stop holding down the Shift key.
+In either case, points that would ordinarily be skipped over because they have
+been examined already will not be moved.  This approach should be used with
+caution or abandoned in favor of robust fitting; see the section below
+on <A HREF = "#MovingResid">Moving All Points by Residual</A>
+<LI> When local alignments were used, <B>Move in All Local Areas</B> can be
+used to move the remaining points in the current local area, and all points in 
+the following local areas, by their residuals.  Again, points that have been
+examined before will be skipped if appropriate.  Also, holding down the Shift
+key while pressing this button will cause the program to iterate on this
+operation, rerunning the alignment and moving points in local areas until
+there are no more points to move, or until you stop holding down the Shift key.
+<LI> Select the <B>Back Up to Last Point</B> button if you want to go back to 
+the last residual that you examined.  This will not necessarily be the 
+previous residual in the file, if you skipped over points by going to 
+the next local set, or if the program skipped over points that you saw 
+before.  However, you can then work forward through the 
+points that you skipped over.
+<LI> If robust fitting was used in Tiltalign, <B>Skip low weights</B> is
+  enabled, and when it is selected, the points with fitting weights less than or equal
+  to the value in the <B>Threshold</B> spin box will be skipped over when
+  going through the points.  Turn this button on if you want to avoid the 
+  effort of fixing points that are essentially excluded from the alignment
+  solution already.  Turn the button off if you do want to fix such points.
+  The robust fitting is still valuable in this case because a fit that
+  excludes an aberrant point should give a more accurate estimate of the
+  point's correct location than a fit that includes and accommodates to the
+  bad position.
+<LI> The program keeps a list of each point whose residual has 
+been examined.  The list is retained when the log file is read again.  
+If the <B>Examine Points Once</B> checkbox is 
+selected, then any point already on the list is skipped over 
+when you <B>Go to Next Big Residual</B>.  A point is added to the 
+list regardless of whether <B>Examine Points Once</B> is selected.  
+If you turn this checkbox off, you will see every point when going 
+forward or backward.
+<LI> Press the <B>Clear Examined List</B> button to empty the list of 
+points that have been examined.  The list is not cleared when 
+<B>Examine Points Once</B> is switched on or off.  To see some 
+points for the second time, turn off <B>Examine Points Once</B>; to 
+see all points again, push <B>Clear Examined List</B>.  When you <B>Back Up
+to Last Point</B>, the current point is removed from the list so that 
+you will come back to it when you go forward again.
+<LI> The <B>Progress</B> lines shows a percentage that is based on the
+number of the current residual point divided by the total number of residuals
+read in.
+</UL>
+<P>
+<H4>Contour Mode</H4>
+This mode lets you move to contours with the highest mean residuals.  With a
+fiducial model, you can step through all the points in such contours and
+adjust ones as needed, or choose to delete the whole contour.  With a model
+based on local patch tracking by 
+<A HREF = "../man/tiltxcorr.html#TOP">Tiltxcorr</A>, you can delete the contours
+where the tracked positions are least consistent with the overall fit.  In
+addition to the buttons to read a log file and run Tiltalign, this mode has
+the following controls:
+<UL>
+<LI> Press the <B>Go to Next Contour</B> button to move initially to the
+contour with the highest mean residual, and thereafter to the contour with the
+next lower mean residual.  If the Model View window is open, the selected
+contour will appear thicker there.
+<LI>Press the <B>Back Up Contour</B> button to go back to the contour with the
+next higher mean residual.
+<LI>Press the <B>Delete Contour</B> button to delete the current contour,
+provided it is still the one selected by either of the two buttons above.  Use
+Ctrl+Z to undo a deletion made with this button.
+</UL>
+<P>
+<A NAME = "MovingResid"><H4>Moving All Points by Residual</H4></A>
+The guiding principle when deciding whether to move one or many points by
+residual is that model points should not be moved away from the gold
+particles.  If many points are displaced from their proper location, this will
+lead to a poorer alignment of the views where such points are located
+(typically the high tilt views).  
+<P>
+The robust fitting now available in Tiltalign is a more statistically valid
+method of eliminating or down-weighting points with high residuals than
+blindly moving points by the residual values from a fit that includes all
+the points with equal weight.  The robust fitting should produce a better
+estimate of the true alignment solution.  Nevertheless, more experience with
+this method is needed to confirm this, so
+here are some guidelines for moving large
+numbers of points by their residuals:
+<OL>
+<LI> To avoid misaligning high tilt views, where residuals tend to be higher,
+in favor of the lower tilt views, you should have the large residuals be
+selected relative to other residuals on nearby views.  Do this by choosing 
+<B>Neighboring views</B> rather than <B>All views</B> in the <B>Residual
+Reporting</B> box in Etomo.
+<LI> You should always go through enough points manually so that you can
+become confident that the large majority of points are being moved correctly.
+If you are just doing global alignments, perhaps do one round manually after
+switching to reporting residuals relative to neighboring views.  If you have a
+small number of local areas, perhaps do one complete round through all of them
+manually.  If you have many local areas, 
+perhaps examine the first few points
+in each local area by hand to see that the suggested movements are appropriate,
+then move the rest in that area automatically.  On the next round, you could
+then move points in all areas automatically.
+<LI> If you know that you are going to be using local alignments, do not
+move points by the global residuals automatically, as it is quite likely to
+move model points off of the gold.  Do the automatic refinements only with
+local residuals.
+</OL>
+<P>
+<H4>Seed Model Mode with Contour Values</H4>
+If any objects in the model contain stored values (e.g., correlation peak
+strengths for beads selected by
+<A HREF = "../man/imodfindbeads.html#TOP">Imodfindbeads</A>), then in seed mode
+the dialog will have additional controls for setting a threshold and deleting
+points below threshold.
+<UL>
+<LI>The <B>Threshold peak value</B> slider can be used to adjust the threshold
+value.
+<LI>When <B>Turn off below threshold</B> is selected, only the contours above
+the threshold will be drawn.  This option should be on when adjusting the
+threshold, but can then be toggled to see points below threshold.
+<LI>Press <B>Delete Below</B> to delete contours below the threshold value.
+You will see a message telling how many contours will be deleted and asking
+you to confirm the deletion.  If you answer <I>Yes Always</I> then you will
+not see such a message again.  These deletions can be undone with the standard
+Undo button in the Info Window or the Ctrl+Z hot key.  If there is a Zap
+window with a rubber band or lasso, then the deletion will include only the contours
+inside the rubber band or lasso.  Specifically, for planar contours, they must be
+completely inside the rubber band or lasso; for open contours that pass between
+sections, they must have a point within the rubber band or lasso.
+<LI>When <B>Delete on all sections</B> is turned off, contours below
+threshold will be deleted
+only if they have a point on the current section.  With the rubber band on,
+that point must be inside the rubber band.  When this option is on,
+contours will be deleted regardless of the Z values of their points.  With the
+rubber band on, there must be a point at some Z value inside the rubber band
+With this option, you can delete points found by 
+<A HREF = "../man/imodfindbeads.html#TOP">Imodfindbeads</A>
+from all planes at once.
+<LI>When <B>Delete in all objects</B> is turned off, only contours below
+threshold in the current object are deleted.  When this option is on, the
+program looks at each object with stored values, and compares the values of
+its contours with the threshold specific to that object.  Thus, if
+<A HREF = "../man/imodfindbeads.html#TOP">Imodfindbeads</A>
+produced points in multiple objects, you can use this option
+together with <B>Delete on all sections</B> to delete all contours below
+threshold at once, after examining the appropriateness of the threshold for
+each object.
+</UL>
+<P>
+<A HREF="index.html#TOP">Help Index<A>

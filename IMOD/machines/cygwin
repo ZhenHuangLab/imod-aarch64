@@ -1,0 +1,821 @@
+#!/bin/csh
+#############################################################################
+# Intel running Cygwin/Windows
+#
+#
+set int64           = "__int64"
+set uint64          = "unsigned __int64"
+
+# Make intel the default
+#
+if ($compiler == default) set compiler = intel
+
+#  Separate pointers are needed for X and Motif includes
+#
+set Xlibdir = /usr/X11R6/lib
+set Xincdir = /usr/X11R6/include/X11
+set Mincdir = /usr/X11R6/include
+if ($no_xlibs == false) then
+    if (!(-e $Xlibdir) || !(-e $Xincdir)) set no_xlibs = true
+endif
+
+set fcompFlags = ""
+set fcmpldFlags = ""
+set openmpFlags = ""
+set ccompFlags = ""
+set fcmpNoportFlags = ""
+set fftw_lib = ""
+set fftw_def = ""
+set dotlib_cfxm = "../buildlib/libcfshr.lib ../buildlib/libimxml.lib"
+set hdf_lib = ""
+set hdf_def = ""
+set jpeglib = false
+set jpeg_def = ""
+set MDopt = "/MD"
+
+#if ($?USE_MKL) set useMKL = true
+    
+
+# Build FrameGPU.dll if entry is 0, or without if flag is -1 (now default)
+if ("$frameGPU" == "-1") then
+    set frameGPU = 0
+else if ("$frameGPU" == "0") then
+    set frameGPU = 1
+endif
+
+if ($compiler == intel) then
+    set c_includes =  
+    set lifft = libifft.lib
+
+    # Get the version from icl, assuming we have matched c++/fortran compilers
+    #
+    icl >&! icl.tmp
+    set iclnum = `sed -n  -e '/\./s// /g' -e '/[[:cntrl:]]/s///g' -e '/Version/s/.*Version \([0-9 ]*\).*/\1/p' icl.tmp`
+    set iclbuild = `sed -n  -e '/[[:cntrl:]]/s///g' -e '/Build/s/.*Build \([0-9]*\).*/\1/p' icl.tmp`
+
+    # If we are running the 32-bit compiler on a 64-bit system, set as 32-bit
+    grep -q IA-32 icl.tmp
+    if ($status == 0 && $m64bit == true) set m64bit = false
+    \rm -f icl.tmp
+    @ iclversion = 7
+    @ subversion = 0
+    if ("$iclnum" != "") then
+        @ iclversion = $iclnum[1]
+    endif
+    if ($#iclnum > 1) then
+        @ subversion = $iclnum[2]
+    endif
+
+    set fortbin = `which ifort | sed '/\/[^\/]*$/s///'`
+
+    # Set up to use MKL if option given
+    if ($useMKL == true) then
+        set topdir = `echo $fortbin | sed '/\/[^\/]*$/s///' | sed '/\/[^\/]*$/s///'`
+        set topdir = `cygpath --mixed "$topdir"`
+        set mkldir = "$topdir/mkl"
+        set c_includes = '-I"'"${mkldir}/include/fftw"'"'
+        set libArch = "intel64"
+        if ($m64bit == false) set libArch = "ia32"
+        set mklArch = "$libArch"
+        if ($iclversion < 12) then
+            if ($m64bit == true) set mklArch = "em64t"
+            if ($m64bit == true) echo "MKL_STATICS = "'"'"$mkldir/$mklArch/lib/mkl_intel_lp64.lib"'" "'"$mkldir/$mklArch/lib/mkl_intel_thread.lib"'" "'"$mkldir/$mklArch/lib/mkl_core.lib"'" "'"$topdir/lib/$libArch/libiomp5md.lib"'"' >> $configure
+            if ($m64bit == false) echo "MKL_STATICS = "'"'"$mkldir/$mklArch/lib/mkl_intel_c.lib"'" "'"$mkldir/$mklArch/lib/mkl_intel_thread.lib"'" "'"$mkldir/$mklArch/lib/mkl_core.lib"'" "'"$topdir/lib/$libArch/libiomp5md.lib"'"' >> $configure
+#            if ($m64bit == true) echo "MKL_STATICS = "'"'"$mkldir/$mklArch/lib/mkl_intel_lp64_dll.lib"'" "'"$mkldir/$mklArch/lib/mkl_intel_thread_dll.lib"'"' >> $configure
+ #           if ($m64bit == false) echo "MKL_STATICS = "'"'"$mkldir/$mklArch/lib/mkl_intel_c_dll.lib"'" "'"$mkldir/$mklArch/lib/mkl_intel_thread_dll.lib"'"' >> $configure
+        else
+            echo "MKL_STATICS = "'"'"$mkldir/lib/$mklArch/mkl_intel_lp64.lib"'" "'"$mkldir/lib/$mklArch/mkl_intel_thread.lib"'" "'"$mkldir/lib/$mklArch/mkl_core.lib"'" "'"$topdir/compiler/lib/$libArch/libiomp5md.lib"'"' >> $configure
+#            echo "MKL_STATICS = "'"'"$mkldir/lib/$mklArch/mkl_intel_lp64_dll.lib"'" "'"$mkldir/lib/$mklArch/mkl_intel_thread_dll.lib"'"' >> $configure
+        endif
+        
+        
+    # Otherwise if FFTW exists, convert directory and adjust include path 
+    #
+    else if ($?FFTW3_DIR) then
+        set fftw_dir = `cygpath --mixed $FFTW3_DIR`
+        set c_includes = "-I${fftw_dir}"
+        set fftw_lib = '-LIBPATH:"'$fftw_dir'"'
+        set fftw_libroot = libfftw3f-3
+        set fftw_def = "$fftw_dir/${fftw_libroot}.lib"
+        set lifft = "libifft.lib ${fftw_libroot}.lib"
+    endif
+
+    # If HDF5_DIR exists, adjust variables
+    if ($?HDF5_DIR) then
+        set hdf_dir = `cygpath --mixed $HDF5_DIR`
+        set c_includes = "$c_includes -I${hdf_dir}/include"
+        set hdf_lib =  '-LIBPATH:"'$hdf_dir/bin'"'
+        set hdf_libroot = hdf5
+        set hdf_def = "${hdf_dir}/bin/${hdf_libroot}.lib"
+        set lhdf = "${hdf_dir}/bin/${hdf_libroot}.lib"
+    endif
+
+    # If TIFF/JPEG collection exists, set JPEG on include path
+    if ($?TIFF_JPEG_ZLIB && $tifflibs != false) then
+        set jpeglib = true
+        set jpeg_dir = `cygpath --mixed $TIFF_JPEG_ZLIB/jpeg`
+        set c_includes = "$c_includes -I$jpeg_dir"
+            
+        # Copy the static lib and include the nodefaultlib based on warning
+        \cp $TIFF_JPEG_ZLIB/jpeg/libjpeg.lib buildlib
+        set jpeg_def = "../buildlib/libjpeg.lib /NODEFAULTLIB:libcmtd.lib"
+
+        # 10/28/17: After moving to new system, 32-bit build needed the zlib import lib 
+        # to link libiimod AND wanted libcmt.lib set to nodefaultlib instead
+        if ($m64bit == false) then
+            \cp $TIFF_JPEG_ZLIB/zlib/zdll.lib buildlib
+            set jpeg_def = "../buildlib/libjpeg.lib  /NODEFAULTLIB:libcmt.lib ../buildlib/zdll.lib"
+        endif
+    endif
+
+    set qt_flags = '-I"$(QTDIR)\include" -I"$(QTDIR)\include\QtCore" -I"$(QTDIR)\include\QtGui" -I"$(QTDIR)\include\QtOpenGL" -I"$(QTDIR)\include\QtSql"'
+    set qt3_flags = '-DQT3_SUPPORT -I"$(QTDIR)\include\Qt3Support"'
+    set cyg_lib = `cygpath -w $lib_dir`
+    set xplax = (qtplax.obj moc_qtplax.obj)
+    set cyg_inc = `cygpath -w $inc_dir`
+    set include_flags = '-I. -I"'$cyg_inc'"'
+    set objext = obj
+    set moc = `cygpath $QTDIR/bin/moc`
+    set inc_dir = `cygpath --mixed $inc_dir`
+    set rgbprogs = 
+    set fcmpNoportFlags = "/C90"
+    set fcomp = ifl
+    #
+    # The heap-arrays flag may not be needed with the /F66000000 below, but play it safe
+    set fcompFlags = "/4L132 /Qvec-report:0 /heap-arrays:1000"
+    set ccompFlags = "/Qvec-report:0 -D_CRT_SECURE_NO_WARNINGS"
+    set nnvulnflags = '/fp:source'
+    
+    # version 8 and above: remove /C90, set record length to 4 bytes
+    # also need to specify that \ is an escape character
+    # Also stack size needs to be set high for a few programs (findwarp and ?)
+    # This Intel bug was fixed in ifort 9.1.29 but is back in 10.1
+    # There was a temporary need to remove delayload for 9.0, removed 4/6/06
+    if ($iclversion > 7) then
+        set fcomp = ifort
+        set fcmpNoportFlags = "/F66000000"
+#        if ("$iclbuild" != "") then
+#            @ build = $iclbuild
+#            if ($build >= 20060816) set fcmpNoportFlags = ""
+#        endif
+        echo "      parameter (nbytes_recl_item=4)" >! $endian_dir/recl_bytes.inc
+        set fcompFlags = "/assume:bscc /4L132 /Qvec-report:0"
+        
+    endif
+    set fcmpldFlags = "$fcmpNoportFlags /4Yportlib"
+    set ldfflags = "$fcmpldFlags "'$(LDFLAGS)'
+    if ($openmp == true) set openmpFlags = '/Qopenmp'
+
+    # Get a Visual Studio version from link /VERSION which gives errors
+    # Make change in nodefaultlib known to work for VC 9, we don't know about 8
+    # 
+    set vcvertext = `link /VERSION | head -n 1 | sed -e '/[^0-9.]/s///g' -e '/\./s// /g'`
+    @ vcversion = $vcvertext[1]
+    set nodeflib = /NODEFAULTLIB:libc.lib
+    if ($vcversion >= 9) set nodeflib = /NODEFAULTLIB:libcmt.lib
+    if ($shared_libs == false) set nodeflib = ""
+    if ($?CUDA_DIR) then
+        if ("$frameGPU" == "0") then
+            set ldframeflags = "/nologo /MD $openmpFlags -link "'-LIBPATH:"'"$cyg_lib"'"'" $hdf_lib $fftw_lib"' $(CUDALIBS)'
+        else
+            set ldframeflags = '$(LDFLAGS)'
+        endif
+    endif
+
+    # Keep LDFLAGS and ldframeflags in sync as needed
+cat << EOF >> $configure
+LDFLAGS = /nologo $MDopt $openmpFlags -link -LIBPATH:"$cyg_lib" $hdf_lib $fftw_lib $nodeflib
+.SUFFIXES: .cpp .obj .f .c
+.cpp.obj:
+	\$(CXX) -c \$(CXXFLAGS) \$<
+
+.c.obj:
+	\$(CC) -c \$(CFLAGS) \$<
+
+.f.obj:
+	\$(FC) -c \$(FFLAGS) \$<
+
+EOF
+
+
+else if ($no_xlibs == false) then
+    set c_includes =  "-I$Xincdir -I$Mincdir"
+    echo 'LDFLAGS = -L$(LIBDIR)' "-L$Xlibdir" >> $configure
+    set xplax = xplax.o
+else
+    set c_includes =
+    echo 'LDFLAGS = -L$(LIBDIR)' >> $configure
+    set xplax = noplax.o
+endif
+
+if ($compiler == intel) then
+    echo "CC        = icl"              >> $configure
+    echo "CXX       = icl"              >> $configure
+   # set usfftdir = $source_dir/USFFTlib/pc-intel
+    echo '#define F77FUNCAP' >> $hconfigure
+else
+# DNM 8/27/01: Needed for large files to work right.  Use a -D define instead
+# of #define in imodconfig because it must precede all system includes.
+    set defines = -D_FILE_OFFSET_BITS=64
+    echo "CC        = gcc"              >> $configure
+    set fcomp = "g77"
+    #
+    # tell the C routines being called by Fortran that they need two __
+    #
+    echo '#define G77__HACK' >> $hconfigure
+    echo '#define DLLEXPORT_H' >> $hconfigure
+    echo '#define DLL_IM_EX' >> $hconfigure
+    set openmp = false
+    unsetenv CUDA_DIR
+endif
+
+# Needed under tcsh 6.12 in RH 8.0 to avoid getting two \ out
+cat << EOF >> $configure
+SHELL     = /bin/sh
+CP        = /bin/cp
+FIND      = /usr/bin/find
+EOF
+
+# Under visual C there is really no strdup (enforced in 2005)
+echo '#if defined(_MSC_VER) && \!defined(strdup)' >> $hconfigure
+echo '#define strdup _strdup' >> $hconfigure
+echo '#endif' >> $hconfigure
+
+
+#
+if ($compiler == intel) then
+    if ($shared_libs == default) set shared_libs = true
+    echo "AR      = link"                 >> $configure
+    echo "ARCPP   = link"                 >> $configure
+    if ($shared_libs == true) then
+    #
+    # to make dll's, set the extension, define the def files for the link 
+    # lines and provide libraries that the dll depends on, 
+    # and set the install directory to bin
+    #
+        set dllext = dll
+        echo "ARFLAGS = -dll /NOLOGO /out:"         >> $configure
+        echo 'MAKELIBCPP = link -dll /NOLOGO /out:' >> $configure
+        #
+        # 11/15/16: jpeg versus tiff is troublesome.  The other way around, jpeg reading
+        # and writing seg faulted
+        echo "LIBIIMODDEF = /def:libiimod.def $dotlib_cfxm $jpeg_def ../buildlib/libtiff.lib $hdf_def"   >> $configure
+        echo 'LIBIMODDEF = /def:libimod.def ../buildlib/libcfshr.lib ../buildlib/libimxml.lib'  >> $configure
+        echo 'LIBIMXMLDEF = /def:libimxml.def'     >> $configure
+        echo 'LIBCFSHRDEF = /def:libcfshr.def ../buildlib/libimxml.lib'     >> $configure
+        echo "LIBIMESHDEF = /def:libimesh.def $dotlib_cfxm ../buildlib/libimod.lib"     >> $configure
+        echo "LIBIWARPDEF = /def:libiwarp.def $dotlib_cfxm"     >> $configure
+        echo "LIBMRCIMDEF = /def:libmrcim.def ../../buildlib/libiimod.lib ../../buildlib/libcfshr.lib ../../buildlib/libimxml.lib"  >> $configure
+        echo 'LIBHVEMDEF = /def:libhvem.def ../../buildlib/libmrcim.lib ../../buildlib/libiimod.lib ../../buildlib/libcfshr.lib ../../buildlib/libimxml.lib'  >> $configure
+        echo "LIBIFFTDEF = /def:libifft.def $fftw_def $dotlib_cfxm"     >> $configure
+        echo 'LIBBLASDEF = /def:libb3dblas.def'   >> $configure
+        echo 'LIBLAPACKDEF = /def:libb3dlapk.def ../../buildlib/libb3dblas.lib'   >> $configure
+        echo 'LIBTRACKDEF = /def:libtrack.def ../../buildlib/libcfshr.lib ../../buildlib/libimxml.lib'   >> $configure
+        set inst_lib_dir = $inst_dir/bin
+        #
+        # Define a command for making non-dll libs still, needed for 
+        # libdnmncar because it calls back to program.
+        # Also need to make separate static libwmod, because it accesses
+        # common in the program
+        #
+        set makenmcar = '$(MAKESTATICLIB)'
+    else
+        echo "ARFLAGS = -lib /NOLOGO /out:"                >> $configure
+        echo 'MAKELIBCPP = $(ARCPP) $(ARFLAGS)' >> $configure
+    endif
+    set lwmod = '$(INCDIR)/fortmodel.$(O) libwmod.lib'
+    set makewmod = '$(MAKESTATICLIB)'
+    echo "LIBEXT  = lib"                  >> $configure
+    echo "RANLIB    = true"            >> $configure
+    set makestaticlib = "link -lib /NOLOGO /out:"
+    set staticranlib = true
+    set staticext = lib
+else
+    #
+    # setup for cygwin static stuff
+    #
+    set shared_libs = false
+    echo "AR      = ar"                 >> $configure
+    echo "ARCPP   = ar"                 >> $configure
+    echo "ARFLAGS = ruv "                >> $configure
+    echo "RANLIB    = ranlib"            >> $configure
+    echo "LIBEXT  = a"                  >> $configure
+    echo 'MAKELIBCPP = $(ARCPP) $(ARFLAGS)' >> $configure
+endif
+
+echo 'MAKELIB   = $(AR) $(ARFLAGS)' >> $configure
+
+
+if ($compiler == intel) then
+    echo "XLIBS   = " >> $configure
+    echo "CLIBS   = " >> $configure
+    set limod = libimod.lib
+    set lcfshr = libcfshr.lib
+    set limxml = libimxml.lib
+    set liimod = libiimod.lib
+    set limesh = libimesh.lib
+    set liwarp = libiwarp.lib
+    set ltiff = libtiff.lib
+    set ldiaqt = libdiaqt.lib
+    set ldummytiff = libtiff.lib
+    #
+    # No tiff lib entry is needed now that libiimod is linked statically to tiff/jpeg
+    if ($?TIFF_JPEG_ZLIB || ($tifflibs == false && $shared_libs == false)) set ltiff = ""
+    if ($tifflibs == false && $shared_libs == false) echo 'JPEGOBJ = tiffstub.obj' >> $configure
+    set lapacklibs = "libb3dlapk.lib libb3dblas.lib"
+    set imsubsobj = '*.obj'
+    set ldnmncar = "libdnmncar.lib"
+    set lctffind = libctffind.lib
+    if ($shared_libs == false) echo 'LIBCTFFINDDEF = /def:libctffind.def' >> $configure
+    echo 'IMLIBS     =  $(LIBWMOD)'" libhvem.lib libmrcim.lib libiimod.lib libcfshr.lib libimxml.lib $ltiff" >> $configure
+    echo 'LINUXFLIBS = ' >> $configure
+else
+    echo "CLIBS   = -lc -lm" >> $configure
+    echo "XLIBS   = -lXm -lXt -lSM -lICE -lXext -lX11" >> $configure
+    echo "IMLIBS     = -lhvem -lmrcim -liimod -lcfshr -limxml -lb3dcmpt" >> $configure
+    echo 'LINUXFLIBS = $(LIBCOMPAT)' >> $configure
+endif
+
+# This is needed for compiles with Visual Studio, it would break compiling with cygwin
+echo '#define WIN32_BIGFILE' >> $hconfigure
+
+echo 'LIBS    = $(CLIBS)'  >> $configure
+echo 'FORTCLIBS = '  >> $configure
+
+# 
+# tell the C routines to swap the bytes for INTEL
+#
+echo '#define B3D_LITTLE_ENDIAN' >> $hconfigure
+echo '#define SWAP_IEEE_FLOATS' >> $hconfigure
+
+echo '#define NO_IMOD_FORK' >> $hconfigure
+echo '#define CLIPBOARD_TIMER_HACK 100' >> $hconfigure
+
+echo '#define GLU_CALLBACK void (__stdcall *)(void)' >> $hconfigure
+
+#
+# Tell fortran routines how to swap bytes too
+#
+\cp $endian_dir/little_endian.inc $endian_dir/endian.inc
+
+if ($compiler == intel) then
+    set optimization = "/O2 /w /nologo"
+    set noop = /Od
+    set qopt = -O2
+    if ($debug == true) then
+        set optimization = "/Zi /Od /w /nologo"
+        set qopt = -Od
+    endif
+else
+    set noop = -O0
+    set optimization = "-O3 -w"
+    if ($debug == true) set optimization = "-ggdb -O0"
+endif
+
+# KEEP CXXFLAGS and cframeflags in sync; don't need -DWIN32
+
+if ($?CUDA_DIR) then
+    set cframeflags = "$flags /MD -DSTATIC_CPP_LIBS $ccompFlags $optimization $defines $include_flags $c_includes"
+endif
+if ("$frameGPU" != "0") set cframeflags = '$(CXXFLAGS) -DDELAY_LOAD_FGPU'
+
+set flags = "$flags $MDopt"
+set cflags = "$flags $ccompFlags $optimization $defines $include_flags $c_includes"
+set fflags = "$flags $fcompFlags $fcmpldFlags $optimization $include_flags"
+if ($compiler == intel) set libtrackFlags = "$flags $fcompFlags $fcmpNoportFlags $optimization $include_flags"
+
+# Add -DWIN32 for opencv and lasik in RAPTOR
+#
+cat << EOF >> $configure
+CFLAGS  = $cflags
+CXXFLAGS = $cflags -DWIN32
+MXMLFLAGS = -DWIN32
+FFLAGS  = $fflags
+TILTFFLAGS = $fflags
+NOOPFFLAGS = $fflags $noop
+LIBCFLAGS = $cflags
+LIBFFLAGS = $fflags
+
+EOF
+
+# Variables for building RAPTOR
+#
+echo 'RAPTORLIBS = user32.lib' >> $configure
+echo 'MARCORLIBS = user32.lib Advapi32.lib' >> $configure 
+
+#
+#   default is to assume tifflib exists
+#
+if ($tifflibs == default) set tifflibs = true
+if ($?TIFF_JPEG_ZLIB) then
+    set libtiff = "$TIFF_JPEG_ZLIB/tiff/libtiff"
+    \cp "$libtiff/tiff.h" include
+    \cp "$libtiff/tiffio.h" include
+    if (-e "$libtiff/tiffvers.h") \cp "$libtiff/tiffvers.h" include
+    if (-e "$libtiff/tiffconf.h") \cp "$libtiff/tiffconf.h" include
+
+    # Switch to copying static lib instead of import lib
+    \cp "$libtiff/libtiff.lib" buildlib/libtiff.lib
+else
+    \cp sysdep/win/tiff*.h include
+    if ($m64bit == true) then
+        \cp sysdep/win/libtiff64.lib buildlib/libtiff.lib
+    else
+        \cp sysdep/win/libtiff.lib buildlib
+    endif
+endif
+
+set binext = .exe
+set junit_home      = `cygpath -m /usr/local/junit`
+set jfcunit_home      = `cygpath -m /usr/local/jfcunit`
+set class_sep       = ';'
+
+# This was needed using a Qt installer package, but that didn't work for OpenGL anyway
+set sysOpengl_lib = ""
+#if ($qtVersion > 4) set sysOpengl_lib = "opengl32.lib glu32.lib"
+
+#
+# Start Qt include files
+#
+echo CONFIG += CONSOLE >! $sendevent_qconf
+echo CONFIG += CONSOLE >! $sourcedoc_qconf
+
+#  /LARGEADDRESSAWARE flag allows up to 3GB memory on a 32-bit system if it
+# has the /3GB boot flag; isn't needed for 64-bit link since it is the default
+cat << EOF >! $imod_qconf
+SOURCES += linegui.cpp
+HEADERS += linegui.h
+LIBS += libiimod.lib libimesh.lib libimod.lib libtrack.lib  $lifft libcfshr.lib libimxml.lib libdiaqt.lib $ltiff $lhdf $sysOpengl_lib
+QMAKE_LFLAGS_RELEASE += /LIBPATH:"../buildlib" $fftw_lib $hdf_lib /NODEFAULTLIB:libc.lib /NODEFAULTLIB:libcd.lib /NODEFAULTLIB:msvcrtd.lib /LARGEADDRESSAWARE
+QMAKE_LFLAGS_DEBUG += /LIBPATH:"../buildlib" $fftw_lib $hdf_lib /NODEFAULTLIB:libc.lib /NODEFAULTLIB:libcd.lib /NODEFAULTLIB:msvcrt.lib /LARGEADDRESSAWARE
+RC_FILE = 3dmod.rc
+EOF
+
+cat <<EOF >! $midas_qconf
+LIBS += libiimod.lib libimod.lib libiwarp.lib $lifft libcfshr.lib libimxml.lib libdiaqt.lib $ltiff $lhdf $sysOpengl_lib
+QMAKE_LFLAGS_RELEASE += /LIBPATH:"../buildlib" $fftw_lib $hdf_lib /NODEFAULTLIB:libc.lib /NODEFAULTLIB:libcd.lib /NODEFAULTLIB:msvcrtd.lib /LARGEADDRESSAWARE
+QMAKE_LFLAGS_DEBUG += /LIBPATH:"../buildlib" $fftw_lib $hdf_lib /NODEFAULTLIB:libc.lib /NODEFAULTLIB:libcd.lib /NODEFAULTLIB:msvcrt.lib /LARGEADDRESSAWARE
+EOF
+
+cat <<EOF >! $ctfplot_qconf
+LIBS += libb3dlapk.lib libb3dblas.lib libctffind.lib libiimod.lib $lifft libcfshr.lib libimxml.lib libdiaqt.lib $ltiff $lhdf
+QMAKE_LFLAGS_RELEASE += /LIBPATH:"../buildlib" $fftw_lib $hdf_lib /NODEFAULTLIB:libc.lib /NODEFAULTLIB:libcd.lib /NODEFAULTLIB:msvcrtd.lib /LARGEADDRESSAWARE
+QMAKE_LFLAGS_DEBUG += /LIBPATH:"../buildlib" $fftw_lib $hdf_lib /NODEFAULTLIB:libc.lib /NODEFAULTLIB:libcd.lib /NODEFAULTLIB:msvcrt.lib /LARGEADDRESSAWARE
+EOF
+
+cat <<EOF >! $qtassist_qconf
+LIBS += libcfshr.lib libimxml.lib
+QMAKE_LFLAGS_RELEASE += /LIBPATH:"../../buildlib"
+QMAKE_LFLAGS_DEBUG += /LIBPATH:"../../buildlib"
+EOF
+
+cat <<EOF >! $prochunk_qconf
+CONFIG += CONSOLE
+LIBS += libcfshr.lib libimxml.lib
+QMAKE_LFLAGS_RELEASE += /LIBPATH:"../../buildlib"
+QMAKE_LFLAGS_DEBUG += /LIBPATH:"../../buildlib"
+EOF
+
+cat <<EOF >! $mrc2tif_qconf
+CONFIG += CONSOLE
+LIBS += libiimod.lib libcfshr.lib libimxml.lib $ltiff $lhdf
+QMAKE_LFLAGS_RELEASE += /LIBPATH:"../../buildlib" $hdf_lib
+QMAKE_LFLAGS_DEBUG += /LIBPATH:"../../buildlib" $hdf_lib 
+EOF
+
+if ($no_qt3 == false) then
+    echo 'QT +=  qt3support' >> $imod_qconf
+    echo 'QT +=  qt3support' >> $midas_qconf
+    echo 'QT +=  qt3support' >> $ctfplot_qconf
+    echo 'QT +=  qt3support' >> $prochunk_qconf
+    echo 'QT +=  qt3support' >> $mrc2tif_qconf
+endif
+
+if ($qtVersion > 4) then
+    foreach i ($ctfplot_qconf $sendevent_qconf $mrc2tif_qconf $qtassist_qconf)
+        echo 'QT += widgets' >> $i
+    end
+    echo 'QT += printsupport' >> $ctfplot_qconf
+endif
+
+set warn = (warn_on warn_on warn_on warn_on warn_on warn_on warn_off warn_on)
+@ i = 0
+while ($i < $#qdir)
+    @ i++
+
+    echo "INCLUDEPATH += ../include ." >> $qdir[$i]/qconfigure
+    set inst_bin_cyg = `cygpath -m $inst_bin_dir`
+    echo "target.path = $inst_bin_cyg" >> $qdir[$i]/qconfigure
+    echo DEFINES += QT_THREAD_SUPPORT >> $qdir[$i]/qconfigure
+    if ($debug == true) then
+        echo CONFIG += thread debug warn_off >> $qdir[$i]/qconfigure
+        echo CONFIG -= debug_and_release release >> $qdir[$i]/qconfigure
+        set vcexedir = Debug
+        if ($openmp == true) then
+            echo QMAKE_CXXFLAGS_DEBUG += $openmpFlags >> $qdir[$i]/qconfigure
+            echo QMAKE_CFLAGS_DEBUG += $openmpFlags >> $qdir[$i]/qconfigure
+        endif
+        echo QMAKE_CXXFLAGS_DEBUG += -D_CRT_SECURE_NO_WARNINGS >> $qdir[$i]/qconfigure
+    else
+        echo CONFIG += thread release $warn[$i] >> $qdir[$i]/qconfigure
+        echo CONFIG -= debug_and_release debug >> $qdir[$i]/qconfigure
+        set vcexedir = Release
+        if ($openmp == true) then
+            echo QMAKE_CXXFLAGS_RELEASE += $openmpFlags >> $qdir[$i]/qconfigure
+            echo QMAKE_CFLAGS_RELEASE += $openmpFlags >> $qdir[$i]/qconfigure
+        endif
+        echo QMAKE_CXXFLAGS_RELEASE += -D_CRT_SECURE_NO_WARNINGS >> $qdir[$i]/qconfigure
+    endif
+
+    # If there is a manifest, the nmake Makefile gets very hard to fix up
+    if ($qtVersion > 4) echo CONFIG -= embed_manifest_exe >> $qdir[$i]/qconfigure
+
+    if ($compiler == intel) then
+        # Fix the Makefiles.  New Cygwin 6/11/04 doesn't manage times well
+        # enough so need to delete the qmake commands
+        # 3/20/05: Removed strip from install - it removes 3KB of symbols that
+        # are needed for plugins to work
+        # Guess what, they are perfectly valid nmake files! It would be possible to
+        # run them but not in parallel
+        # The rule '/pat1/,/pat2//{//\!d}' removes lines between pat1 and pat excluding
+        # those lines
+        (cd $qdir[$i] ; qmake -o makefile.tmp $qprog[$i].pro)
+        set badrules = `sed -n '/{.*}.*{.*}/p' < $qdir[$i]/makefile.tmp`
+        sed -e '/^<</d'  -e '/^	$/d' -e '/-del/s//-rm -f/' -e '/@<< */s//\\/' \
+        -e '/DEL_FILE.*=.*del/s/del/rm -f/' -e '/makefile.tmp/s//Makefile/g' \
+        -e '/^	\$</d' -e '/{.*}.*{.*}/d'  -e '/UIC/s/-f *<< */\\/' \
+        -e '/.SUFFIXES.*$/s//.SUFFIXES: .c .cpp .obj/'  \
+        -e "/^C.*FLAGS[ 	]*=/s/-Od/$qopt/" \
+        -e '/\\bin\\moc.exe/s/\\/\//g' -e '/\\bin\\uic/s/\([^ ]\)\\/\1\//g' \
+        -e '/\$(LINKER) \$(LFLAGS)/,/^\$(LIBS)/{//\!d}' \
+        -e '/^\$(LIBS)/s//\$(OBJECTS) \$(LIBS)/' \
+        -e '/call.*uic_wrapper.bat/s//uic/' \
+        -e '/images\\/s//images\//g' -e '/CHK_DIR_EXISTS/d' \
+        -e '/^COPY[ 	]*=/s/=.*/= \/usr\/bin\/cp/' \
+        -e '/^COPY_FILE[ 	]*=/s/=.*/= \$(COPY)/' \
+        -e '/^INSTALL_FILE[ 	]*=/s/=.*/= \$(COPY_FILE)/' \
+        -e '/-I\([^\"]\)\([^ ]*\)/s//-I\"\1\2\"/g' -e '/@if not exist/d' \
+        -e '/^LIBS[ 	]*=/s/\\/\//g' -e '/^QMAKE[ 	]*=/s/\\/\//g' \
+        -e '/(set QT_PLUGIN_PATH.* & /s///' \
+        -e '/QMAKE.*Makefile/d' \
+        < $qdir[$i]/makefile.tmp >! $qdir[$i]/Makefile
+        \rm $qdir[$i]/makefile.tmp
+#        -e '/^install/a\	/usr/bin/cp \$(TARGET) '"$inst_bin_dir" \
+
+        # append new build rules if the bad ones were there (Qt 3.1.1)
+        if ("$badrules" != "") then
+            cat <<EOF >> $qdir[$i]/Makefile
+.cpp.obj:
+	\$(CXX) -c \$(CXXFLAGS) \$(INCPATH) \$<
+
+.c.obj:
+	\$(CC) -c \$(CFLAGS) \$(INCPATH) \$<
+EOF
+        endif
+    endif
+end
+
+# Make new project files for 3dmod and midas if needed
+# set QMAKESPEC here for msvc, now that real makefiles are done
+#
+setenv QMAKESPEC win32-msvc2008
+set newer = `\find $imod_dir -name 3dmod.dsp -newer $imod_dir/3dmod.pro \
+ -exec echo newer \;`
+if ($newer != newer) then
+    (cd $imod_dir ; qmake -t vcapp -o 3dmod.dsp 3dmod.pro)
+   echo "MADE NEW 3dmod PROJECT FILE"
+   echo "exclude linegui.cpp, moc_linegui.cpp, libtrack.lib, define TRACK_PLUGIN"
+endif
+
+set newer = `\find $midas_dir -name midas.dsp -newer $midas_dir/midas.pro \
+ -exec echo newer \;`
+if ($newer != newer) then
+   (cd $midas_dir ; qmake -t vcapp -o midas.dsp midas.pro)
+endif
+
+# set up make files for things built by VisualC, or finish imod makefile
+#
+if ($compiler == intel) then
+
+    # Set variables for library/dll makes that depended on qt_libs
+    # First set for making libdiaqt
+    #
+    set qt_libs = '/LIBPATH:"$(QTDIR)/lib" QtCore4.lib QtGui4.lib QtOpenGl4.lib'
+    set sql_lib = "QtSql4.lib"
+    if ($qtVersion > 4) then
+        set qt_libs = '/LIBPATH:"$(QTDIR)/lib" Qt5Core.lib Qt5Gui.lib Qt5OpenGl.lib Qt5Widgets.lib'
+        set sql_lib = "Qt5Sql.lib"
+        set qt_flags = "$qt_flags "'-I"$(QTDIR)\include\QtWidgets" -I"$(QTDIR)\include\QtPrintSupport"'
+    else
+        #
+        # Put a 4 on the libs to copy for Qt 4, no longer added by installqtlib
+        set newLibs = ''
+        foreach i ($qt4libstocopy)
+           set newLibs = "$newLibs ${i}4"
+        end
+        set qt4libstocopy = "$newLibs"
+    endif
+
+    # This little gem is for using the Qt installer package
+    set libsArr = ($qt4libstocopy)
+    if (! -e "$QTDIR/lib/$libsArr[1].dll" && -e  "$QTDIR/bin/$libsArr[1].dll") echo QTLIBSRC =  "$QTDIR/bin" >> $configure
+    if ($no_qt3 == false) set qt_libs = "$qt_libs Qt3Support4.lib"
+
+    # Get the openGl lib
+    if ($shared_libs == true) then
+        set opengl_lib = `sed -n '/^LIBS[ 	]*=/s/^.*\(opengl[^ ]*.lib\).*$/\1/p' $midas_dir/Makefile`
+        echo "LIBDIAQTDEF = $qt_libs" >> $configure
+    endif
+
+    # Then for making plugins
+    set qt_libs = "$qt_libs $sql_lib"
+    echo "MAKELIBSO = link -dll /NOLOGO  $qt_libs ../../buildlib/libimod.lib ../../buildlib/libcfshr.lib ../../buildlib/libimxml.lib ../../3dmod/3dmod.lib ../../buildlib/libdiaqt.lib  ../../buildlib/libimesh.lib /out:" >> $configure
+
+    # Then get simple set for fortran graphics
+    set qt_libs = `sed -n '/^LIBS[ 	]*= */s///p' $sendevent_dir/Makefile | sed '/\\/s//\//g'`
+    if ($qtVersion > 4) set qt_libs = "$qt_libs "'$(QTDIR)/lib/Qt5Widgets.lib $(QTDIR)/lib/Qt5PrintSupport.lib'
+
+    # Output variables for libraries to copy to bin
+    #
+    @ dllnum = 2
+    if ($m64bit == true) then
+        if ($distname == "") set distname = _win64
+        set strip = true
+        set sed3264 = '32'
+    else
+        if ($distname == "") set distname = _win
+        set sed3264 = '64'
+    endif
+    if ($?TIFF_JPEG_ZLIB) then
+        echo "DLLSOURCEDIR1 = $TIFF_JPEG_ZLIB/zlib" >> $configure
+        set dlltocopy = `ls "$TIFF_JPEG_ZLIB"/zlib/*.dll`
+        echo "DLLSTOCOPY1 = $dlltocopy:t:r" >> $configure
+    else if ($tifflibs == true) then
+        if ($m64bit == true) then
+            echo "DLLSOURCEDIR1 = $SYSTEMDRIVE/Program Files (x86)/GnuWin32/bin" >> $configure
+            echo 'DLLSTOCOPY1 = libtiff' >> $configure
+        else
+            echo "DLLSOURCEDIR1 = $SYSTEMDRIVE/Program Files/GnuWin32/bin" >> $configure
+            echo 'DLLSTOCOPY1 = libtiff libjpeg zlib' >> $configure
+        endif
+    endif
+    if ($iclversion == 7) then
+        echo "DLLSOURCEDIR$dllnum = $SYSTEMDRIVE/Program Files/Intel/Compiler70/IA32/Bin" >> $configure
+        echo "DLLSTOCOPY$dllnum = libCEPCF90MD libF90MD libIEPCF90MD libPCEPCF90MD libintrinsMD libmmd" >> $configure
+        @ dllnum++
+    else
+
+        # Version 8 or higher has different libraries, and also needs to
+        # include msvcr71.dll from .NET for Win2K, or more complicated stuff
+        #
+        set dllDir = "$fortbin"
+        if ($iclversion > 11) then   # No idea what 12-14 need here and below!
+            set dllDir = `echo "$fortbin" | sed '/\/bin\(.*\)/s//\/redist\1\/compiler/'`
+        endif
+        echo "DLLSOURCEDIR$dllnum = $dllDir" >> $configure
+        set dllstocopy2 = "libifcoremd libifportmd libmmd"
+        if ($iclversion > 11) set dllstocopy2 = "$dllstocopy2 svml_dispmd"
+        if ($iclversion > 10) then    
+            if ($openmp == true) set dllstocopy2 = "$dllstocopy2 libiomp5md"
+        else
+            if ($openmp == true) set dllstocopy2 = "$dllstocopy2 libguide40"
+        endif
+        echo "DLLSTOCOPY$dllnum = $dllstocopy2" >> $configure
+        @ dllnum++
+
+        # If this variable is set, we need to copy a redist directory and 
+        # install manifests in executables.  The variable is the dir
+        #
+        if ($?MSVCREDIST) then
+            if ($m64bit == false) then
+                echo "MANIFEST = sysdep/win/generic.manifest" >> $configure
+            else
+                echo "MANIFEST = sysdep/win/generic64.manifest" >> $configure
+            endif
+
+        else
+
+            # Older 32-bit compilations
+            if ($m64bit == false) then
+                set dllsrc3 = `cygpath $SYSTEMROOT/system32`
+                echo "DLLSOURCEDIR$dllnum = $dllsrc3" >> $configure
+                echo "DLLSTOCOPY$dllnum = msvcr71 msvcp71" >> $configure
+                @ dllnum++
+            endif
+        endif
+    endif
+
+    # Adjust variables for CUDA and set to copy the library
+    #
+    if ($?CUDA_DIR) then
+        set cudabin = "$CUDA_DIR/bin"
+        set cudalib = "$CUDA_DIR/lib"
+        if ($?CUDA_BIN_PATH && $?CUDA_LIB_PATH) then
+            set cudabin = `cygpath -m "$CUDA_BIN_PATH"`
+            set cudabin = "$cudabin"
+            set cudalib = `cygpath -m "$CUDA_LIB_PATH"`
+            set cudalib = "$cudalib"
+        endif
+        set cudart = `cd "$cudabin" ; ls cudart*.dll | sed -e '/[[:cntrl:]]/s///g' -e '/[^ ]*emu[^ ]*/s///g' -e '/.dll/s///g'`
+        set cufft = `cd "$cudabin" ; ls cufft*.dll | sed -e '/[[:cntrl:]]/s///g' -e '/[^ ]*emu[^ ]*/s///g' -e '/.dll/s///g'`
+        
+        if ($#cudart > 1) set cudart = `echo $cudart | sed -e '/[^ ]*'"$sed3264"'[^ ]*/s///g'`
+        if ($#cufft > 1) set cufft = `echo $cufft | sed -e '/[^ ]*'"$sed3264"'[^ ]*/s///g'`
+        set cudavers = `nvcc --version | sed -n -e '/[[:cntrl:]]/s///g' -e '/[,.]/s// /g' -e '/^.*release/s///p'`
+        @ cudamajor = $cudavers[1]
+        if ($cudamajor >= 4) set cuda_arch_opts = '-arch sm_20'
+        if ($cudamajor >= 9) set cuda_arch_opts = '-arch sm_30'
+        set cudadir = `cygpath -m "$CUDA_DIR"`
+        set nvcc_base_flags = "$cuda_arch_opts -O2 "'-I"'"$cudadir"'/include" -I../../include'
+        set nvcc_flags = "$nvcc_base_flags -Xcompiler /MD"
+        if ($cudamajor == 4 && $m64bit == false) set nvcc_flags = "$nvcc_flags -m 32"
+        set cudalibs = '-LIBPATH:"'"$cudalib"'" cudart.lib cufft.lib'
+        echo "DLLSOURCEDIR$dllnum = $cudabin" >> $configure
+        echo "DLLSTOCOPY$dllnum = $cudart $cufft" >> $configure
+        @ dllnum++
+    endif
+
+    # Set up to use MKL if not linking static; skip the mkl_def dll for 64-bit
+    if ($useMKL == true) then
+        #set mklDllDir = "$mkldir/$mklArch/bin"
+        #set dllList = "mkl_intel_thread mkl_core"
+        #if ($iclversion > 11) set mklDllDir = "$topdir/redist/$mklArch/mkl"
+        #if ($m64bit == true) set dllList = "$dllList mkl_mc3"
+        #if ($m64bit == false) set dllList = "$dllList mkl_def mkl_p4m3 msvcr71"
+        #echo "DLLSOURCEDIR$dllnum = $mklDllDir" >> $configure
+        #echo "DLLSTOCOPY$dllnum = $dllList" >> $configure
+        #@ dllnum++
+
+    # Otherwise set up for fftw library
+    else if ($?FFTW3_DIR) then
+        echo "DLLSOURCEDIR$dllnum = $fftw_dir" >> $configure
+        echo "DLLSTOCOPY$dllnum = $fftw_libroot" >> $configure
+        @ dllnum++
+    endif
+
+    # Set up for hdf library
+    if ($?HDF5_DIR) then
+        echo "DLLSOURCEDIR$dllnum = $hdf_dir/bin" >> $configure
+        echo "DLLSTOCOPY$dllnum = $hdf_libroot" >> $configure
+        @ dllnum++
+    endif
+
+    # Build imodwincpu
+    #
+    echo 'IMODWINCPU = imodwincpu.exe' >> $configure
+
+    # Compiler 9.1 suddenly started assuming VC6 compatibility flag 
+    # (No, I installed it wrong).  But not for 64-build...  THIS SHOULD
+    # BE DONE WITH A VC VERSION BASED ON LINK
+    if ($iclversion > 8 && $subversion > 0 && $iclversion < 10) echo "WINCPUVC = /Qvc7.1" >> $configure
+else
+    set makefile_ext = dummy
+    set makefile_dirs = ($qdir $libdiaqt_dir $plugsrc_dir)
+    set sourcedoc_exe = '$(VCEXEDIR)/sourcedoc'
+
+endif
+
+# Set library for building FrameGPU.dll and modify nvcc_flags
+# A -1 entry (default now) was promoted to 0 so these happen only when building a DLL
+if ("$frameGPU" != "0") then
+    set nvcc_frame_flags = "$nvcc_flags -Xcompiler -DDELAY_LOAD_FGPU"
+    if ("$frameGPU" == "1") then
+        echo "FGPULIBS = ../buildlib/libiimod.lib ../buildlib/libcfshr.lib ../buildlib/libimxml.lib ../buildlib/libifft.lib" >> $configure
+    else
+        echo "FGPULIBS = $frameGPU" >> $configure
+        set nvcc_frame_flags = "$nvcc_base_flags -Xcompiler -DDELAY_LOAD_FGPU,-DNO_DUMPS_IN_DLL"
+    endif
+endif
+
+echo VCEXEDIR = $vcexedir >> $configure
+
+# 5/20/10: removed Workaround for vista w/o manifest, i.e. imod2vatch etc.
+#
+echo "BACKGROUND_SCRIPTS = 3dmodbg 3dmodv processchunksbg" >> $configure
+
+# Set up to copy qt lib to bin dir for a distribution
+#
+echo 'QTINSTLIBDIR = bin' >> $configure
+echo 'INSTALL_FILES = IMOD-cygwin.csh IMOD-cygwin.sh' >> $configure
+
+# 1/16/09: Remove dual python build, the altpy path was broken (4.0.2)
+
+# Add scripts for running from command line to the install.  They are no
+# longer generated because of permission problems and to handle spaces in args
+#
+echo "CMDWRAPPERS = cmdwrappers" >> $configure
+
+# Set up for Qt image plugin copy
+#
+set plugVers = "4"
+if ($qtVersion > 4) set plugVers = ""
+echo "QTPLUGS_TOCOPY1 = qjpeg$plugVers.dll qico$plugVers.dll" >> $configure
+echo "QTSQL_TOCOPY = qsqlite$plugVers.dll" >> $configure
+echo "QTPLUGS_TOCOPY3 = qwindows.dll" >> $configure
+
+# Make sure critical scripts are in unix mode
+# ALL BASH/SH SCRIPTS MUST BE INCLUDED
+#
+(cd scripts ; dos2unix matchrotpairs prochunks.csh queuechunk >& /dev/null)
+(cd dist ; dos2unix installStub IMOD-cygwin.sh >& /dev/null)
+dos2unix installqtlib >& /dev/null

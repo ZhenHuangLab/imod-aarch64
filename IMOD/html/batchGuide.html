@@ -1,0 +1,428 @@
+<html><head><title>Batch Tomogram Reconstruction with IMOD </title></head>
+<body>
+<A NAME = "TOP"></A>
+<H2 ALIGN=center>Batch Tomogram Reconstruction with Batchruntomo in IMOD 4.11</H2>
+<H3 ALIGN=center>University of Colorado, Boulder</H3>
+<HR>
+<BR><A HREF = "#Intro">Introduction</A>
+<BR><A HREF = "#BatchSetup">Setting General Batch Processing</A>
+<BR><A HREF = "#Stacks">The Stack Table</A>
+<BR><A HREF = "#SetValues">Setting Basic Parameters for the Data Sets</A>
+<BR><A HREF = "#SetAdvanced">Using the Advanced Parameter Interface</A>
+<BR><A HREF = "#Run">Running the Data Sets</A>
+<HR>
+<H3><A NAME = "Intro"></A>Introduction</H3>
+<P>
+  Etomo provides an interface for reconstructing multiple tomograms
+  automatically using
+  <A HREF = "man/batchruntomo.html#TOP">Batchruntomo</A>.  The data sets
+  should be sufficiently similar so that, for the most part, the same
+  parameters and procedures can
+  be applied to all of them.  The 
+  interface allows you to set a number of parameters, but in each case a
+  different value can be used for an individual data set.  The parameters that we
+  think most likely to vary are included in a table of data sets.  For the
+  other parameters, there is one tab of the interface to set the values to
+  apply in general, which are referred to as global values.  If necessary, you
+  can open a copy of this screen for an individual data set and set
+  different values there.
+  <P>You may want to go through the <a href="batchExample.html#TOP">Example of
+  Batch Reconstruction</a> either before or after reading this document.
+  <P> For simplicity, the basic interface presents a selected subset of the many
+  parameters that can
+  be set from the regular reconstruction interface.  However, you can now
+  switch to an advanced interface that presents a much larger number of
+  other parameters. Initially, we relied
+  on templates as a mechanism for controlling the values of parameters not
+  exposed in the interface.  Templates still have an important role even with
+  the advanced parameter screen available.  Templates and the current editor
+  for saving them are described in <A HREF = "UsingEtomo.html#Templates">Using
+  Etomo</A>.  In
+  brief, they are text files with the extension ".adoc" containing name-value
+    pairs called directives, whose format is described in the
+    <A HREF = "man/batchruntomo.html#TOP">Batchruntomo</A> man page.  The
+    available directives are listed in the <A HREF =
+    "directives.html#TOP">directive table</A>.  If you want to make a template
+    for personal use and do so by hand, put it in the directory
+    .etomotemplate under your home directory (this is where Etomo's template
+    editor places user templates by default).  <A HREF =
+    "UsingEtomo.html#Templates">Using Etomo</A> describes what to do with templates
+    for general use. 
+    <P> The interface is organized into four tabs that would generally be
+    visited in sequence from left to right.  However, they can all be accessed
+    and changed at any time.  Also note that you can close the interface and
+    reopen it to resume working on a project; you should find all of the
+    settings as you left them, although a few may no longer be changed.  The
+    project file has the extension ".ebt".
+<H3><A NAME = "BatchSetup"></A>Setting General Batch Processing
+  Parameters</H3>
+<P>
+  The <B>Batch Setup</B> tab has items that should be filled in first.
+  <UL>
+    <LI> <B>Moving stacks to directories</B>.&nbsp;  There are two different
+      options for moving data sets from
+      their current locations into another location where each will be given
+      its own directory for processing.  If each data set is already in its own
+      directory for processing, then leave <B>Stacks are
+      already in dataset directories</B> selected.  With either of the other two
+      options, when
+      <A HREF = "man/batchruntomo.html#TOP">Batchruntomo</A> starts processing
+      a data set, it creates a directory for it under the indicated location,
+      with the root name of the data set, and moves the 
+      raw stack(s) there, as well as any associated files (".mdoc", ".rawtlt",
+      and ".log").  With the option <B>Move all stacks to dataset directories
+      under</B>, all data set directories will be created in the same
+      location, which must already exist.  After you turn on this radio
+      button, you can select this
+      location with the directory chooser window, which will allow you to
+      create it if necessary. This option is ideal for 
+      handling stacks that have been transferred to a single location after
+      being acquired, but in fact the data sets can be in multiple locations.
+      With the option <B>Move stacks to dataset directories under their
+      current locations</B>, the directories will be created right where the
+      stacks are and the stacks will be moved down one level for processing.
+      This option is convenient if stacks are already in the parent directory of
+      where you want them processed, and it is essential if you have already
+      sorted stacks into several different parent directories (e.g., one for
+      each specimen type) and want to maintain that tree structure.
+    <LI> <B>Starting directive file</B>.&nbsp; You can initialize the global
+      parameters for these data set with a directive file from previous batch
+      processing.  This provides an alternative to making a template file from
+      a similar data set.  If you later decide that you do not want to use any
+      starting file, press the <B>Clear</B> button.
+    <LI> <B>Templates</B>.&nbsp; Templates can be selected just as in the
+      reconstruction setup page.  If you do not have a starting directive file,
+      these selections are initialized with the defaults that can be chosen in
+      the Options-Settings dialog.  With a starting directive file, the
+      template entries in that file, if any, are used to initialize these
+      entries. Select one of the stock system templates in order to activate
+      the Sobel filter centering during bead tracking with an appropriate
+      smoothing parameter.  The template entries are shown blue because
+      parameters in the <B>Dataset Values</B> that are derived from a
+      template are also shown in blue.
+    <LI> <B>Project Name and Location</B>.&nbsp; The project files consist of the
+      command file for running
+      <A HREF = "man/batchruntomo.html#TOP">Batchruntomo</A>, the Etomo project
+      file, and a directive file with global settings.  They will be named
+      with the <B>root name</B> shown in the box.  The default name was
+      designed to be reasonably
+      unique as well as fairly interpretable (the 6 digits after the date
+      are hours, minutes, seconds without any colons), but you are free to
+      change it.  The <B>Location</B> is initialized to the directory from
+      which you started Etomo, but another location can be selected.
+  </UL>
+  
+  </P>
+<H3><A NAME = "Stacks"></A>The Stack Table</H3>
+<P>
+  On the <B>Stacks</B>, you add the tilt series that you want to process to a
+  table.  When you press <B>Add Stack(s)</B>, a file chooser will open to
+  allow you to select the stack files.  You can select multiple files and add
+  them together.  If you have many dual-axis data sets, you can select all of
+  the "a" and "b" files together, and the program will show just the "a" files
+  in the table.  The stacks can have an extension of either ".st" or ".mrc";
+  the latter will be renamed to ".st" for processing.
+  <P> For your first addition to the table, the <B>Dual
+  axis</B>, <B>Montage</B>, and <B>Beads on Two Surfaces</B> checkboxes are
+  set based on the defaults that you have set in the Options-Settings dialog,
+  as modified by any templates you have chosen.  The setting for 
+  <B>Dual Axis</B> box will also be modified as appropriate when both "a" and
+  "b" stacks are entered, or when the stack root name does not end in "a" or
+  "b".  Further entries will inherit the settings of these three boxes from
+  the previous line in the table.  The <B>Copy Down</B> button will copy these
+  three settings from the selected line to the one below, which is fairly
+  useless and should be changed to copy to all lines below.  For now, the
+  easiest way to get these boxes set for a large number of data sets is to add
+  one, set the buttons, then add the rest.
+  <P> The <B>Boundary Model</B> is used to indicate regions where the fiducial
+    seed model should be selected for tracking, or where patch tracking should
+    be done.  If you have
+    data sets needing such models, check the box before pressing the 3dmod icon
+    to draw the model, so that 3dmod can be given the right filename and
+    location.  The file is named with the data set root name plus
+    "_rawbound.mod" and is placed in the current location of the data set.  For
+    a dual-axis data set, the model is transformed to be used with the second
+    axis.  When using fiducials, the transformation is based on the previous
+    run of <A HREF = "man/transferfid.html#TOP">Transferfid</A> for
+    transferring fiducials; when patch tracking, Transferfid is used at this
+    point to find the transformation. You need to draw one or more contours
+    just on one view, the zero-degree one if possible.
+  <P> If entries are made to <B>Exclude Views</B>, the views will
+    currently be carried through into the coarse and fine aligned stacks but
+    skipped in tracking, alignment and reconstruction.  A directive can be
+    supplied in a template or starting batch file to remove the excluded views.
+  </P>
+  <H3><A NAME = "SetValues"></A>Setting Parameters for the Data Sets</H3>
+  <P>
+  <UL>
+    <LI> <B>Distortion Corrections</B>.&nbsp; You can select an image distortion field
+      file and a magnification gradient file if you have those distortion
+      corrections available.  If you have data from SerialEM, the binning will
+      be detected when the header is scanned.  Otherwise, if you have data with
+      a binning other than 1, you would need to have a directive in a template
+      file (e.g., "setupset.copyarg.binning = 2").
+    <LI> <B>X-ray Removal</B>.&nbsp;  Removal of X-rays and other extreme artifacts
+      will be done if <B>Remove X-rays</B> is selected.  The raw stack will be
+      "archived" automatically with
+      <A HREF = "man/archiveorig.html#TOP">Archiveorig</A>.  If you have
+      large artifacts present on every section, you can select an existing
+      <B>Manual replacement model</B> to erase them.  Or, you can
+      press <B>Make in 3dmod</b> and make such a model on the first data set.
+      The convention in these models is that object 1 should have patches in
+      which each pixel has a model point, object 2 should have lines to
+      remove, and object 3 should have patches defined by boundary contours.
+      In any case, the model will be copied into each of the data sets from
+      where it exists.
+    <LI> <B>Alignment Method and Tracking Parameters</B>.&nbsp; All of the alignment
+      methods available in Etomo can be run with automation.  With the <B>Autoseed and
+      track</B> method, the seed model for the second axis
+      will be done by first running
+      <A HREF = "man/transferfid.html#TOP">Transferfid </A> then using
+      <A HREF = "man/autofidseed.html#TOP">Autofidseed</A> to add points to
+      the model, which is useful if there is a significant shift between the
+      two axes.  Local tracking is done by default. If you use patch
+      tracking and break contours into pieces, the pieces will have the
+      default length that is used in Etomo based on the number of views.
+      With direct detectors,
+      especially K2 in counting mode, you may want anti-aliased reduction for
+      the prealigned stack, and this would also require a template entry
+      "comparam.prenewst.newstack.AntialiasFilter = -1".  Similarly,
+      antialiased reduction for the final aligned stack would require
+      "comparam.newst.newstack.AntialiasFilter = -1".
+    <LI> <B>Alignment</B>.&nbsp; Robust fitting is used in all cases in
+      <A HREF = "man/tiltalign.html#TOP">Tiltalign</A> with the default
+      tuning factor of 1.  A template entry such as
+      "comparam.align.tiltalign.KFactorScaling = 0.9" could be used for more
+      aggressive downweighting of outlying points.
+      The only parameters that can be set here are
+      whether to use local alignments and whether to enable solving
+      for distortion (X-stretching).  The program will not allow the latter
+      unless gold is actually found to be on two surfaces in reasonable
+      amounts after fiducial tracking.  The new script
+      <A HREF = "man/restrictalign.html#TOP">Restrictalign</A> will be called
+      to reduce the alignment parameters automatically in order to maintain a
+      minumum and/or target ratio of measurements to unknowns.  There are
+      directives to control that process if necessary.  Other than this, the
+      one template entry that might be needed for alignment would be to
+      enable the beam tilt solution with
+      "comparam.align.tiltalign.BeamTiltOption = 2".
+    <LI> <B>Tomogram Positioning</B>.&nbsp;  Positioning can be done with
+    whole binned-down tomograms. For plastic sections, the thickness is chosen
+    automatically, but a fixed value to be used instead can be placed in
+    the <B>Tomogram thickness</B> field.  
+      <A HREF = "man/findsection.html#TOP">Findsection</A>
+    will be used to find the surface of the section and generate a model for
+    <A HREF = "man/tomopitch.html#TOP">Tomopitch</A> with 5 pairs of lines.
+    For cryosamples, an unbinned thickness must be specified in 
+    the <B>Tomogram thickness</B> field, and a complex sequence of operations
+    is done with <A HREF = "man/cryoposition.html#TOP">Cryoposition</A>.  For
+    this analysis, it is essential that gold beads be removed from the volume
+    before detecting the structure.  When patch tracking or coarse
+    alignment only are done, you must indicate whether gold beads are present with
+    the <B>Sample has gold beads</B> checkbox and fill in the <B>Bead size</B>
+    field there if it is empty.  The extra thickness added when running
+    <A HREF = "man/tomopitch.html#TOP">Tomopitch</A> can be set with a
+    directive "comparam.tomopitch.tomopitch.ExtraThickness".  For cryo, this
+    usually needs to be a generous number, and <A HREF =
+    "man/batchruntomo.html#TOP">Batchruntomo</A>, will set it to 25 by default.
+    <LI> <B>CTF Correction</B>.&nbsp; CTF correction can be done with fitting in
+      <A HREF = "man/ctfplotter.html#TOP">Ctfplotter</A> to all individual
+      images or to a series of blocks of images.  For the latter,
+      select <B>Autofit range</B> and fill in entries for the range of angles
+      to fit and the angular step between ranges (e.g., 20 and 10 to fit
+      blocks of views over 20 degrees with 10 degree steps between the
+      blocks).  You must fill in the range and step when using this option,
+      and the <B>Defocus</B> box with the expected defocus in all cases.
+    <LI> <B>Gold Erasing</B>.&nbsp; Gold fiducials can be erased using a model
+      that is completed to have points on all views by selecting <B>Use fiducial
+        model</B>.  Alternatively, all beads can be found in an appropriately
+      binned tomogram by selecting <B>Find beads in 3D</B>, in which case the
+      unbinned thickness must be entered in <B>Tomogram thickness</B>.  If patch
+      tracking is used, there is no way to enter the needed bead size through
+      the interface and a size would have to be entered with a
+      "setupset.copyarg.gold" directive.
+    <LI> <B>Reconstruction</B>.&nbsp; The tomogram can be built with
+      regular R-weighted backprojection, with a SIRT-like filter, or with SIRT.
+      When doing either SIRT or the SIRT-like filter, a regular
+      backprojection can also be computed; simply check the boxes for the two
+      types desired.  (In fact, you have to turn off <B>R-weighted
+      backprojection</B> to avoid getting both.)  For the SIRT-like filter, fill in
+      the <B>Equivalent iterations</B> field with a single value.
+      For SIRT, that field is labeled <B>Iterations to leave</B> and can take a list of
+      iterations to leave, or more likely just a single vale for the number
+      of iterations.<br>  
+      There are three choices for specifying the tomogram
+      thickness, one by total unbinned pixels, one by binned pixels, and one to
+      use a calculated value plus a specified margin.  The latter will use a
+      specified thickness as the fallback if there is no calculated thickness
+      available or if it is too much smaller than the fallback (only 0.4 as
+      big).  This option is the default because it is the most
+      general-purpose.  The
+      calculated value is initially based on the distance between gold on two
+      surfaces, but is superceded if positioning is done.
+    <LI> <B>Postprocessing</B>.&nbsp; The tomogram can be reoriented with 
+      <A HREF = "man/trimvol.html#TOP">Trimvol</A>, and optionally converted
+      to bytes if <B>Fraction of Z slices to analyze</B> is selected.  There
+      is a default of 0.33 if the text box is left blank.  For
+      plastic sections, the tomogram can also be trimmed to section limits
+      found with <A HREF = "man/findsection.html#TOP">Findsection</A> by
+      selecting <B>Find plastic section limits and add</B>.  An entry for the
+      amount to add is required; it can be either the number of binned pixels
+      or a fraction of the measured thickness.<br>
+      NAD filtering of the trimmed volume can be specified in the Advanced interface.
+    <LI> <B>Datasets Table for Specific Values</B>.&nbsp; The simple table at the
+      bottom has a button with which you can open a parameter value dialog for
+      a single data set.  When you press <B>Open</B>, that data set will be given
+      a copy of the current parameters, and after that point, its values are
+      separate and unaffected by any further changes in the global values.  You
+      can revert to global values in the standalone dialog, and that will
+      discard any special values that you set.
+  </UL>
+  </P>
+
+<H3><A NAME = "SetAdvanced">Using the Advanced Parameter Interface</A></H3>
+<P>
+  Press the <B>Advanced</B> button on the Dataset Values tab to switch to the
+  advanced interface.  The same button can be used on the Dataset Values
+  dialog for an individual data set to set advanced parameters for that set.
+  The button changes to <B>Basic</B> can be used to switch back to the basic
+  interface.  Unlike Advanced mode in the reconstruction interface, the
+  Advanced dialog here does not include any of the parameters in the basic
+  interface.
+<P>
+  This interface is organized as a set of stacked sections that can be
+  individually opened and closed by clicking the bar with the name of the
+  section.  The sections correspond to the ones in the master directive table,
+  and all directives described in that table but not included in the basic
+  interface are available in the advanced interface.  If you are using a
+  template or starting batch file that includes any directives not listed in
+  the master table, then there will be an additional section at the bottom
+  with those directives.
+<P>
+  The directives that appear in the interface are controlled by the two
+  choices in the <B>Which Directives to Show</B> box.  Turning on 
+  <B>Only items containing a value</B> will make it show just the directives that
+  have a value set from either a template, starting batch file, or by your
+  setting the value. With <B>Only items output to batch file</B> checked, only
+  the directives that will actually be written to batch file will be shown,
+  not ones with template values.
+<P>
+  When the directives being shown are restricted, sections with no directives
+  to show are closed and disabled.
+<P>
+  The entry fields depend on the type of parameter. 
+  <UL>
+    <LI> Boolean entries will have
+      a combo box with "Yes", "No", and blank, where blank means no directive will
+      be output.  
+    <LI>Items with a fixed set of choices will have a combo box with the
+      choices and a blank for no diretcive.  The choices will be listed with a
+      number and description, and that is what will appear in the field, but the
+      actual directive just has the number.
+    <LI>File entries have a file chooser button as well as an eraser button
+      that can be used to clear out an entry.
+    <LI>Numeric entries have a text field.  If the label includes "and", then
+    two values are expected.  Check the tooltip for a longer description
+    including the type and number of values expected and any additional
+    notes, all taken directly from the
+    <A HREF = "directives.html#TOP">directive table</A>.
+  </UL>
+<P>
+  Values from templates and their labels will be shown in blue, as well as
+  values from the "batchDefaults.adoc" file, which is treated like a
+  bottom-level template.  When there is a non-boolean value from a template, the
+  <B>X</B> to the right of the field will be enabled.  This button allows you to
+  override the template and revert to a default value by placing a blank
+  directive into the batch file.  Press this button to select an override; the
+  field will then turn black and display "&gt;OVERRIDE&lt;".  The override
+  button will remain enabled and you can press it again to revert to the
+  template value.
+<P>
+  The program checks whether entries match the expected type and
+  number and do not have extraneous characters.
+  Erroneous entries will be displayed in red.  However, there is no check for
+  whether more complex restrictions are satisfied, such as two options being
+  mutually exclusive or negative values for entries that should be positive.
+  These errors will not be caught until the program in question runs.
+</P>
+<H3><A NAME = "Run"></A>Running the Data Sets</H3>
+<P>
+  When you select the <B>Run</B> tab, you should first make selections in
+  the <B>Run Actions</B> section to indicate whether to use multiple CPUs and
+  one or more GPUs.  If you make no selections, only a single CPU will be
+  used.  After you select either <B>Use multiple CPUs</B> or <B>Parallel
+  GPUs</B>, a table appears at the top with
+  computing resources.  If both are selected, the table will show available
+  CPUs on the left and available GPUs on the
+  right.  Your selections determine what resources are used for each single
+  reconstruction.  Reconstructions are run sequentially, not in parallel with
+  each other.  
+<P>
+  If you enable <B>Email notification</B> and enter an address,
+  <A HREF = "man/batchruntomo.html#TOP">Batchruntomo</A> will send an email
+  whenever a data set is aborted and when all processing is complete.  For the
+  email to work, you may need to define an SMTP mail server; this can be done
+  in the Options - Settings dialog.
+<P>
+  The <B>Subset of steps to run</B> section allows you to control a stopping
+  or starting point for the run.  If you turn on <B>Stop after</B>, you can
+  select one of the available stopping points.  All data sets selected for
+  running (by means
+  of the button in the <B>Run</B> column of the Datasets table) will be run to
+  the same selected stopping point.  When the run stops at such a point, you
+  can then turn on <B>Start from</B> and select a starting point.  Generally
+  you would want to select the starting point paired with the stopping point,
+  but you can go back to an earlier one if desired.  Ordinarily, it would not
+  work to 
+  select a
+  starting point later than the earliest point reached by any of the data sets
+  included in the run, so this ius not allowed by default.  However, if you
+  have completed a step manually, such that it would not be a problem to start
+  at a later step, then you can select <B>Enable starting from any step</B>
+  and select any step.  When starting past the Fine Alignment step, <A HREF =
+  "man/batchruntomo.html#TOP">Batchruntomo</A> no longer recomputes the fine
+  alignment (which involves adjusting alignment parameters as needed.)
+<P>
+  Press <B>Run</B> to start a run.  During the run, you can use <B>Kill
+  Process</B> to stop processing immediately, or <B>Pause</B> to make it stop
+  after the current data set finishes or reaches the stopping point.  After a
+  Pause or Kill, the <B>Resume</B> button can be used to restart the run from
+  where it left off.  When resuming from a Kill, the data set that was killed
+  will be run from the beginning or from the selected starting point, not from
+  the step where it was killed.  
+<P>
+  Almost nothing can be changed after a Pause
+  or Kill: data set parameters and starting and stopping points are disabled;
+  data sets marked for running can be dropped out but none can be added.  The
+  situation is more flexible when all data sets have reached a selected
+  stopping point; it is possible to manipulate which sets are included in
+  the run.  However, data set parameters currently can still not be changed 
+  (we plan to enable a subset of parameters that will have an effect when
+  changed).  To remove all these restrictions in either situation,
+  press <B>Reset</B>.  This has several consequences: 1) data set parameters
+  can be edited again; 2) the <B>Resume</B> button is disabled and the program
+  forgets about what would be needed to resume; 3) all data sets selected for
+  running will be run from the selected started point or the beginning, even
+  if they already reached that point.  Thus, if you use <B>Reset</B> after a
+  Pause or Kill, you have to manually turn off the <B>Run</B> checkboxes for
+  any data sets that have already been run and that you do not wish to rerun.
+<P>
+  Etomo saves and runs a single command file in
+  the project directory, named "rootname.com", where "rootname" is the project
+  root name from the <B>Batch Setup</B> tab. 
+  During the run, a corresponding log file will be created in the project
+  directory and will contain all of the log
+  output from the run.  There will be a copy of the portion of that log for
+  each data set in its respective directory, named "batchruntomo.log"; this can
+  be opened with the <B>Open Log</B> button in the Run table.  The
+  full log for all runs can be opened from the menu brought up by
+  right-clicking over the panel.  Selected extracts are shown in the Project
+  Log.
+</P>
+<P>
+  You can exit Etomo after starting a run and reopen it later.  The program
+  will "reconnect" to the run, whether it is finished or not, and update the
+  status for all data sets.
+</P>
+</body>
+</html>

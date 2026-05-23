@@ -1,0 +1,18 @@
+[tab = setup]
+set.adoc.function = batch-setup.adoc
+run.function.main =
+
+[tab = stacks]
+open.dialog.align=
+set.adoc.function = batch-stacks.adoc
+run.function.main =
+
+[tab = values]
+open.dialog.join=
+set.adoc.function = batch-values.adoc
+run.function.main =
+
+[tab = run]
+open.dialog.model=
+set.adoc.function = batch-run.adoc
+run.function.main =

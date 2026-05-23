@@ -1,0 +1,834 @@
+#!/usr/bin/env python
+# setupcombine - program to set up command files for combine
+#
+# Author: David Mastronarde
+#
+# $Id$
+#
+progname = 'setupcombine'
+prefix = 'ERROR: ' + progname + ' - '
+XYBORDERS = (24, 36, 54, 68, 80)    # border sizes per increment of minimum
+BORDERINC = 1000                # dimension
+DELPATCHXY = 100
+NZPATCH3 = 75      # Thickness at which to do 3 patches in Z
+NZPATCH4 = 150     # Thickness at which to do 4 patches in Z
+MAXPIXELS = 50000  # KPixels for maximum FFT 
+TAPERPADXZ = 8       # Size of taper/pad for 3D ffts in X and Z
+TAPERPADY = 4       # Size of taper/pad for 3D ffts in Y
+MAXPIECEY = 1       # Maximum pieces in Y
+MINOVERLAP = 10     # Minimum overlap between pieces
+
+# Read needed values from one tilt.com
+def readTiltOptions(tilt):
+   comlines = readTextFile(tilt, 'tilt command file')
+   tiltarr = optionValue(comlines, 'xaxistilt', 2, True)
+   xaxis = 0.
+   if tiltarr:
+      xaxis = tiltarr[0]
+   tiltarr = optionValue(comlines, 'offset', 2, True)
+   offset = 0.
+   if tiltarr:
+      offset = tiltarr[0]
+   tiltarr = optionValue(comlines, 'shift', 2, True)
+   xshift = 0.
+   zshift = 0.
+   if tiltarr:
+      xshift = tiltarr[0]
+   if tiltarr and len(tiltarr) > 1:
+      zshift = tiltarr[1]
+   binning = 1
+   tiltarr = optionValue(comlines, 'imagebinned', 1, True)
+   if tiltarr:
+      binning = tiltarr[0]
+   zshift /= binning
+   sliceStart = 0
+   sliceEnd = 0
+   tiltarr = optionValue(comlines, 'slice', 1, True)
+   if tiltarr and len(tiltarr) > 1:
+      sliceStart = tiltarr[0]
+      sliceEnd = tiltarr[1]
+   
+   return (xaxis, offset, zshift, xshift, binning, sliceStart, sliceEnd)
+
+
+# Determine binned original size and axis rotation angle for one axis
+def getSeriesSizeAndAngle(axis):
+   xsize = 0
+   ysize = 0
+   angle = None
+   xfname = rootname + axis + '.xf'
+   tltname = rootname + axis + '.tlt'
+   recname = datasetFilename(axis + '.rec')
+   stackname = rootname + axis + '.' + stackExt
+   plname = rootname + axis + '.pl'
+   if not (os.path.exists(recname) and os.path.exists(stackname)):
+      return (None, None, None)
+   try:
+
+      # First get the axis angle from the rotation of the zero-tilt view
+      if os.path.exists(xfname):
+         xflines = runcmd('xf2rotmagstr ' + xfname)
+         for ind in range(len(xflines)):
+            if 'rot=' in xflines[ind]:
+               xflines = xflines[ind:]
+               break
+
+         # Assume the middle view, but if tlt file exists, read it and find minimum angle
+         middle = len(xflines) // 2
+         if os.path.exists(tltname):
+            tiltlines = readTextFile(tltname)
+            if len(tiltlines) == len(xflines):
+               minTilt = 200.
+               minLine = middle
+               try:
+                  for ind in range(len(tiltlines)):
+                     tilt = float(tiltlines[ind])
+                     if math.fabs(tilt) < math.fabs(minTilt):
+                        minTilt = tilt
+                        minLine = ind
+                  middle = minLine
+               except Exception:
+                  pass
+
+         # With whatever line, convert the angle if possible.  Need negative to fit
+         # definition of axis angle
+         lsplit = xflines[middle].replace(',', ' ').split()
+         if len(lsplit) > 3:
+            try:
+               angle = -float(lsplit[2])
+            except Exception:
+               pass
+
+      (nxStk, nyStk, nzStk, mode, xpixStk, ypixStk, zpixStk) = getmrc(stackname)
+      (nxRec, nyRec, nzRec, mode, xpixRec, ypixRec, zpixRec) = getmrc(recname)
+      binning = int(round(xpixRec / xpixStk))
+   except ImodpyError:
+      exitFromImodError(progname)
+
+   # If it is montage, get the size, forget it if it fails
+   if os.path.exists(plname):
+      try:
+         (nxStk, nyStk, nzStk) = getMontageSize(stackname, plname)
+         xsize = nxStk // binning
+         ysize = nyStk // binning
+      except ImodpyError:
+         pass
+
+   # Otherwise, we have the size already
+   else:
+      xsize = nxStk // binning
+      ysize = nyStk // binning
+
+   return (xsize, ysize, angle)
+
+
+# Edits the com file with the current sed commands, applies a change list if any, writes
+# com file and writes a default copy to dfltcoms if different, and a copy to origcoms
+def editApplyChangeListAndWrite(sedcom, comName, doChange = True):
+   sedcom.append('/####CreatedVersion####/s/# .*/#' + IMODversion + '/')
+   (srcRoot, ext) = os.path.splitext(comName)
+   sedLines = pysed(sedcom, srcdir + '/' + srcRoot + '.com', None)
+
+   # set output format if appropriate
+   addOutputFormatVarToLines(sedLines, nameStyle)
+
+   if doChange and len(changeList) > 0:
+      tempLines = copy.deepcopy(sedLines)
+      sedLines = modifyForChangeList(sedLines, srcRoot, '', changeList)
+      if dfltComDir and tempLines != sedLines:
+         writeTextFile(os.path.join(dfltComDir, comName), tempLines)
+   writeTextFile(comName, sedLines)
+   if doChange and origComDir:
+      writeTextFile(os.path.join(origComDir, comName), sedLines)
+                       
+
+# Make a copy of combine.com or edit it as needed
+def makeCombineCom():
+   sedcom = ['/####CreatedVersion####/s/# .*/#' + IMODversion + '/']
+   if autoPatch or useVolMatch:
+      if autoPatch:
+         final = autoPatch
+         if extraTargets:
+            final += ' -extra ' + extraTargets
+         sedcom += [fmtstr('/autopatchfit -final/s/-final E/-final {}/', final),
+                   '/goto patchcorr/s//goto autopatch/']
+
+      if useVolMatch:
+         sedcom.append('/goto solvematch/s//goto dualvolmatch/')
+            
+   pysed(sedcom, srcdir + '/combine.com', 'combine.com')
+
+
+def commonFFTLines(sumnum):
+   ixyz = ranlist[ranind].split(',')
+   if chunkedHDF:
+      outFile = sumname
+   else:
+      outFile = tmppath + datasetFilename('.rec', root = fmtstr('sum{}', sumnum))
+   volAdd = ['$echo',
+             '#',
+             '$combinefft -StandardInput',
+             'AInputFFT	' + recfile,
+             'BInputFFT	' + tmpmatfile,
+             'OutputFFT	' + outFile,
+             fmtstr('XMinAndMax	{},{}', ixyz[0], ixyz[1]),
+             fmtstr('YMinAndMax	{},{}', ixyz[2], ixyz[3]),
+             fmtstr('ZMinAndMax	{},{}', ixyz[4], ixyz[5]),
+             fmtstr('TaperPadsInXYZ	{},{},{}', TAPERPADXZ, TAPERPADY, TAPERPADXZ)]
+   return volAdd
+
+
+def warning(text):
+   dest = sys.stderr
+   if warnToStdOut:
+      dest = sys.stdout
+   prnstr(' ', file=dest)
+   prnstr('WARNING: ' + text + '\n', file=dest)
+   
+
+
+#### MAIN PROGRAM  ####
+#
+# load System Libraries
+import os, sys, shutil, math, copy
+
+#
+# Setup runtime environment
+if os.getenv('IMOD_DIR') != None:
+   sys.path.insert(0, os.path.join(os.environ['IMOD_DIR'], 'pylib'))
+   from imodpy import *
+   addIMODbinIgnoreSIGHUP()
+else:
+   sys.stdout.write(prefix + " IMOD_DIR is not defined!\n")
+   sys.exit(1)
+
+#
+# load IMOD Libraries
+from pip import *
+from pysed import *
+from comchanger import *
+
+to_srcname = "g5a"
+from_srcname = "g5b"
+tmp_srcname = "g5tmpdir"
+root_srcname = "g5"
+backupname = "./savework"
+backupsed = ".\/savework"
+
+srcdir = os.path.join(os.environ['IMOD_DIR'], 'com')
+if not os.path.exists(srcdir):
+   exitError("Source directory for command files, " + srcdir + ", not found")
+
+# Get IMOD version
+IMODversion = getIMODversion()
+if not IMODversion:
+   exitError('Getting IMOD version')
+
+# Set up to save coms if copytomocoms set up directories
+origComDir = 'origcoms'
+dfltComDir = 'dfltcoms'
+if not os.path.exists(origComDir):
+   origComDir = ''
+if not os.path.exists(dfltComDir):
+   dfltComDir = ''
+
+sedtranskey = "gibberish"
+fromlet = "b"
+tolet = "a"
+delregion = "RegionModel"
+
+# Fallbacks from ../manpages/autodoc2man 3 1 setupcombine
+options = ["name:RootName:FN:", "atob:MatchAtoB:B:", "tolist:ToVolPointList:LI:",
+           "fromlist:FromVolPointList:LI:", "transfer:TransferPointFile:FN:",
+           "uselist:UsePointList:LI:", "surfaces:SurfaceModelType:I:",
+           "initial:InitialVolumeMatching:B:", "patchsize:PatchTypeOrXYZ:CH:",
+           "autopatch:AutoPatchFinalSize:CH:", "extra:ExtraResidualTargets:CH:",
+           "xlimits:XLowerAndUpper:IP:", "ylimits:YLowerAndUpper:IP:",
+           "zlimits:ZLowerAndUpper:IP:", "regionmod:PatchRegionModel:FN:",
+           "lowradius:LowFromBothRadius:F:", "wedgefrac:WedgeReductionFraction:F:",
+           "change:ChangeParametersFile:FNM:", "one:OneParameterChange:CHM:",
+           "tempdir:TemporaryDirectory:FN:", "noclean:NoTempCleanup:B:",
+           "info:InfoOnPatchSizes:B:", "only:OnlyMakeCombineCom:B:",
+           "style:NamingStyle:I:", "stackext:StackExtension:CH:",
+           "chunked:ChunkedHDFFiles:I:", "warnings:WarningsToStandardOut:B:",
+           "help:usage:B:"]
+
+(numOpts, numNonOpts) = PipReadOrParseOptions(sys.argv, options, progname, 1, \
+                                              0, 0)
+
+# Get patch size info first and exit
+ifInfo = PipGetBoolean('InfoOnPatchSizes', 0)
+if ifInfo:
+   for size in ('S', 'M', 'L', 'E'):
+      (patchnx, patchny, patchnz, err) = patchSizeFromEntry(size)
+      prnstr(fmtstr('{}:  {}  {}  {}', size, patchnx, patchny, patchnz))
+   sys.exit(0)
+
+# Now get info about the data set
+(comExt, dualNum, setroot, typeExt, stackExt) = findRootAxisAndExtensions \
+                                                (forceSingle = -1)
+if not comExt:
+   comExt = defaultComExtension()
+comExt = '.' + comExt
+
+stackExt = PipGetString('StackExtension', stackExt)
+if not stackExt:
+   exitError('Raw stack extension must be entered; it cannot be determined from ' +\
+             'dataset files')
+
+(nameStyle, typeExt) = getNamingStyle(typeExt)
+if typeExt == None:
+   typeExt = ''
+if nameStyle < 0:
+   nameStyle = mapTypeExtensionToStyle(typeExt)
+
+solvematch = 'solvematch' + comExt
+dualvolmatch = 'dualvolmatch' + comExt
+matchvol1 = 'matchvol1' + comExt
+patchcorr = 'patchcorr' + comExt
+matchorwarp = 'matchorwarp' + comExt
+warpvol = 'warpvol' + comExt
+matchvol2 = 'matchvol2' + comExt
+volcombine = 'volcombine' + comExt
+
+# Get options
+makeCombineOnly = PipGetBoolean('OnlyMakeCombineCom', 0)
+rootname = PipGetString("RootName", "")
+if not rootname and not makeCombineOnly:
+   exitError("A root name must be entered")
+
+warnToStdOut = PipGetBoolean('WarningsToStandardOut', 0)
+matchatob = PipGetBoolean('MatchAtoB', 0)
+if matchatob:
+   fromlet = 'a'
+   tolet = 'b'
+
+corrlist1 = PipGetString('ToVolPointList', '/')
+corrlist2 = PipGetString('FromVolPointList', '/')
+
+transfile = PipGetString('TransferPointFile', '')
+if transfile:
+   sedtranskey = "#TransferCoordinateFile"
+
+uselist = PipGetString('UsePointList', '/')
+
+# All lists must have / converted to \/ to be used in sed commands
+corrlist1 = corrlist1.replace('/', '\/')
+corrlist2 = corrlist2.replace('/', '\/')
+uselist = uselist.replace('/', '\/')
+
+useVolMatch = PipGetBoolean('InitialVolumeMatching', 0)
+if useVolMatch:
+   modsurf = 2
+else:
+   modsurf = PipGetInteger('SurfaceModelType', -10)
+   if (modsurf < -2 or modsurf > 2) and not makeCombineOnly:
+      exitError('You must enter either the -initial option or the -surface option ' +\
+                   'with a value between -2 and 2')
+
+patchin = PipGetString('PatchTypeOrXYZ', 'M')
+(patchnx, patchny, patchnz, err) = patchSizeFromEntry(patchin)
+if err and not makeCombineOnly:
+   exitError('You must enter one of S, M, L, or E or sizes in X,Y,Z for ' +\
+                'the -patchsize option')
+
+autoPatch = PipGetString('AutoPatchFinalSize', '')
+extraTargets = ''
+if autoPatch:
+   (autonx, autony, autonz, err) = patchSizeFromEntry(autoPatch)
+   if err:
+      exitError('You must enter one of S, M, L, or E or sizes in X,Y,Z for ' +\
+                   'the -autopatch option')
+   if autonx < patchnx or autony < patchny or autonz < patchnz:
+      exitError('The final patch size for Autopatchfit must not be smaller than ' + \
+                   'the starting patch size')
+
+   # Handle #, #, # in this entry, which etomo sends in, and handle no comma or space
+   # and comma in extra targets
+   if ' ' in autoPatch:
+      autoPatch = fmtstr('{},{},{}', autonx, autony, autonz)
+   extraTargets = PipGetString('ExtraResidualTargets', '')
+   if extraTargets and ' ' in extraTargets:
+      extraTargets = extraTargets.replace(' ', ',')
+      while ',,' in extraTargets:
+         extraTargets = extraTargets.replace(',,', ',')
+
+setRootAndExtension(rootname, typeExt)
+
+# If making combine.com only, do it now that preconditions are done
+if makeCombineOnly:
+   makeBackupFile("combine.com")
+   makeCombineCom()
+   sys.exit(0)
+   
+# Limits
+(patchxl, patchxu) = PipGetTwoIntegers('XLowerAndUpper', 0, 0)
+noxlim = PipGetErrNo()
+(patchyl, patchyu) = PipGetTwoIntegers('YLowerAndUpper', 0, 0)
+noylim = PipGetErrNo()
+(patchzl, patchzu) = PipGetTwoIntegers('ZLowerAndUpper', 0, 0)
+noZentered = PipGetErrNo()
+if noZentered and not autoPatch:
+   exitError('You must enter the -zlimits option')
+
+# Region model
+regionmod = PipGetString('PatchRegionModel', '')
+if regionmod:
+   delregion = 'gibberish'
+   if not os.path.exists(regionmod):
+      warning('file ' + regionmod + ' does not yet exist.')
+
+# Volcombine entries, Temp directory and cleanup
+lowRadius = PipGetFloat('LowFromBothRadius', 0)
+wedgeReduction = PipGetFloat('WedgeReductionFraction', 0)
+tmproot = PipGetString('TemporaryDirectory', '')
+handclean = PipGetBoolean('NoTempCleanup', 0)
+changeList = processChangeOptions('ChangeParametersFile', 'OneParameterChange',
+                                  'comparam')
+chunkedHDF = PipGetInteger('ChunkedHDFFiles', 0)
+
+# Get tilt.com filenames and values from them
+toname = rootname + tolet
+fromname = rootname + fromlet
+tilta = "tilt" + tolet + comExt
+tiltb = "tilt" + fromlet + comExt
+
+if os.path.exists(tilta) and os.path.exists(tiltb):
+   (xaxisa, angoffa, zshifta, xshifta, binninga, sliceStarta, sliceEnda) = \
+       readTiltOptions(tilta)
+   (xaxisb, angoffb, zshiftb, xshiftb, binningb, sliceStartb, sliceEndb) = \
+       readTiltOptions(tiltb)
+else:
+   xaxisa = xaxisb = angoffa = angoffb = zshifta = zshiftb = 0.
+   binninga = binningb = 0
+   if not useVolMatch:
+      warning(fmtstr('CANNOT FIND tilta{0} or tiltb{0}; CANNOT SET X-AXIS TILTS CORRECTLY'
+                     , comExt))
+
+# set up some filenames
+recfile = datasetFilename(".rec", root = toname)
+matfile = datasetFilename(".mat", root = fromname)
+origfile = datasetFilename(".rec", root = fromname)
+fromStack = fromname + '.' + stackExt
+fromAli = datasetFilename('.ali', root = fromname)
+toAli = datasetFilename('.ali', root = toname)
+invfile = "inverse.xf"
+atlt = toname + ".tlt"
+btlt = fromname + ".tlt"
+sumName = datasetFilename('.rec', root = 'sum')
+
+# Get file size
+if os.path.exists(recfile):
+   try:
+      (nx, nz, ny) = getmrcsize(recfile)
+   except ImodpyError:
+      exitFromImodError(progname)
+
+else:
+   (nx, nz, ny) = (1024, 60, 1024)
+   warning(recfile + " NOT FOUND; SETTING SIZE TO " + \
+         fmtstr("{} {} {} FOR TEST PURPOSES", nx, nz, ny))
+
+# Set Z limits to full range if using automated processing
+if noZentered:
+   patchzl = 1
+   patchzu = nz
+
+# Determine if reconstructions are centered, needed for two kinds of output
+reconsCentered = False
+if xshifta == 0. and xshiftb == 0. and os.path.exists(fromStack) and \
+       os.path.exists(fromname + '.xf') and binninga and \
+       ((sliceStarta == 0 and sliceEnda == 0) or os.path.exists(toAli)) and \
+       ((sliceStartb == 0 and sliceEndb == 0) or os.path.exists(fromAli)):
+   reconsCentered = True
+   try:
+      if sliceStarta != 0 or sliceEnda != 0:
+         (nxali, nyali, nzali) = getmrcsize(toAli)
+         diff = (sliceStarta + sliceEnda) // 2 - nyali
+         if diff > 4 or diff < -4:
+            reconsCentered = False
+            
+      if reconsCentered and (sliceStartb != 0 or sliceEndb != 0):
+         (nxali, nyali, nzali) = getmrcsize(fromAli)
+         diff = (sliceStartb + sliceEndb) // 2 - nyali
+         if diff > 4 or diff < -4:
+            reconsCentered = False
+
+   except ImodpyError:
+      reconsCentered = False
+   
+# Get the default border size and process the patch limits
+minsize = min(nx, ny)
+borderindex = min(minsize // BORDERINC, len(XYBORDERS) - 1)
+xyborder = min(XYBORDERS[borderindex], minsize // 4)
+
+if noxlim:
+   patchxl = xyborder
+   patchxu = nx - xyborder
+if patchxl < 0 or patchxl > nx or patchxl >= patchxu:
+   exitError(fmtstr('X limits ({}, {}) out of range or out of order', \
+                    patchxl, patchxu))
+if noylim:
+   patchyl = xyborder
+   patchyu = ny - xyborder
+if patchyl < 0 or patchyl > ny or patchyl >= patchyu:
+   exitError(fmtstr('Y limits ({}, {}) out of range or out of order', \
+                    patchyl, patchyu))
+
+# NEW: make Z positive
+if not patchzl:
+   patchzl = 1
+if patchzl <= 0 or patchzl > nz or patchzl >= patchzu:
+   exitError(fmtstr('Z limits ({}, {}) out of range or out of order', \
+                    patchzl, patchzu))
+
+npatchx = (patchxu + DELPATCHXY // 2 - patchxl) // DELPATCHXY
+npatchy = (patchyu + DELPATCHXY // 2 - patchyl) // DELPATCHXY
+
+# set number of patches in Z based on criteria, but if patch thickness
+# is greater than two-thirds of extent, do only one row of patches
+npatchz = 2
+if patchzu - patchzl >= NZPATCH3:
+   npatchz = 3
+if patchzu - patchzl >= NZPATCH4:
+   npatchz = 4
+
+if autoPatch:
+   npatchx = autoPatchNumber(autonx, patchxl, patchxu, 0)
+   npatchy = autoPatchNumber(autony, patchyl, patchyu, 0)
+   npatchz = max(npatchz, autoPatchNumber(autonz, patchzl, patchzu, 1))
+   
+if patchnz > (2 * (patchzu - patchzl)) / 3:
+   npatchz = 1
+   warning("Only one layer of patches will be computed in Z")
+
+# If patch thickness is greater than extent cut it down
+if patchnz > patchzu + 1 - patchzl:
+   patchnz = patchzu + 1 - patchzl
+   warning(fmtstr("Patch thickness set to {} to fit within Z limits",
+                  patchnz))
+
+# Get tilt series size and angle and set up for modifications
+(nxAstack, nyAstack, aAngle) = getSeriesSizeAndAngle('a')
+(nxBstack, nyBstack, bAngle) = getSeriesSizeAndAngle('b')
+axisAngle = 0.
+if aAngle and bAngle:
+   axisAngle = (aAngle + bAngle) / 2.
+elif aAngle:
+   axisAngle = aAngle
+elif bAngle:
+   axisAngle = bAngle
+
+kpixel = (((nx * nz) // 100) * ny) // 10
+mbytes = ((6 * kpixel) + (kpixel // 2)) // 1000
+lim1 = ((4 * kpixel) + (kpixel // 2) + (8 * MAXPIXELS)) // 1000
+lim2 = ((2 * kpixel) + (10 * MAXPIXELS)) // 1000
+mbytes = max(mbytes, lim1, lim2)
+
+prnstr(fmtstr('{} MBytes of disk space will be needed for combining',
+              mbytes))
+
+if tmproot:
+   if not os.path.isdir(tmproot):
+      exitError(tmproot + 'does not exist or is not a directory')
+   if not os.access(tmproot, os.W_OK):
+      exitError(' You do not have permission to write in ' + tmproot)
+   tmpdir = tmproot + '/combine.' + fmtstr('{}', os.getpid())
+   tmppath = tmpdir + '/'
+   ifmkdir = '$if'
+   tmpmatfile = tmppath + matfile
+   sedtmpdir = tmpdir.replace('/','\/')
+   sedmatfile = sedtmpdir + '\/' + matfile
+   sedtempkey = "TemporaryDir"
+
+else:
+   tmpdir = ""
+   tmppath = ""
+   ifmkdir = '#$if'
+   tmpmatfile = matfile
+   sedtmpdir = ""
+   sedmatfile = matfile
+   sedtempkey = "gibberish"
+
+sumname = datasetFilename('.rec', root = 'sum')
+
+# If there is an existing link to sum.rec, remove it
+if os.path.islink(sumname):
+   os.remove(sumname)
+
+# BUT NO LONGER MAKE sum.rec in the temporary directory
+if tmpdir:
+   if handclean:
+      prnstr("sum.rec will be assembled in the current directory.\n" + \
+             matfile +" will be left in " + tmpdir + \
+             "\nYou are responsible for deleting $tmpdir and its contents\n" +\
+             " when you are done with these files.")
+   else:
+      prnstr("Your temporary directory is " + tmpdir + \
+             "\nIt and its contents will be deleted when combine.com " +\
+             "finishes successfully.")
+
+prnstr(" ")
+prnstr("The number of patches for Corrsearch3d is "+\
+      fmtstr("{} in X, {} in Y, and {} in Z", npatchx, npatchz, npatchy))
+prnstr("   (Y and Z are not flipped in entries to corrsearch3d in patchcorr.com)")
+
+makeBackupFile("combine.com")
+makeBackupFile(solvematch)
+makeBackupFile(dualvolmatch)
+makeBackupFile(matchvol1)
+makeBackupFile(matchvol2)
+makeBackupFile(warpvol)
+makeBackupFile(patchcorr)
+makeBackupFile(matchorwarp)
+makeBackupFile(volcombine)
+
+baseChanges = [fmtstr("s/{}.rec/{}/g", from_srcname, origfile),
+               fmtstr("s/{}.rec/{}/g", to_srcname, recfile),
+               fmtstr("s/{}.matmod/{}.matmod/g", from_srcname, fromname),
+               fmtstr("s/{}.mat/{}/g", from_srcname, matfile),
+               fmtstr("s/{}/{}/g", from_srcname, fromname),
+               fmtstr("s/{}/{}/g", to_srcname, toname),
+               fmtstr("s/{}/{}/g", matfile, sedmatfile)]
+
+sedcom = baseChanges + \
+         ["/^ACorrespondenceList/s/[ 	].*/	" + corrlist1 + "/",
+          "/^BCorrespondenceList/s/[ 	].*/	" + corrlist2 + "/",
+          fmtstr("/^XAxisTilts/s/[ 	].*/	{},{}/", xaxisa, xaxisb),
+          fmtstr("/^AngleOffsets/s/[ 	].*/	{},{}/", angoffa, angoffb),
+          fmtstr("/^ZShifts/s/[ 	].*/	{},{}/", zshifta, zshiftb),
+          fmtstr("/^SurfacesOrUseModel/s/[ 	].*/	{}/", modsurf),
+          fmtstr("/{}/s/.*/TransferCoordinateFile	{}/", sedtranskey,
+                 transfile),
+          "/^UsePoints/s/[ 	].*/	" + uselist + "/",
+          fmtstr("/^MatchingAtoB/s/[ 	].*/	{}/", matchatob)]
+editApplyChangeListAndWrite(sedcom, solvematch)
+
+sedcom = [fmtstr("s/{}/{}/g", root_srcname, rootname),
+          fmtstr("/^MatchAtoB/s/[ 	].*/	{}/", matchatob)] + \
+   sedDelAndAdd('NamingStyle', nameStyle, 'RootName')
+editApplyChangeListAndWrite(sedcom, dualvolmatch)
+
+sedcom = baseChanges + \
+         [fmtstr("s/{}/{}/g", tmp_srcname, sedtmpdir),
+          fmtstr("/mkdir/s/.*if/{}/", ifmkdir),
+          fmtstr("/{}/s/#//", sedtempkey),
+          fmtstr("/OutputSizeXYZ/s/\//{} {} {}/g", nx,nz,ny)]
+editApplyChangeListAndWrite(sedcom, matchvol2, False)
+
+editApplyChangeListAndWrite(sedcom, warpvol, False)
+
+sedcom.append(fmtstr("/savework-file/s//{}/g", backupsed))
+editApplyChangeListAndWrite(sedcom, matchvol1, False)
+
+sedcom = baseChanges + \
+         [fmtstr("/^PatchSizeXYZ/s/[ 	].*/	{},{},{}/", patchnx, patchnz,
+                 patchny),
+          fmtstr("/^NumberOfPatchesXYZ/s/[ 	].*/	{},{},{}/", npatchx, \
+                 npatchz, npatchy),
+          fmtstr("/^XMinAndMax/s/[ 	].*/	{},{}/", patchxl, patchxu),
+          fmtstr("/^YMinAndMax/s/[ 	].*/	{},{}/", patchzl, patchzu),
+          fmtstr("/^ZMinAndMax/s/[ 	].*/	{},{}/", patchyl, patchyu),
+          fmtstr("/^BSourceBorder/s/[ 	].*/	{},{}/", xyborder, xyborder),
+          fmtstr("/^RegionModel/s/[ 	].*/	{}/", regionmod),
+          fmtstr("/^{}/d", delregion)]
+
+# If either angle is there and either stack size, add angle, then stack sizes
+if reconsCentered and (aAngle or bAngle) and (nxAstack or nxBstack):
+   if nxAstack or nxBstack:
+      sedcom.append(fmtstr('/^FlipYZMes/a/AxisRotationAngle	{:.2f}/', axisAngle))
+   if nxAstack:
+      sedcom.append(fmtstr('/^FlipYZMes/a/TiltSeriesSizeXY	{},{}/', nxAstack,
+                           nyAstack))
+   if nxBstack:
+      sedcom.append(fmtstr('/^FlipYZMes/a/BTiltSeriesSizeXY	{},{}/', nxBstack,
+                           nyBstack))
+
+# Add entries for autopatchfit
+if autoPatch:
+   sedcom.append('/^FlipYZMes/a/LocalSDNumBinnings	4/')
+   sedcom.append('/^FlipYZMes/a/BoxSizeForLocalSD	32,8,32/')
+   sedcom.append('/^FlipYZMes/a/EliminateByLocalSD	1,0.5/')
+
+editApplyChangeListAndWrite(sedcom, patchcorr)
+
+# Make matchorwarp
+sedcom = baseChanges + \
+         [fmtstr("s/{}/{}/g", tmp_srcname, sedtmpdir),
+          fmtstr("/mkdir/s/.*if/{}/", ifmkdir),
+          fmtstr("/{}/s/#//", sedtempkey)]
+if autoPatch:
+   sedcom += ['/^WarpLimits/a/ExtentToFit	3/',
+              '/^WarpLimits/a/StructureCriteria	0.5,0.57,0.65/']
+if regionmod:
+   sedcom.append(fmtstr('/^WarpLimits/a/ModelFile	{}/', regionmod))
+
+editApplyChangeListAndWrite(sedcom, matchorwarp)
+
+# Do combine.com
+makeCombineCom()
+
+# Start volcombine, get as strings
+sedcom = baseChanges + \
+         [fmtstr('/set combinefft_lowboth =/s/=.*/= {}/', lowRadius),
+          fmtstr('/set combinefft_reduce =/s/=.*/= {}/', wedgeReduction),
+          fmtstr("/savework-file/s//{}/g", backupsed),
+          '/####CreatedVersion####/s/# .*/#' + IMODversion + '/']
+voltext = pysed(sedcom, srcdir + '/' + volcombine[:-4] + '.com')
+addOutputFormatVarToLines(voltext, nameStyle)
+
+# If we really want this to run with no recfile, supply the test size to -tomo
+megamax = MAXPIXELS // 1000
+chunkArg = ''
+if chunkedHDF:
+   chunkArg = '-hdf'
+tomocom = fmtstr("tomopieces -tomo {} -mega {} -xpad {} -ypad {} " +\
+                 "-zpad {}  -min {} -ymax {} {}", recfile, megamax,
+                 TAPERPADXZ, TAPERPADY, TAPERPADXZ, MINOVERLAP, MAXPIECEY, chunkArg)
+try:
+   ranlist = runcmd(tomocom)
+except ImodpyError:
+   exitFromImodError(progname)
+
+for i in range(len(ranlist)):
+   ranlist[i] = str(ranlist[i]).rstrip('\r\n')
+
+# Eat any lines with PIP fallback output
+while len(ranlist) > 0:
+   if ranlist[0].strip() == '' or 'a' in ranlist[0] or 'e' in ranlist[0] or \
+      'i' in ranlist[0] or 'o' in ranlist[0]:
+      ranlist.pop(0)
+   else:
+      break
+
+# Set up filltomo command and check all the conditions for specifying valid area
+fillcom = ['MatchedToTomogram	' + recfile,
+           'SourceTomogram	' + origfile,
+           'InverseTransformFile	' + invfile]
+
+if reconsCentered:
+
+   # Get the size of the raw stack from montage or stack
+   # If anything goes wrong, just forget it
+   try:
+      rawSize = ''
+      if os.path.exists('newst' + fromlet + comExt):
+         (nxraw, nyraw, nzraw) = getmrcsize(fromname + '.' + stackExt)
+         rawSize = fmtstr('{} {} {}', nxraw, nyraw, nzraw)
+
+      elif os.path.exists('blend' + fromlet + comExt):
+         (nxraw, nyraw, nzraw) = getMontageSize(fromname + '.' + stackExt, 
+                                                fromname + '.pl')
+         rawSize = fmtstr('{} {} {}', nxraw, nyraw, nzraw)
+      
+   except ImodpyError:
+      rawSize = ''
+      pass
+
+   # Things are good, add the source commands
+   if rawSize:
+      fillcom += [fmtstr('ImagesAreBinned	{}', binningb),
+                  'SourceRawStackSize	' + rawSize,
+                  'SourceStackTransforms	' + fromname + '.xf']
+   
+voltext += ['$set nonomatch',
+            '$\\rm -f ' + tmppath + '*.mat~ ' + tmppath + 'mat.fft* ' + \
+            tmppath + 'rec.fft* ' + tmppath + 'sum.fft* ' + sumname + '* ' +\
+            tmppath + 'sum[1-9]*.rec* ' + tmppath + 'sum[1-9]*_rec.' + typeExt + '*',
+            '#',
+            '$echo STATUS: RUNNING FILLTOMO TO FILL IN GRAY AREAS IN ' +\
+            'THE .MAT FILE',
+            '$echo ',
+            '#',
+            '$filltomo -StandardInput',
+            'FillTomogram	' + tmpmatfile] + \
+            fillcom
+line = ranlist[0].split()
+npiecex = int(line[0])
+npiecey = int(line[1])
+npiecez = int(line[2])
+ranind = 1
+if chunkedHDF:
+   line = ranlist[1].split()
+   nxChunk = int(line[0])
+   nyChunk = int(line[1])
+   nzChunk = int(line[2])
+   ranind = 2
+   ixyz = ranlist[ranind].split(',')
+   voltext += ['#',
+               '$echo STATUS: INITIALIZING CHUNKED OUTPUT FILE']
+   voltext += commonFFTLines(1)
+   voltext.append(fmtstr('ChunkSizeForHDF	{} {} {}', nxChunk, nyChunk, nzChunk))
+
+sumnum = 0
+npiecetot = npiecex * npiecey * npiecez
+for znum in range(npiecez):
+   for ynum in range(npiecey):
+      for xnum in range(npiecex):
+         sumnum += 1
+         voltext += \
+         ['#',
+          fmtstr('$dopiece{}:', sumnum),
+          '$echo STATUS: EXTRACTING AND COMBINING PIECE ' +\
+          fmtstr(' {}  of {}', sumnum, npiecetot)]
+         voltext += commonFFTLines(sumnum)
+         ranind += 1
+         voltext += \
+          ['InverseTransformFile	' + invfile,
+           'ATiltFile	' + atlt,
+           'BTiltFile	' + btlt,
+           'ReductionFraction	$combinefft_reduce',
+           'LowFromBothRadius	$combinefft_lowboth']
+         
+         if chunkedHDF:
+            mmpl = ranlist[ranind].split(',')
+            ranind += 1
+            voltext += ['XSaveStartAndEnd	' + mmpl[0] + ' ' + mmpl[1],
+                        'YSaveStartAndEnd	' + mmpl[2] + ' ' + mmpl[3],
+                        'ZSaveStartAndEnd	' + mmpl[4] + ' ' + mmpl[5],
+                        fmtstr('PlaceChunkAtXYZ	{} {} {}', mmpl[6], mmpl[7], mmpl[8])]
+
+voltext += ['#', '$echo STATUS: REASSEMBLING PIECES']
+if not chunkedHDF:
+   voltext += ['$echo',
+               '#',
+               '$assemblevol -StandardInput',
+               'OutputFile ' + sumname]
+
+   for xnum in range(npiecex):
+      voltext.append('StartEndToExtractInX ' + ranlist[ranind])
+      ranind += 1
+   for ynum in range(npiecey):
+      voltext.append('StartEndToExtractInY ' + ranlist[ranind])
+      ranind += 1
+   for znum in range(npiecez):
+      voltext.append('StartEndToExtractInZ ' + ranlist[ranind])
+      ranind += 1
+
+   for sumnum in range(npiecetot):
+      voltext.append('InputFile ' + tmppath + 
+                     datasetFilename('.rec', root = fmtstr('sum{}', sumnum + 1)))
+
+voltext += ['#',
+            '$echo ',
+            '$echo STATUS: RUNNING FILLTOMO ON FINAL VOLUME',
+            '$echo ',
+            '#', 
+            '$\\rm -f ' + tmppath + 'sum[1-9]*.rec ' + tmppath + 'sum[1-9]*_rec.' + \
+               typeExt + '*',
+            '$filltomo -StandardInput',
+            'FillTomogram	' + sumname] + \
+            fillcom
+
+if tmpdir and not handclean:
+   voltext.append('$\\rm -r ' + tmpdir)
+voltext.append(fmtstr('$if (-e {0}) {0}', backupname))
+
+try:
+   volout = open(volcombine, 'w')
+   for line in voltext:
+      prnstr(line, file=volout)
+except:
+   exitError('Opening or writing to ' + volcombine)
+
+sys.exit(0)

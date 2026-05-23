@@ -1,0 +1,89 @@
+#!/usr/bin/env python
+# copyheader - copy the header from an MRC file
+#
+# Author: David Mastronarde
+#
+# $Id$
+#
+
+progname = 'copyheader'
+prefix = 'ERROR: ' + progname + ' - '
+
+
+#### MAIN PROGRAM  ####
+#
+# load System Libraries
+import os, sys
+
+#
+# Setup runtime environment
+if os.getenv('IMOD_DIR') != None:
+   sys.path.insert(0, os.path.join(os.environ['IMOD_DIR'], 'pylib'))
+   from imodpy import *
+   addIMODbinIgnoreSIGHUP()
+else:
+   sys.stdout.write(prefix + " IMOD_DIR is not defined!\n")
+   sys.exit(1)
+
+from pip import exitError, setExitPrefix
+setExitPrefix(prefix)
+
+# Get file names, check existence
+if len(sys.argv) < 3:
+   prnstr("""Usage: copyheader inputFile outputFile
+    Copies standard and extended header of inputFile to outputFile""")
+   sys.exit(0)
+
+inName = sys.argv[1]
+outName = sys.argv[2]
+
+if not os.path.exists(inName):
+   exitError('Input file ' + inName + ' does not exist')
+
+# Get a full header and make sure it is MRC, and find # of extra bytes
+try:
+   if getImageFormat(inName) != 'MRC':
+      exitError('This is not an MRC file; cannot copy header')
+   headLines = runcmd('header "' + inName + '"')
+except ImodpyError:
+   exitFromImodError(progname)
+
+numBytes = 1024
+for line in headLines:
+   if 'extra bytes' in line:
+      numStart = line.find('.  ') + 2
+      if numStart > 2:
+         lsplit = line[numStart:].split()
+         try:
+            numBytes += int(lsplit[1])
+         except Exception:
+            numStart = 0
+      if numStart < 3:
+         exitError('Finding number of extra header bytes in output from header')
+
+# Open and read the necessary bytes
+try:
+   action = 'Opening'
+   inFile = open(inName, 'rb')
+   action = 'Reading from'
+   header = inFile.read(numBytes)
+except IOError:
+   exitError(fmtstr('{} input file {} - {}', action, inName, str(sys.exc_info()[1])))
+
+inFile.close()
+
+# Backup output file, open, and write the bytes.  That's it.
+makeBackupFile(outName)
+
+try:
+   action = 'Opening'
+   outFile = open(outName, 'wb')
+   action = 'Writing to'
+   outFile.write(header)
+except IOError:
+   exitError(fmtstr('{} output file {} - {}', action, outName, str(sys.exc_info()[1])))
+   
+outFile.close()
+sys.exit(0)
+
+   

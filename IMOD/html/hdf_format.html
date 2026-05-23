@@ -1,0 +1,112 @@
+<html><head><title>HDF5 Format in IMOD </title></head>
+<body>
+<A NAME = "TOP"></A>
+<P>
+In IMOD's implementation of HDF5 image files, everything is under a top
+group of "MDF" and a subgroup or "images".&nbsp; Below that can be two different data
+organizations: a stack of 2-D images that are all the same size, or a set of one
+or more 3-D volumes that can be different sizes.
+<P>
+<B> Header Attributes and Image Stack Files</B>
+<br>
+All attributes are prefixed with IMOD.&nbsp; For a stack file, most of the items
+from an MRC header are placed as attributes at the top level "MDF/images",
+with a prefix of IMOD.MRC and a name based on the one in the MRC format and on
+modifications used in EMAN2.
+<pre>
+IMOD.MRC.nxstart    int       Starting point of sub image not used in IMOD  
+IMOD.MRC.nystart    int
+IMOD.MRC.nzstart    int
+IMOD.MRC.mx         int       Grid size in X, Y, and Z       
+IMOD.MRC.my         int
+IMOD.MRC.mz         int
+IMOD.MRC.xlen       float     Cell size
+IMOD.MRC.ylen       float        pixel spacing = xlen/mx, ylen/my, zlen/mz
+IMOD.MRC.zlen       float
+IMOD.MRC.alpha      float     cell angles - ignored by IMOD
+IMOD.MRC.beta       float
+IMOD.MRC.gamma      float
+IMOD.MRC.mapc       int       map column  1=x,2=y,3=z.       
+IMOD.MRC.mapr       int       map row     1=x,2=y,3=z.       
+IMOD.MRC.maps       int       map section 1=x,2=y,3=z.       
+IMOD.MRC.minimum    float     Minimum pixel value.
+IMOD.MRC.maximum    float     Maximum pixel value.
+IMOD.MRC.mean       float     Mean pixel value.
+IMOD.MRC.rms        float     Mean pixel value.
+IMOD.MRC.ispg       int       space group number.
+IMOD.MRC.xorigin    float     Origin of image, positive for a subvolume
+IMOD.MRC.yorigin    float
+IMOD.MRC.zorigin    float
+IMOD.MRC.tiltangles 6 floats  0,1,2 = original:  3,4,5 = current 
+IMOD.MRC.nlabl      int  	    Number of labels
+IMOD.MRC.label0     81-character null-terminated string, padded with spaces
+... up to
+IMOD.MRC.LABEL9
+
+IMOD.imageid_max    int       Maximum of highest image group number and
+                                number of images minus 1
+IMOD.is_complex     int       1 for complex data (FFTs)
+IMOD.is_rgb         int       1 for RGB data
+</pre>
+<P>
+The X and Y dimensions are defined by the image sizes, which must all be
+equal.&nbsp; The Z dimension is the number of images.  
+<P>
+The mode is defined by the data type stored for bytes, short integers and
+floats.&nbsp; Bytes are stored unsigned. RGB data are stored as unsigned bytes in a
+sequence of RGB triplets.&nbsp; Complex data are stored as a float data type in a
+sequence of real, complex pairs just as in an MRC file.&nbsp; They are also
+organized the same way as in an MRC file
+<P>
+Images are treated in IMOD as right-handed, with the first pixel at the lower
+left corner. Following the conventions of the HDF5 high-level image interface,
+this is indicated with an attribute "DISPLAY_ORIGIN" set to "LL".
+<P>
+For an image stack, the MDF/images group contains a sequence of groups named
+from "0" to "NZ-1", each with a 2-D dataset named "image".&nbsp; Input files
+may have these groups in any order and may skip values, but these group
+numbers are
+considered to define the order of the images, starting with the lowest actual
+group number as Z = 0, and the highest one as Z = NZ -1.
+<P>
+<B> Volume Image Files</B>
+<br>
+For a set of 3-D volumes, the top level has only the "DISPLAY_ORIGIN" and
+"imageid_max" attributes, where the latter is the number of volumes minus 1.
+Newstack, which is the one program that can create multiple volumes in a file,
+inserts the top-level attribute "image_pyramid" when it adds a volume to a
+file.
+<P>
+The top level contains a sequence of groups named from "0" on up.&nbsp; Each group
+contains all of the attributes found in the top level of a stack file except
+"DISPLAY_ORIGIN" and "imageid_max".&nbsp; The group has a dataset named "image"
+containing multiple planes of data, whose size defines the image dimensions.
+The maximum size in Z is defined as unlimited, so these volumes can be extended.
+
+<P>
+<B> Other Metadata</B>
+<br>
+The HDF module stores all of the attributes in an autodoc structure that is
+accessible to calling programs.&nbsp; Programs can thus add metadata using the
+autodoc interface.&nbsp; Newstack will do so when given an MRC file and its
+accompanying .mdoc file from SerialEM and producing an HDF file.&nbsp; SerialEM
+will also do so when writing an HDF file. 
+<P>
+Global data from outside any autodoc
+section are placed in the top-level group containing header attributes.
+Entries in ZValue sections are placed as attributes inside the corresponding
+2-D image group.&nbsp; Sections of type "T" are discarded as redundant with the
+labels.&nbsp; Sections of other types 
+will be placed in their own groups, named with the type name of the section
+(e.g. MontParam).&nbsp; That group will contain a subgroup for each section of that
+type, named with the section name.
+<P>
+The other metadata in an HDF file can be extracted as an autodoc file with the command
+<br>
+&nbsp;&nbsp;&nbsp;<code>extracttilts -attrib filename.hdf filename.adoc</code>
+<br>
+The <B>-key</B> option to Extracttilts can also be used to extract a single
+type of data from the metadata in the file.
+</P>
+</body>
+</html>

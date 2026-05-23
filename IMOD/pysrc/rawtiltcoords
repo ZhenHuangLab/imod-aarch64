@@ -1,0 +1,220 @@
+#!/usr/bin/env python
+# rawtiltcoords - produce coordinates and angles in original views for points in tomogram
+#
+# Author: David Mastronarde
+#
+# $Id$
+#
+
+progname = 'rawtiltcoords'
+prefix = 'ERROR: ' + progname + ' - '
+yzRatioCrit = 2.
+
+#### MAIN PROGRAM  ####
+#
+# load System Libraries
+import os, sys
+
+#
+# Setup runtime environment
+if os.getenv('IMOD_DIR') != None:
+   sys.path.insert(0, os.path.join(os.environ['IMOD_DIR'], 'pylib'))
+   from imodpy import *
+   addIMODbinIgnoreSIGHUP()
+else:
+   sys.stdout.write(prefix + " IMOD_DIR is not defined!\n")
+   sys.exit(1)
+
+#
+# load IMOD Libraries
+from pip import *
+from pysed import *
+from tomocoords import *
+
+# Fallbacks from ../manpages/autodoc2man 3 1 rawtiltcoords
+options = ["root:RootName:CH:", "volume:VolumeModeled:FN:",
+           "center:CenterPositionFile:FN:", "objects:ObjectsToUse:LI:",
+           "output:OutputModel:FN:", "angle:AngleOutputFile:FN:",
+           "defocus:DefocusFile:FN:", "pixel:PixelSize:F:",
+           "invert:InvertTiltAngles:B:", "full:FullReconstruction:CH:",
+           "ali:AlignedStack:CH:", "com:CommandFile:FN:", "reorient:ReorientionType:I:",
+           "skip:SkipBackTransform:B:", "help:usage:B:"]
+
+# Common startup
+(rootName, volName, centerFile, pointFile, modelFile, objList, comFile, \
+       reorientIn, enteredOrient) = getCommonOptions(options, progname)
+
+outName = PipGetInOutFile('OutputModel', 0)
+if not outName:
+   exitError('Name of final output model must be entered')
+
+angleFile = PipGetString('AngleOutputFile', '')
+defocusFile = PipGetString('DefocusFile', '')
+defocusIsList = False
+if defocusFile:
+   if not angleFile:
+      exitError('You cannot produce defocus values without an angle output file')
+
+   # If given filename exists, assume it is a simple list and get pixel size/inversion
+   if os.path.exists(defocusFile):
+      defocusIsList = True
+      pixForDefocus = PipGetFloat('PixelSize', 0.)
+      invertTilt = PipGetBoolean('InvertTiltAngles', 0)
+
+   # Otherwise parse a ctfcorrection.com file for pixel size and inversion,
+   # and the log for the defocus for each tilt
+   elif os.path.exists(defocusFile + '.com') and os.path.exists(defocusFile + '.log'):
+      ctfLines = readTextFile(defocusFile + '.com')
+      pixForDefocus = optionValue(ctfLines, 'PixelSize', FLOAT_VALUE, numVal = 1)
+      invertTilt = optionValue(ctfLines, 'InvertTiltAngles', BOOL_VALUE)
+      if not pixForDefocus:
+         exitError('Cannot find pixel size in ' + defocusFile + '.com')
+      if not invertTilt:
+         invertTilt = 0
+      ctfLines = readTextFile(defocusFile + '.log')
+      defocus = []
+      for line in ctfLines:
+         if 'defocus[' in line:
+            lsplit = line.split()
+            try:
+               defocus.append(str(float(lsplit[2]) * 1000.))
+            except Exception:
+               exitError('Parsing a defocus value from ' + defocusFile + '.log')
+               
+   else:
+      exitError(fmtstr('Either the defocus file {0} must exist, or both {0}.com and ' + \
+                          '{0}.log must exist', defocusFile))
+
+(comExt, ifDual, rawRoot, typeExt, rawExt) = findRootAxisAndExtensions()
+if typeExt == None:
+   typeExt = ''
+if not rawExt:
+   numCandid = 0
+   for ext in ['st', 'mrc', 'hdf']:
+      if os.path.exists(rootName + '.' + ext):
+         numCandid += 1
+         rawExt = ext
+
+   if not numCandid:
+      exitError('Cannot find a raw stack under extension .st, .mrc, or .hdf')
+   if numCandid > 1:
+      exitError('Cannot identify which file is the raw stack, there is more than one ' +\
+                'with extension .st, .mrc, or .hdf')
+
+# Check that all the files exist
+stackName = rootName + '.' + rawExt
+aliName = PipGetString('AlignedStack', datasetFilename('.ali', rootName, typeExt))
+fullRec = PipGetString('FullReconstruction',  datasetFilename('_full.rec', rootName, 
+                                                              typeExt))
+checkList = [(stackName, 'raw stack'), (aliName, 'aligned stack'),
+             (volName, 'modeled volume'), (comFile, 'command file'),
+             (centerFile, 'center position file'), (fullRec, 'full reconstruction')]
+if angleFile:
+   xfName = rootName + '.xf'
+   checkList += [(xfName, 'transform file')]
+for (name, descrip) in checkList:
+   if not os.path.exists(name):
+      exitError('The ' + descrip + ', ' + name + ', does not exist')
+
+# Common point processing, header reading, orientation processing
+(pid, cleanList, pointList, aliBinning, reorient, comLines, \
+    nxRaw, nyRaw, nzRaw, pixXraw, pixYraw, pixZraw, \
+    nxAli, nyAli, nzAli, pixXali, pixYali, pixZali, origXali, origYali, \
+    origZali, nxVol, nyVol, nzVol, pixXvol, pixYvol, pixZvol, origXvol, \
+    origYvol, origZvol, nxFull, nyFull, nzFull, pixXfull, pixYfull, pixZfull, \
+    origXfull, origYfull, origZfull) = \
+    getPointsAndHeaders(modelFile, objList, pointFile, progname, stackName, aliName, \
+                           volName, fullRec, enteredOrient, reorientIn, comFile)
+
+skipBackXform = PipGetBoolean('SkipBackTransform', 0)
+comLines = extractProgramEntries(comLines, 'tilt', '-Standard')
+if not comLines:
+   exitError('Cannot find entries to run tilt program in ' + comFile)
+                   
+# Loop on points
+zAdjust = 0.5 * pixZvol
+fullLines = []
+for ptNum in range(len(pointList)):
+   point = pointList[ptNum]
+
+   # Convert points from a point list by the header transformation to match scaled
+   # values that came in from model conversion
+   if not modelFile:
+      point[0] = point[0] * pixXvol - origXvol;
+      point[1] = point[1] * pixYvol - origYvol;
+      point[2] = point[2] * pixZvol - origZvol;
+   
+   # For rotation, Y comes from inversion of Z, Z from Y
+   if reorient < 0:
+      temp = - (point[2] + zAdjust)
+      point[2] = point[1] - zAdjust
+      point[1] = temp
+
+   # For flip, the origins were not swapped in the header, so undo the origin that was
+   # applied and adjust by origin that should have been applied
+   elif reorient > 0:
+      temp = (point[2] + origZvol - origYvol) + zAdjust
+      point[2] = (point[1] + origYvol - origZvol) - zAdjust
+      point[1] = temp
+
+   fullLines.append(fmtstr('{:10.2f} {:10.2f} {:10.2f}',
+                           (point[0] + origXfull) / pixXfull, 
+                           (point[1] + origYfull) / pixYfull, 
+                           (point[2] + origZfull) / pixZfull))
+
+
+fullPoint = modelFile + '.fullpt' + pid
+fullModel = modelFile + '.fullmod' + pid
+aliModel = modelFile + '.alimod' + pid
+rawModel = modelFile + '.rawmod' + pid
+cleanList += [fullPoint, fullModel, aliModel, rawModel]
+writeTextFile(fullPoint, fullLines)
+
+# For a defocus list, either adjust the raw pixel size for binning or use the aligned
+# stack pixel size; otherwise now write temporary defocus list
+if defocusFile:
+   if defocusIsList:
+      if pixForDefocus:
+         pixForDefocus *= aliBinning
+      else:
+         pixForDefocus = pixXali
+   else:
+      defocusFile = modelFile + '.defocus' + pid
+      cleanList.append(defocusFile)
+      err = writeTextFile(defocusFile, defocus, True)
+      if err:
+         cleanupFiles(cleanList)
+         exitError('Error ' + err)
+
+# Prepare tilt command
+sedcom = [sedModify('InputProjections', aliName, delim = '|'),
+          sedModify('OutputFile', aliModel, delim = '|')] + \
+          sedDelAndAdd('ProjectModel', fullModel, 'OutputFile', delim = '|')
+if angleFile:
+   sedcom += sedDelAndAdd('AngleOutputFile', angleFile, 'OutputFile', delim = '|') + \
+       sedDelAndAdd('AlignTransformFile', xfName, 'OutputFile', delim = '|')
+if defocusFile:
+   sedcom += sedDelAndAdd('DefocusFile', defocusFile, 'OutputFile', delim = '|') + \
+       sedDelAndAdd('PixelForDefocus', fmtstr('{} {}', pixForDefocus, invertTilt),
+                    'OutputFile', delim = '|')
+
+sedlines = pysed(sedcom, comLines, delim = '|')
+
+# Run everything
+try:
+   runcmd(fmtstr('point2model -image "{}" -num 1 -scat -sph 5 "{}" "{}"', fullRec,
+                 fullPoint, fullModel))
+   runcmd('tilt -Standard', sedlines)
+   if skipBackXform:
+      runcmd(fmtstr('imodtrans -i "{}" "{}" "{}"', aliName, aliModel, outName))
+   else:
+      runcmd(fmtstr('xfmodel -scale {} -back -xform "{}" "{}" "{}"', 1. / aliBinning,
+                    rootName + '.xf', aliModel, rawModel))
+      runcmd(fmtstr('imodtrans -i "{}" "{}" "{}"', stackName, rawModel, outName))
+
+except ImodpyError:
+   cleanupFiles(cleanList)
+   exitFromImodError(progname)
+
+cleanupFiles(cleanList)
+sys.exit(0)

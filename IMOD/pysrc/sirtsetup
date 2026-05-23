@@ -1,0 +1,814 @@
+#!/usr/bin/env python
+# sirtsetup - program to set up command files for SIRT
+#
+# Author: David Mastronarde
+#
+# $Id$
+#
+
+progname = 'sirtsetup'
+prefix = 'ERROR: ' + progname + ' - '
+sirtext = 'srec'
+intext = 'sint'
+trimext = 'strm'
+vsext = 'vsr'
+setname = ""
+scMinMax = ""
+trimarg = ""
+srecname = ""
+
+# Find the number of command files created by splittilt
+def findSplitComNumber(splitout, descrip):
+   retval = -1
+   reg = re.compile(r'^.* files for ([ 0-9]*)chunks created.*$')
+   for l in splitout:
+      if l.startswith('WARNING:'):
+         prnstr(l)
+      if reg.search(l):
+         numstr = reg.sub(r'\1', l)
+         if numstr and numstr != "":
+            retval = int(numstr)
+   if retval < 0:
+      exitError('Cannot determine com file number from splittilt on ' + descrip)
+   return retval
+
+# Simple rename function in a try block
+def tryRename(sirtcom, comname):
+   try:
+      os.rename(sirtcom, comname)
+   except:
+      exitError(fmtstr('Renaming {} to {}', sirtcom, comname))
+
+# Function to output scaling commands
+def outputScalingLines(comf, recnum):
+   if scMinMax != "":
+      convname = datasetFilename(fmtstr('.{}{:02d}', intext, recnum))
+      prnstr('$b3dremove ' + convname, file=comf)
+      prnstr(fmtstr('$newstack -mode 1 -scale {} {} {}', \
+            scMinMax, srecname, convname), file=comf)
+   if trimarg != "":
+      convname = datasetFilename(fmtstr('.{}{:02d}', trimext, recnum))
+      prnstr('$b3dremove ' + convname, file=comf)
+      prnstr(fmtstr('$trimvol {} {} {}', trimarg, srecname, convname), file=comf)
+
+# Function to output final commands
+def commandsForFinish(comf, sirtname, testmode):
+   prnstr("$findsirtdiffs " + sirtname, file=comf)
+   if testmode < 2:
+      prnstr("$b3dremove -g " + sirtname + "-[0-9]*.*", file=comf)
+   comf.close()
+
+# Extract and convert number from name
+def extractRecNum(recname, basename, baseExt):
+   if len(baseExt):
+      numText = recname[len(basename):-len(baseExt)]
+   else:
+      numText = recname[len(basename):]
+   return convertToInteger(numText, 'rec number in ' + recname)
+
+
+#### MAIN PROGRAM  ####
+#
+# load System Libraries
+import os, sys, math, re, glob, shutil
+
+#
+# Setup runtime environment
+if os.getenv('IMOD_DIR') != None:
+   sys.path.insert(0, os.path.join(os.environ['IMOD_DIR'], 'pylib'))
+   from imodpy import *
+   addIMODbinIgnoreSIGHUP()
+else:
+   sys.stdout.write(prefix + " IMOD_DIR is not defined!\n")
+   sys.exit(1)
+
+#
+# load IMOD Libraries
+from pip import *
+from pysed import *
+
+
+# Initializations (defaults are in Pip calls)
+recchunk = ""
+projchunk = ""
+targetChunks = ""
+boundpixels = parallelBoundarySize()
+
+# Fallbacks from ../manpages/autodoc2man 3 1 sirtsetup
+options = ["co:CommandFile:FN:", "naming:NamingStyle:I:", "nu:NumberOfProcessors:I:",
+           "ra:ChunksPerProcessor:I:", "st:StartFromZero:B:",
+           "re:ResumeFromIteration:I:", "it:IterationsToRun:I:",
+           "le:LeaveIterations:LI:", "sk:SkipVertSliceOutput:B:",
+           "cl:CleanUpPastStart:B:", "su:SubareaSize:IP:", "yo:YOffsetOfSubarea:I:",
+           "sc:ScaleToInteger:FP:", "tr:TrimvolOptions:CH:", "fl:FlatFilterFraction:F:",
+           "rd:RadiusAndSigma:FP:", "falloff:FalloffIsTrueSigma:B:",
+           "cs:ConstrainSign:B:", "ch:SeparateRecChunks:B:", "pc:SeparateProjChunks:B:",
+           "bo:BoundaryPixels:I:", "mo:OutputMode:I:", "te:TestMode:I:",
+           "help:usage:B:"]
+
+(numOpts, numNonOpts) = PipReadOrParseOptions(sys.argv, options, progname, 1, 1, 0)
+
+# Get the com file name, derive a root name and new com file name, check exists
+comfile = PipGetInOutFile('CommandFile', 0)
+(comfile, rootname) = completeAndCheckComFile(comfile)
+
+(comExt, dualNum, setroot, typeExt, stackExt) = findRootAxisAndExtensions(useTilt = comfile)
+if not comExt:
+   comExt = comfile[-3:]
+comExt = '.' + comExt
+
+(optNameStyle, typeExt) = getNamingStyle(typeExt)
+
+# Get options
+numproc = PipGetInteger('NumberOfProcessors', 8)
+procEntered = 1 - PipGetErrNo()
+chunkPerProc = PipGetInteger('ChunksPerProcessor', 0)
+
+if PipGetBoolean('SeparateRecChunks', 0):
+   recchunk = "-c"
+if PipGetBoolean('SeparateProjChunks', 0):
+   projchunk = "-c"
+
+boundpixels = PipGetInteger('BoundaryPixels', boundpixels)
+flatfrac = PipGetFloat('FlatFilterFraction', 1.0)
+trueSigma = PipGetBoolean('FalloffIsTrueSigma', 0)
+sigma = 0.05
+if trueSigma:
+   sigma = 0.035
+(radius, sigma) = PipGetTwoFloats('RadiusAndSigma', 0.4, sigma)
+
+iterations = PipGetInteger('IterationsToRun', 10)
+iterEntered = 1 - PipGetErrNo()
+leaveStr = PipGetString('LeaveIterations', "")
+
+resumeIter = PipGetInteger('ResumeFromIteration', -1)
+startfirst = PipGetBoolean('StartFromZero', 0)
+if startfirst and resumeIter > 0:
+   exitError('You cannot enter both StartFromZero and ResumeFromIteration')
+
+usingForSirt = False
+if not startfirst and rootname.endswith('_for_sirt'):
+   usingForSirt = True
+   rootname = rootname[0:-9]
+
+cleanup = PipGetBoolean('CleanUpPastStart', 0)
+
+(subXsize, subYsize) = PipGetTwoIntegers('SubareaSize', 0, 0)
+doSubarea = 1 - PipGetErrNo()
+subOffset = PipGetInteger('YOffsetOfSubarea', 0)
+
+signConstraint = PipGetInteger('ConstrainSign', 0)
+mode = PipGetInteger('OutputMode', 2)
+skipVert = PipGetInteger('SkipVertSliceOutput', 0)
+
+(scaleMin, scaleMax) = PipGetTwoFloats("ScaleToInteger", 0., 0.)
+scMinMax = ""
+if scaleMin != 0. or scaleMax != 0.:
+   scMinMax = fmtstr('{:f},{:f}', scaleMin, scaleMax)
+trimarg = PipGetString('TrimvolOptions', "")
+if scMinMax != "" and trimarg != "":
+   exitError("You cannot enter both scaling and trimming options")
+
+testmode = PipGetInteger('TestMode', 0)
+
+sirtname = rootname + '_sirt'
+
+# read com file and get options from it
+comlines = readTextFile(comfile, 'tilt command file')
+#slices = optionValue(comlines, 'slice', 1, 1)
+alifile = optionValue(comlines, 'inputproj', 0, 1)
+recfile = optionValue(comlines, 'outputfile', 0, 1)
+#widthArr = optionValue(comlines, 'width', 1, 1)
+shiftArr = optionValue(comlines, 'shift', 2, 1)
+thicknessArr = optionValue(comlines, 'thickness', 1, 1)
+logbase = optionValue(comlines, 'log', 2, 1)
+xtiltArr = optionValue(comlines, 'xaxistilt', 2, 1)
+xtiltFile = optionValue(comlines, 'xtiltfile', 0, 1)
+useGPU = optionValue(comlines, 'UseGPU', 1, 1, numVal = 1)
+zfactors = optionValue(comlines, 'zfactorfile', 0, 1)
+localali = optionValue(comlines, 'localfile', 0, 1)
+substart = optionValue(comlines, 'subsetstart', 1, 1)
+binningArr = optionValue(comlines, 'imagebinned', 1, 1)
+scaleArr = optionValue(comlines, 'scale', 2, 1)
+maskOption = optionValue(comlines, 'mask', 1, 1, numVal = 1)
+binning = 1
+if binningArr:
+   binning = binningArr[0]
+xtilt = 0.
+if xtiltArr:
+   xtilt = xtiltArr[0]
+   
+# If GPU is used and number of procs not entered, assume 1 not 8
+if useGPU != None and useGPU >= 0 and not procEntered:
+   numproc = 1
+
+if numproc > 1 and chunkPerProc > 0:
+   targetChunks = fmtstr('-t {} -m {}', numproc * chunkPerProc, numproc)
+
+# Figure out if it can be done with internal SIRT
+simpleBP = localali == None and zfactors == None
+if simpleBP and xtiltFile:
+   xtlines = readTextFile(xtiltFile, 'X-tilt file')
+   if not len(xtlines):
+      exitError('The file of X-axis tilts, ' + xtiltfile + ', is empty')
+   firstxt = float(xtlines[0])
+   for i in range(len(xtlines)):
+      if math.fabs(float(xtlines[i]) - firstxt) > 1.e-5:
+         simpleBP = False
+   else:
+      xtilt += firstxt
+
+doingVert = simpleBP and xtilt != 0.
+
+# Get the input image file name from the command file if necessary
+if alifile == None:
+   for ind in range(len(comlines)):
+      if re.search(r'^\s*\$\s*tilt\s', comlines[ind]) or \
+             re.search(r'^\s*\$\s*tilt$', comlines[ind]):
+         break
+   else:
+      exitError("tilt command not found in com file " + comfile)
+   while ind < len(comlines) - 1:
+      ind += 1
+      if not comlines[ind].strip().startswith('#'):
+         alifile = comlines[ind].strip()
+         break
+   if recfile == None:
+      while ind < len(comlines) - 1:
+         ind += 1
+         if not comlines[ind].strip().startswith('#'):
+            recfile = comlines[ind].strip()
+            break
+   if alifile == None or recfile == None:
+      exitError("Cannot find input and output file names in command file")
+
+# Make sure ali exists and get its size
+if not os.path.exists(alifile):
+   exitError(alifile + " does not exist yet")
+try:
+   (alix, aliy, aliz, aliMode, alipx, alipy, alipz) = getmrc(alifile)
+except ImodpyError:
+   exitFromImodError(progname)
+
+# Make sure SUBSETSTART is there
+if not substart or len(substart) < 2:
+   exitError('The command file needs to have a SUBSETSTART entry')
+ssXstart = substart[0]
+ssYstart = substart[1]
+
+# Check size and offset of a subarea
+if doSubarea:
+   fullx = alix
+   fully = aliy
+   subXsize = 2 * ((subXsize + 1) // 2)
+   if subXsize > alix or subYsize > aliy:
+      exitError('Subarea size must be smaller than the aligned stack size')
+   if subXsize < 32 < subYsize < 1:
+      exitError('The subarea size is too small')
+   if aliy // 2 + subYsize // 2 + subOffset > aliy or \
+      aliy // 2 - subYsize // 2 + subOffset < 0:
+      exitError('The subarea offset is too large and the subarea goes ' + \
+                'outside the image')
+   alix = subXsize
+   aliy = subYsize
+   ssXstart += binning * ((fullx - alix) // 2)
+   ssYstart += binning * ((fully - aliy) // 2 + subOffset)
+
+# Get some clip arguments for doing stats
+iytext = ""
+if thicknessArr:
+   iytext = "-iy " + str(thicknessArr[0] // (2 * binning))
+ixtext = "-ix " + str(alix // 2)
+maskSize = max(2, alix // 500)
+if maskOption != None:
+   maskSize = max(maskSize, maskOption)
+
+# If either width or slices entry is present, we need to make sure ali 
+# matches the possibly binned size here
+#if widthArr != None and alix != widthArr[0] // binning:
+#   exitError("The reconstruction must be the full width of the aligned stack")
+# Actually, slices are completely overridden below, so who cares
+#if slices != None and aliy != (slices[1] // binning + 1 - slices[2] // binning):
+#   exitError("The reconstruction must be the full height of the aligned stack")
+
+# Get the z shift if any, for substituting in a SHIFT line
+zshift = 0.
+if shiftArr != None and len(shiftArr) > 1:
+   zshift = shiftArr[1]
+
+lastslice = aliy * binning - 1
+
+# Get the setname and pull off _rec for standard extension style
+setname = (os.path.splitext(recfile))[0]
+descripSeparator = '.'
+if typeExt:
+   descripSeparator = '_'
+   if len(setname) > 4 and setname[-4] == '_':
+      setname = setname[0:-4]
+   else:
+      typeExt = ''
+
+# adjust it to add _sub or substitute this for _full
+if doSubarea:
+   if setname.endswith('_full'):
+      setname = setname[0:-5]
+   setname += '_sub'
+
+setRootAndExtension(setname, typeExt)
+   
+# Get starting reconstruction #: first look for 3 digit ones, then two
+lastnum = 0
+if not startfirst:
+   basename = setname + descripSeparator + sirtext
+   baseExt = ''
+   if typeExt:
+      baseExt = '.' + typeExt
+
+   # Get the hundreds list, which is all we need if resume >= 100
+   reclist = glob.glob(basename + '[0-9][0-9][0-9]' + baseExt)
+   if resumeIter < 100:
+
+      # if resume < 100, save the list if resuming, get lower list either
+      # in this case or if hundreds list empty
+      if resumeIter > 0:
+         hundredList = reclist
+         reclist = []
+      if not len(reclist):
+         reclist = glob.glob(basename + '[0-9][0-9]' + baseExt)
+         
+   # Now see if resume iteration is present
+   if resumeIter > 0:
+      for rec in reclist:
+         num = extractRecNum(rec, basename, baseExt)
+         if num == resumeIter:
+            lastnum = resumeIter
+            lastrec = rec
+            break
+
+      # Error if didn't find it
+      if lastnum == 0:
+         exitError('There is no "srec" file for the iteration you want to ' +\
+                   'resume from')
+
+   # Or if not resuming, sort and find last one on list; or start at 0
+   elif len(reclist):
+      reclist.sort()
+      lastrec = reclist[len(reclist) - 1]
+      lastnum = extractRecNum(lastrec, basename, baseExt)
+      prnstr("Starting from last reconstruction # " + str(lastnum))
+   else:
+      startfirst = True
+
+# If resuming and doing vertical internal slices, look for the vertical slice rec
+startingVSrec = None
+if not startfirst and doingVert:
+   vsrec = datasetFilename(fmtstr('.{}{}', vsext, 
+                                  extractRecNum(lastrec, basename, baseExt)))
+   if os.path.exists(vsrec):
+      startingVSrec = vsrec
+
+# Make sure the rec to resume from is the right size
+if not startfirst:
+   try:
+      (usex, usey, usez) = getmrcsize(lastrec)
+
+      # Also check starting vert slice rec and cancel if it doesn't match
+      if startingVSrec:
+         (vsrx, vsry, vsrz) = getmrcsize(startingVSrec)
+         if usex != vsrx or usez != vsrz:
+            prnstr('WARNING: ' + progname + ' - Vertical slice file ' + startingVSrec +\
+                   ' does not have the right dimensions; using interpolation to resume' +
+                   ' from regular reconstruction')
+            startingVSrec = None
+            
+   except ImodpyError:
+      exitFromImodError(progname)
+   if usex != alix or usez != aliy:
+      exitError(fmtstr('The X/Z size of the existing file {} ({}/{}), does ' +\
+                       'not match the X/Y size of the aligned stack ({}/{})',
+                       lastrec, usex, usez, alix, aliy))
+
+# Set up cleanup lists
+cleanlist = ''
+if cleanup:
+   for ext in [sirtext, intext, trimext, vsext]:
+      basename = setname + descripSeparator + ext
+      reclist = glob.glob(basename + '[0-9][0-9]*' + typeExt)
+      for rec in reclist:
+         lastchar = len(rec)
+         while not rec[lastchar-1].isdigit():
+            lastchar -= 1
+         num = int(rec[len(basename):lastchar])
+         if num > lastnum or startfirst:
+            cleanlist += rec + ' '
+
+   if cleanlist != "":
+      prnstr('INFO: The following files will be deleted when the run starts')
+      prnstr('INFO: ' + cleanlist)
+
+# Get proper name of the input aligned stack after processing
+makeLog = logbase != None and not simpleBP
+changeScale = makeLog and len(scaleArr) == 2 and aliMode != 2
+aliuse = alifile
+densin = alifile
+if doSubarea or makeLog:
+   (aliroot, aliext) = os.path.splitext(alifile)
+   if typeExt:
+      ind = aliroot.rfind('_')
+      if ind > 0 and ind < len(aliroot) - 1:
+         aliext = '.' + aliroot[ind + 1:]
+         aliroot = aliroot[:ind]
+      else:
+         exitError('Cannot extract descriptive text between _ and extension from ' + \
+                   alifile)
+   
+   if doSubarea:
+      aliroot += '_sub'
+      densin = datasetFilename(aliext, root = aliroot)
+   if makeLog:
+      aliext += 'log10'
+   
+   aliuse = datasetFilename(aliext, root = aliroot)
+
+if changeScale:
+   scaleLine = fmtstr(r'/^\s*SCALE.*/s//SCALE  {} {}/', scaleArr[0], scaleArr[1] / 5000.)
+
+# Make sure modified input stack exists and has right size if restarting
+if not startfirst and aliuse != alifile:
+   if not os.path.exists(aliuse):
+      exitError(aliuse + " does not exist")
+   try:
+      (usex, usey, usez) = getmrcsize(aliuse)
+   except ImodpyError:
+      exitFromImodError(progname)
+   if usex != alix or usey != aliy or usez != aliz:
+      exitError(fmtstr('The existing file {} is {}x{}x{}, not the expected' +\
+                       ' size of {}x{}x{}', aliuse, usex, usey, usez, alix, \
+                       aliy, aliz))
+
+# Clean up previous stuff that splittilt might not get
+cleanChunkFiles(sirtname)
+
+# Figure out iterations and leave list
+leaveList = []
+if leaveStr:
+   leaveList = parselist(leaveStr)
+   if not leaveList:
+      exitError("Parsing the leave list " + leaveStr)
+
+   # Sort the list and remove duplicates
+   leaveList.sort()
+   ind = 0
+   while ind < len(leaveList) - 2:
+      if leaveList[ind] == leaveList[ind+1]:
+         leaveList.remove(ind)
+      else:
+         ind += 1
+         
+   lastLeave = leaveList[len(leaveList) - 1]
+
+   # If no iterations entered, set it from the last entry on leave list
+   if not iterEntered:
+      iterations = lastLeave - lastnum
+      if iterations <= 0:
+         exitError(fmtstr("Trying to resume with iteration {}, but the last entry on " +\
+                          "the list to retain ({}) is before this iteration ",
+                          lastnum + 1, lastLeave))
+
+   # Check validity of leave values
+   for leave in leaveList:
+      if leave <= lastnum or leave > lastnum + iterations:
+         exitError(fmtstr('A value on the list to retain ({}) is outside the range of' + \
+                          ' iterations being done ({} to {})', leave, lastnum + 1,
+                          lastnum + iterations))
+
+# Set up loop index, and add previous reconstruction and last iteration to
+# leave list to protect both of them
+# then for internal SIRT make length of list be # of iterations
+loopIter = 0
+doVert = ''
+if lastnum:
+   leaveList.insert(0, lastnum)
+if not len(leaveList) or leaveList[len(leaveList) - 1] != lastnum + iterations:
+   leaveList.append(lastnum + iterations)
+if simpleBP:
+   prnstr('Doing SIRT internally in the Tilt program')
+   doVert = '-v'
+   iterations = len(leaveList)
+   if lastnum:
+      loopIter = 1
+
+# Make an initial reconstruction or starting internal SIRT
+sirtcom = sirtname + '.com'
+comnum = 1
+madeStart = False
+if startfirst:
+   if simpleBP:
+
+      # For simple bp, get the first iteration # from leaveList and make
+      # sure that is the last number on leaving the loop
+      internalIter = leaveList[loopIter]
+      loopIter += 1
+      srecname = datasetFilename(fmtstr('.{}{:02d}', sirtext, internalIter))
+      lastnum = internalIter
+   else:
+
+      srecname = datasetFilename('.' + sirtext + "00")
+
+
+# For cleanup, or for regular taking the log or subarea when first starting,
+# make com to do this and advance the com number
+if cleanlist != "" or (startfirst and (makeLog or doSubarea)):
+   comnum += 1
+   try:
+      action = 'Opening'
+      comname = sirtname + '-001-sync' + comExt
+      comf = open(comname, 'w')
+      action = 'Writing to'
+      if cleanlist:
+         prnstr('$b3dremove ' + cleanlist, file=comf)
+      if startfirst and doSubarea:
+         prnstr('$b3dremove ' + densin, file=comf)
+         prnstr(fmtstr('$newstack -size {},{} -off 0,{} {} {}', alix, aliy,
+                       subOffset, alifile, densin), file=comf)
+
+      if startfirst and makeLog:
+         prnstr('$b3dremove ' + aliuse, file=comf)
+         prnstr(fmtstr('$densnorm -log {:f} -ignore {} {}', logbase[0], densin,
+                       aliuse), file=comf)
+      comf.close()
+   except:
+      exitError(action + " file: " + comname)
+
+# Set up the base sed commands common to all command files
+sedbase = [r'/^\s*SLICE/d',
+           r'/^\s*WIDTH/d',
+           r'/^\s*MASK/d',
+           r'/^\s*RADIAL/d',
+           r'/^\s*FalloffIsTrueSigma/d',
+           r'/^\s*HammingLikeFilter/d',
+           r'/^\s*ExactFilterSize/d',
+           r'/^\s*FakeSIRTiterations/d',
+           fmtstr(r'/^\s*MODE.*/s//MODE   {}/', mode),
+           fmtstr(r'/^\s*SHIFT.*/s//SHIFT 0.0 {}/', zshift),
+           fmtstr(r'/^\s*SUBSETSTART.*/s//SUBSETSTART   {} {}/', ssXstart, ssYstart),
+           fmtstr('/THICKNESS/a/SLICE  0 {}/', lastslice),
+           sedModify('ActionIfGPUFails', '2,2')]
+if trueSigma:
+   sedbase.append('/THICKNESS/a/FalloffIsTrueSigma  1/')
+
+if startfirst:
+         
+   # Compose the commands for first bp.  Strip log for regular, not for simple
+   sedlist = sedbase + \
+             [fmtstr('/{}/s//{}/', recfile, srecname),
+              fmtstr('/{}/s//{}/', alifile, aliuse),
+              fmtstr('/THICKNESS/a/RADIAL   {:.3f} {:.3f}/', radius, sigma),
+              fmtstr('/THICKNESS/a/MASK  {}/', maskSize),
+              fmtstr('/THICKNESS/a/FlatFilterFraction  {:f}/', flatfrac)]
+
+   if simpleBP:
+      sedlist.append(fmtstr('/THICKNESS/a/SIRTIterations   {}/', internalIter))
+      sedlist.append('/THICKNESS/a/StartingIteration  1/')
+      if signConstraint:
+         sedlist.append(fmtstr('/THICKNESS/a/ConstrainSign  {}/', signConstraint))
+      if doingVert and not skipVert:
+         startingVSrec = datasetFilename(fmtstr('.{}{:02d}', vsext, internalIter))
+         sedlist.append(fmtstr('/THICKNESS/a/VertSliceOutputFile  {}/', startingVSrec))
+   else:
+      sedlist.append(r'/^\s*LOG/d')
+      if changeScale:
+         sedlist.append(scaleLine)
+   pysed(sedlist, comlines, sirtcom, True)
+
+   if numproc > 1:
+      try:
+         cmdline = fmtstr('splittilt -d {},{} -n {} {} -o {} -b {} -i {} {} {}', 
+                          alix, aliy, numproc, targetChunks, recchunk, boundpixels,
+                          comnum, doVert, sirtcom)
+         splitout = runcmd(cmdline)
+         numchunk = findSplitComNumber(splitout, 'initial run')
+
+         # If the number started past 1 there was no -start file, so add 1
+         # Otherwise keep track so count can be adjusted at end
+         if comnum > 1 and recchunk == "":
+            comnum += 1
+         elif recchunk == "":
+            madeStart = True
+         comnum += numchunk + 1
+
+      except ImodpyError:
+         prnstr('Splittilt failed on initial run')
+         exitFromImodError(progname)
+
+   # One processor, do not split the file, just rename it
+   else:
+      tryRename(sirtcom, sirtname + fmtstr('-{:03d}-sync{}', comnum, comExt))
+      comnum += 1
+
+   # Have to write a finish file now for simple case done in one shot
+   # or a scaling file for simple BP
+   if loopIter == iterations or (simpleBP and (scMinMax or trimarg)):
+      comname = sirtname + '-finish' + comExt
+      if loopIter < iterations:
+         comname = sirtname + fmtstr('-{:03d}-sync{}', comnum, comExt)
+         comnum += 1
+      try:
+         action = 'Opening'
+         comf = open(comname, 'w')
+         action = 'Writing to'
+         if scMinMax or trimarg:
+            outputScalingLines(comf, lastnum)
+         if loopIter == iterations:
+            commandsForFinish(comf, sirtname, testmode)
+
+      except:
+         exitError(action + " file: " + comname)
+
+projname = datasetFilename('.proj')
+diffname = datasetFilename('.diff')
+drecname = datasetFilename('.drec')
+
+# Start the iterations
+while loopIter < iterations:
+   if simpleBP:
+      recnum = leaveList[loopIter]
+   else:
+      recnum = lastnum + 1
+   loopIter += 1
+
+   srecname = datasetFilename(fmtstr('.{}{:02d}', sirtext, recnum))
+   lastname = datasetFilename(fmtstr('.{}{:02d}', sirtext, lastnum))
+
+   # Set rec file to reproject from a vert slice file if any
+   recToReproj = lastname
+   if startingVSrec:
+      recToReproj = startingVSrec
+
+   # Make commands for reprojection or SIRT iterations
+   sedlist = sedbase + [fmtstr('/{}/s//{}/', alifile, aliuse),
+                        fmtstr('/THICKNESS/a/RecFileToReproj  {}/', recToReproj)]
+
+   if simpleBP:
+      sedlist.append(fmtstr('/{}/s//{}/', recfile, srecname))
+      sedlist.append(fmtstr('/THICKNESS/a/RADIAL   {:.3f} {:.3f}/', radius, sigma))
+      sedlist.append(fmtstr('/THICKNESS/a/MASK  {}/', maskSize))
+      sedlist.append(fmtstr('/THICKNESS/a/SIRTIterations  {}/',
+                            recnum - lastnum))
+      sedlist.append(fmtstr('/THICKNESS/a/StartingIteration  {}/', lastnum))
+      if signConstraint:
+         sedlist.append(fmtstr('/THICKNESS/a/ConstrainSign  {}/', signConstraint))
+
+      # If using starting vertical slices, indicate so and use them only once unless...
+      # If outputting vertical slices, set up filename to use it on next round
+      if startingVSrec:
+         sedlist.append('/THICKNESS/a/VertForSIRTInput/')
+         startingVSrec = None
+      if doingVert and not skipVert:
+         startingVSrec = datasetFilename(fmtstr('.{}{:02d}', vsext, recnum))
+         sedlist.append(fmtstr('/THICKNESS/a/VertSliceOutputFile  {}/', startingVSrec))
+      thisChunk = recchunk
+                        
+   else:
+      sedlist.append(fmtstr('/{}/s//{}/', recfile, diffname))
+      sedlist.append(fmtstr('/THICKNESS/a/RADIAL   {:.3f} {:.3f}/', radius, sigma))
+      sedlist.append('/THICKNESS/a/ViewsToReproj  0/')
+      sedlist.append('/THICKNESS/a/SIRTSubtraction/')
+      sedlist.append(r'/^\s*LOG/d')
+      if changeScale:
+         sedlist.append(scaleLine)
+      thisChunk = projchunk
+
+   pysed(sedlist, comlines, sirtcom, True)
+   if numproc > 1:
+      try:
+         cmdline = fmtstr('splittilt -d {},{} -n {} {} -o {} -b {} -i {} {} {}', 
+                          alix, aliy, numproc, targetChunks, thisChunk, boundpixels,
+                          comnum, doVert, sirtcom)
+         splitout = runcmd(cmdline)
+         numchunk = findSplitComNumber(splitout,
+                                       fmtstr('projection for iteration {}', recnum))
+
+         comnum += numchunk + 1
+         if thisChunk == "":
+            comnum += 1
+
+      except ImodpyError:
+         prnstr(fmtstr('Splittilt failed setting up projection for iteration {}', recnum))
+         exitFromImodError(progname)
+
+   # One processor, do not split the file, just rename it
+   else:
+      tryRename(sirtcom, sirtname + fmtstr('-{:03d}-sync{}', comnum, comExt))
+      comnum += 1
+
+   if not simpleBP:
+
+      # Make the error reconstruction and subtract from rec
+      sedlist = sedbase + \
+                [fmtstr('/{}/s//{}/', recfile, srecname),
+                 fmtstr('/{}/s//{}/', alifile, diffname),
+                 r'/^\s*LOG/d',
+                 fmtstr('/THICKNESS/a/RADIAL   {:.3f} {:.3f}/', radius, sigma),
+                 fmtstr('/THICKNESS/a/MASK  {}/', maskSize),
+                 '/THICKNESS/a/FlatFilterFraction  2/',
+                 fmtstr('/THICKNESS/a/BaseRecFile  {}/', lastname),
+                 fmtstr('/THICKNESS/a/StartingIteration  {}/', recnum),
+                 '/THICKNESS/a/SubtractFromBase   -1/']
+      if changeScale:
+         sedlist.append(scaleLine)
+
+      if signConstraint:
+         sedlist.append(fmtstr('/THICKNESS/a/ConstrainSign  {}/', signConstraint))
+      
+      pysed(sedlist, comlines, sirtcom, True)
+      if numproc > 1:
+         try:
+            cmdline = fmtstr('splittilt -d {},{} -n {} {} -o {} -b {} -i {} {}', 
+                             alix, aliy, numproc, targetChunks, recchunk, boundpixels,
+                             comnum, sirtcom)
+            splitout = runcmd(cmdline)
+            numchunk = findSplitComNumber(splitout, 'difference reconstructi'+\
+                                          fmtstr('on for iteration # {}', recnum))
+
+            comnum += numchunk + 1
+            if recchunk == "":
+               comnum += 1
+
+         except ImodpyError:
+            prnstr('Splittilt failed setting up difference reconstruction ' +\
+                  fmtstr('for iteration # {}', recnum))
+            exitFromImodError(progname)
+
+      else:
+         tryRename(sirtcom, sirtname + fmtstr('-{:03d}-sync.com', comnum))
+         comnum += 1
+
+   # Put out a sync file that subtracts diff reconstruction from last recon
+   # if appropriate and manages conversions and leaving
+   if loopIter == iterations or  not simpleBP or scMinMax or trimarg:
+      comname = fmtstr('{}-{:03d}-sync{}', sirtname, comnum, comExt)
+      
+      if loopIter == iterations:
+         comname = sirtname + '-finish' + comExt
+      try:
+         action = 'Opening'
+         comf = open(comname, 'w')
+         action = 'Writing to'
+         if not simpleBP:
+            deldiff = diffname
+            if testmode:
+               deldiff = ""
+            prnstr(fmtstr('$b3dremove {} {}~',  deldiff, lastname), file=comf)
+
+         # Delete something not on the leave list unconditionally, or delete
+         # something on the list if it got converted
+         if lastnum not in leaveList:
+            prnstr('$b3dremove ' + lastname, file=comf)
+         elif scMinMax or trimarg:
+            lastconv = datasetFilename(fmtstr('.{}{:02d}', intext, lastnum))
+            if trimarg:
+               lastconv = datasetFilename(fmtstr('.{}{:02d}', trimext, lastnum))
+            rmstring = '$if (-e ' + lastconv + ') b3dremove ' + lastname
+            if doingVert and not skipVert:
+               rmstring += ' ' + datasetFilename(fmtstr('.{}{:02d}', vsext, lastnum))
+            prnstr(rmstring, file=comf)
+
+         # Set up conversion if requested
+         if recnum in leaveList and (scMinMax or trimarg):
+            outputScalingLines(comf, recnum)
+
+         if loopIter == iterations:
+            commandsForFinish(comf, sirtname, testmode)
+         else:
+            comnum += 1
+            
+         comf.close()
+
+      except:
+         exitError(action + " file: " + comname)
+
+   # End of loop at last
+   lastnum = recnum
+
+if madeStart:
+   comnum += 1
+
+# Copy the tilt.com that was used for etomo to use as a checkpoint on resumability
+if not usingForSirt:
+   usedname = rootname + '_for_sirt' + comExt
+   makeBackupFile(usedname)
+   try:
+      shutil.copyfile(comfile, usedname)
+   except:
+      prnstr('WARNING: ' + progname + ' - Failed to copy ' + comfile + ' to ' + usedname)
+
+
+prnstr(fmtstr('{} command files created and ready to run with:', comnum))
+prnstr("  processchunks machine_list " + sirtname)
+if numproc == 1:
+   prnstr("Or with:")
+   prnstr("  subm " + sirtname + "*" + comExt)
+   
+sys.exit(0)
+

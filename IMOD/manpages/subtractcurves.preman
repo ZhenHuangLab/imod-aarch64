@@ -1,0 +1,43 @@
+.na
+.nh
+.TH subtractcurves 1 4.8.46 IMOD
+.SH NAME
+subtractcurves \- subtract curves between two files
+.SH SYNOPSIS
+subtractcurves  options  positiveFile negativeFile outputFile
+.SH DESCRIPTION
+Subtractcurves is a Python program that will subtract one data column
+between two corresponding files with one or more sets of values.  The
+values are treated as curves having a regular progression of X values
+in one column and the Y values to be subtracted in another column.
+Contiguous groups of lines can be averaged to produce an output with
+less noise.  The regular progression is not necessary unless averaging
+is being done; however, the X values must correspond between the two
+files.  There is an option for forming an appropriately weighted
+average of values that were deriving from averaging over rings of data.
+.P
+If a file has multiple curves in it, there must be integer values in the
+first column that provide a type number for each curve, such as would
+be needed when plotting the data with onegenplot(1) or genhstplot(1).
+.SH OPTIONS
+Subtractcurves uses the PIP package for input (see the manual page
+for pip(1)).  Options can be specified either as command line
+arguments (with the -) or one per line in a command file
+(without the -).  Options can be abbreviated to unique letters; the currently
+valid abbreviations for short names are shown in parentheses.
+INSERT OPTION TEXT HERE
+.TP
+.B -StandardInput
+Read parameter entries from standard input
+
+.SH FILES
+If the output file already exists, it is renamed to a backup
+with the ~ extension.  
+.SH AUTHOR
+.nf
+David Mastronarde
+.fi
+.SH SEE ALSO
+alignframes(1), onegenplot(1)
+.P
+Email bug reports to mast@colorado.edu.

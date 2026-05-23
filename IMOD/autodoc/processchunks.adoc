@@ -1,0 +1,225 @@
+Version = 1.0
+Pip = 1
+
+[Field = r]
+type = B
+usage = Resume, retaining existing finished files (the default is to remove
+all log files and redo everything)
+tooltip = 
+manpage = Resume processing and retain all existing log files.  The default is
+to remove all existing log files, run rootname-start.com if it exists, and
+then run all of the individual command files, finishing with
+rootname-finish.com if it exists.  With this option, the program
+will not rerun any command files whose corresponding log files end with "CHUNK
+DONE", including the start and finish files.
+
+[Field = s]
+type = B
+usage = Run a single command file named root_name or root_name.com
+tooltip = 
+manpage = Run a single command file on a remote machine (i.e., the first
+machine in machine list).  The command file is not required to be numbered.
+The rootname given on the command line can be either the full name or the name
+excluding ".com".
+
+[Field = m]
+type = B
+usage = Run multiple, independently named command files
+tooltip = 
+manpage = Run multiple, independently named command files, whose full names or
+names without extension are given as non-option arguments after the machine list.
+The command files are not required to be numbered.  The program behavior
+changes in several ways: processing will continue even if some chunks fail;
+chunks that fail will be retried only once unless a different value is entered
+with the \fB-e\fR option; the detection of slow/hung chunks is disabled unless the
+\fB-C\fR option is entered.
+
+[Field = G]
+type = B
+usage = Distribute jobs to multiple or specific GPUs on each machine
+tooltip = 
+manpage = Distribute jobs to multiple or specific GPUs on each machine.  With
+this option, each machine name can be followed by a colon and one or more
+specific GPU device numbers (not number of devices) separated by colons.
+Devices are numbered from 1 and the numbers must be positive.  The program
+will run each job with the environment variable IMOD_USE_GPU2 set to the given
+GPU number, or set to 0 for a machine where no GPU numbers were entered (0
+requests the best available GPU on that machine.)  No machine name can be
+entered more than once. For example, "tubule:2:1,eclipse:2,druid" would use
+two GPUs on tubule, a specific one (not two) on eclipse, and the best or only
+one on druid.
+
+[Field = O]
+type = I
+usage = Set the thread limit to the given number or do not set if 0
+tooltip = 
+manpage = Set the limit on the number of threads processes will run in
+parallel by setting environment variable OMP_NUM_THREADS to the given number.
+A value of 0 means do not limit multiple threads.  The default is 0 (no limit)
+when a single file is run with -s or when the -G option is given; otherwise
+the default is 1.
+
+[Field = g]
+type = B
+usage = Go process, without asking for confirmation after probing machines
+tooltip = 
+manpage = Go start processing after probing the machines, without waiting for
+confirmation from the user.
+
+[Field = n]
+type = I
+usage = Set the "nice" value to the given number (default 18, range 0-19)
+tooltip = 
+manpage = Run jobs with "niceness" set to the given value, which can range
+from 0 for no reduction in priority to 19 for maximum reduction.  The default
+nice value is 18.
+
+[Field = w]
+type = FN
+usage = Full path to working directory on remote machines
+tooltip = 
+manpage = The full path for reaching the current directory on the remote
+machines.  This
+entry is needed when working on a local disk whose mounted path on the other
+machines is different from its path (as given by pwd) on the local machine.
+
+[Field = d]
+type = I
+usage = Drop a machine after given number of failures in a row (default 5)
+tooltip = 
+manpage = Drop a machine from the list if it fails this number of times in a
+row.  The default criterion is 5.
+
+[Field = e]
+type = I
+usage = Quit after the given # of processing errors for a chunk (default 5)
+tooltip = 
+manpage = Quit if a chunk gives a processing error (as opposed to failing to
+start) this number of times, unless running multiple
+named command files with the \fB-m\fR option.  All running jobs will be killed
+when quitting.  The default limit is 5 for numbered command files, or 2 when
+running with the \fB-m\fR option or when running on one machine.
+
+[Field = C]
+type = FT
+usage = Criterion for chunk too slow within one machine, factors for between
+machines and for sync
+tooltip = 
+manpage = This option enters three factors that control the program's decision
+to kill a chunk that appears to have hung up.  They are: 1) A criterion for
+how much longer a chunk can take than the slowest chunk so far on the same
+machine.  The default is 4; this criterion needs to reflect the intrinsic
+variability among chunks and extent to which machine performance could vary
+during a run.  A value of 0 completely disables chunk timing tests.
+2) A multiplier to that criterion when comparing a
+chunk time with the slowest time so far on any machine.  The default is 3, so the
+default overall criterion is 12; this factor needs to reflect the intrinsic
+spread in machine capabilities.  3) A multiplier for both of these criteria
+when considering sync chunks.  The default is 0, for no testing for sync
+chunks; the factor could be 1 if sync chunks are comparable or faster than
+non-sync chunks.
+
+[Field = T]
+type = IP
+usage = Timeouts for log file activity for non-sync and sync chunks (seconds)
+tooltip = 
+manpage = Timeouts for log file activity for non-sync and sync chunks, in
+seconds.  The default is 300,0.  A value of 0 disables this test.  A non-sync
+chunk is killed if it is too slow by the timing tests controlled with the "-C"
+option, AND if it log is older than the first number entered here.  The same
+dual test is applied for a sync chunk if the log activity test is enabled with
+the second number here and the timing test is enabled with a non-zero factor
+in the third number of the "-C" entry.  However, if the log activity test is
+enabled and the timing test is not enabled, non-sync chunks will be killed
+solely on the basis of the log becoming too old.
+
+[Field = c]
+type = FN
+usage = Check the given file for commands P, Q, and D (default 
+"processchunks.input")
+tooltip = 
+manpage = Check the given file periodically for lines with commands to quit,
+pause, or drop a machine (Q, P, or D machine_name).  The default name of this
+file is "processchunks.input".
+
+[Field = L]
+type = I
+usage = Limit to the number of jobs started per one-second cycle (default 20)
+tooltip = 
+manpage = Set the limit on the number of jobs started sequentially during one
+cycle of checking jobs and machines.  The time between cycles is 1 second.
+The default is 20.
+
+[Field = q]
+type = I
+usage = Run on cluster queue with given maximum # of jobs at once
+tooltip = 
+manpage = Put chunks on a cluster queue instead of sending them to individual
+machines via ssh.  The given value indicates the maximum number of chunks to
+submit at any one time.  With this option, the list of machine names must be
+replaced by the command needed to interact with the queue.
+
+[Field = Q]
+type = CH
+usage = Machine name to use for the queue (default queue)
+tooltip = 
+manpage = When running on a queue, this option can be used to specify the name
+that
+Processchunks will use when it reports chunks being started and
+finishing.  The entry must be a single word with no embedded spaces.  It need
+not match the actual name of the queue; the default is "queue".
+
+[Field = I]
+type = CH
+usage = Command to send to the queue for initialization at the start
+tooltip = 
+manpage = When running on a queue, this option can be used to specify a
+command that will be issued to the queue before submitting jobs, such as for
+allocating nodes.  It can have embedded spaces.
+
+[Field = D]
+type = CH
+usage = Command to send to the queue for deinitialization before exiting
+tooltip = 
+manpage = When running on a queue, this option can be used to specify a
+command that will be issued to the queue before exiting.  It can have
+embedded spaces.
+
+[Field = W]
+type = I
+usage = Seconds to wait for queue initialization command to finish (default 30)
+tooltip = 
+manpage = Seconds to wait for the queue initialization command given with the
+\fB-I\fR to finish.  Enter -1 to wait indefinitely, or a positive value up to
+2000000.  The default is 30, or a value set with the environment variable
+IMOD_QUEUE_INIT_WAIT.  An entry here overrides a value set with that variable.
+
+[Field = P]
+type = B
+usage = Output process ID
+tooltip = 
+manpage = Output process ID.  When this option is entered together with "-g",
+the program will skip probing machine loads.
+
+[Field = v]
+type = B
+usage = Verbose output
+tooltip = 
+manpage =
+
+[Field = V]
+type = CH
+usage = ?|?,2|class[,function[,...]][,2]|2  Debugging output from specific function.
+tooltip = 
+manpage = This option enables debugging output from a specific class or
+function.  It has no effect if "-v" is not entered too.  The entry has the
+form "?|?,2|class[,function[,...]][,2]|2" where 2 means more verbose and ? or
+function[,...] lists the functions that have information to print.  The
+matching to class and function names is case-insensitive and to the end of the
+name, rather than to the whole name.
+
+[Field = help]
+type = B
+usage = Print usage message
+tooltip = 
+manpage =

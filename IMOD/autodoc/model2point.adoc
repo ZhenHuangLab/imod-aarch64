@@ -1,0 +1,109 @@
+Version = 1.0
+Pip = 1
+
+[Field = InputFile]
+short = input
+type = FN
+usage = Input model file
+tooltip = 
+manpage = Input model file.  If this option
+is not entered, the first non-option argument will be used for the input
+file.
+
+[Field = OutputFile]
+short = output
+type = FN
+usage = Output text file for points
+tooltip = 
+manpage = Output text file for points.  If this option
+is not entered, the second non-option argument will be used for the output
+file.
+
+[Field = FloatingPoint]
+short = float
+type = B
+usage = Output model coordinates as floating point, not integer
+tooltip = 
+manpage = Output model coordinates as floating point; otherwise the nearest 
+integer value is output.  Floating point output is the default unless the
+environment variable MODEL2POINT_INTEGERS is set to any value.  This entry is
+still useful for overriding the environment variable setting.
+
+[Field = IntegerOutput]
+short = integer
+type = B
+usage = Output model coordinates as integer, not floating point
+tooltip = 
+manpage = Output model coordinates by taking the nearest 
+integer instead of outputting floating point numbers, which is the default
+behavior.  This option cannot be entered with \fB-float\fR.
+
+[Field = ScaledCoordinates]
+short = scaled
+type = B
+usage = Output coordinates in model coordinate system, not as pixel indices
+tooltip = 
+manpage = Output coordinates in the model coordinate system, scaled by the
+original image pixel size in Angstroms and offset by origin values.  The
+default is to output index coordinates corresponding to the pixel coordinates
+in the image.
+
+[Field = ObjectAndContour]
+short = object
+type = B
+usage = Output object and contour numbers for each point (numbered from 1)
+tooltip = 
+manpage = 
+
+[Field = Contour]
+short = contour
+type = B
+usage = Output contour number for each point (numbered from 1)
+tooltip = 
+manpage = 
+
+[Field = NumberedFromZero]
+short = zero
+type = B
+usage = Output object and contour numbers starting from 0 instead of 1
+tooltip = 
+manpage = 
+
+[Field = ZCoordinatesFromZero]
+short = zcoord
+type = B
+usage = Output Z coordinates starting from 0 instead of -0.5
+tooltip = 
+manpage = Output Z coordinates that are 0 instead of -0.5 at the bottom
+of the volume.  In IMOD models, integer Z values are defined as being located in the
+middle of a pixel in Z, which makes model coordinates range from -0.5 to NZ -
+0.5 for a volume of NZ slices.  With this option, the point coordinates will
+be shifted so that they range from 0 to NZ, i.e., so that their fractional
+parts actually correspond to their fractional positions within the pixels in Z.
+
+[Field = ValuesInLastColumn]
+short = values
+type = I
+usage = 1 or -1 to output point or contour value as last number on line
+tooltip = 
+manpage = Enter 1 to output general point values as the last number on each
+line, after the Z coordinate, or -1 to output general contour values for the
+first point in each contour.  A point file with either format can be read back
+in by Point2model(1), provided that the -values option is given to that
+program.  When a point or contour has no stored value, a value of 0 will be
+output, unless a different value is specified with the -fill option.
+
+[Field = FillValue]
+short = fill
+type = F
+usage = Value to output when contour/point has no stored value (default 0)
+tooltip = 
+manpage = 
+
+[Field = usage]
+short = help
+long = usage
+type = B
+usage = Print help output
+tooltip = 
+manpage = Print help output. 

@@ -1,0 +1,390 @@
+Version=1.0
+Pip=1
+
+[Field = InputFile]
+short = input
+type = FN
+usage = Input file with images to be filtered
+tooltip =
+manpage = 
+
+[Field = OutputFile]
+short = output
+type = FN
+usage = Output file for filtered images (omit to rewrite input file)
+tooltip =
+manpage = Output file for filtered images.  If this file is omitted, the
+program will write filtered images back to the input file.
+
+[Field = StartingAndEndingZ]
+short = zrange
+type = IP
+usage = First and last Z values to filter, numbered from 1 (default is all)
+tooltip =
+manpage = First and last Z values in the file to filter.  Values are
+numbered from 1 and the default is to do all sections.  This entry is allowed
+when doing a 3D FFT on real-space input, but not for FFT input.
+
+[Field = ModeToOutput]
+short = mode
+type = I
+usage = Storage mode of output file; 0 for byte, 1 or 6 for integer, 2 for real
+tooltip = 
+manpage = The storage mode of the output file; 0 for byte, 1 for 16-bit 
+signed integer, 6 for 16-bit unsigned integer, or 2 for 32-bit floating point.
+The default is the mode of the input file.  This entry is allowed only when
+writing to a new output file and when the input is not an FFT.
+
+[Field = FilterIn3D]
+short = 3dfilter
+type = B
+usage = Filter data in 3D instead of in 2D
+tooltip = 
+manpage = Filter data in 3D instead of in 2D.  The entire volume will be
+filtered, so it must fit into memory and -zrange.  If the
+volume will not fit in memory, you can try to use "clip fft -3d" to get an
+FFT, run Mtffilter on the 3D FFT, then inverse transform with "clip fft -3d -m
+mode", where mode is the desired output mode, typically the same as the
+input.  Otherwise you will need to process it in chunks.
+
+[Field = OneDimensionalFilter]
+short = 1dfilter
+type = B
+usage = Filter data in 1D (in X direction) instead of in 2D
+tooltip = 
+manpage = 
+
+[Field = LowPassRadiusSigma]
+short = lowpass
+type = FP
+usage = Radius and sigma for high-frequency roll-off to 0.0 (default no filter)
+tooltip = Cutoff radius and sigma for low pass filter to provide a
+high-frequency Gaussian roll-off to 0.0.  (The default is no filtering)
+manpage = Cutoff radius and sigma for a low pass filter that imposes a
+high-frequency Gaussian roll-off to 0.0.
+The default is no high-frequency filtering.  These entries correspond to the
+Radius2 and Sigma2 entries to Enhance(1) and other programs; see the
+Enhance(1) or Filterplot(1)
+man pages for a full explanation of the effects of changing the sign of 
+the Sigma2 or the Sigma1 and Radius1 parameters entered with the next two
+options.
+
+[Field = HighPassSigma]
+short = highpass
+type = F
+usage = Sigma for inverted Gaussian low-frequency filter (default no filter)
+tooltip = 
+manpage = Sigma for a high pass filter based on an inverted Gaussian that
+starts at 0.0 at zero frequency and decays up to 1 with the given sigma.
+The default is no low-frequency filtering.  This entry corresponds to the 
+Sigma1 entry to Enhance(1) and other programs.  A negative Sigma1 can be used
+to get a band-pass filter based on the second derivative of a Gaussian.
+
+[Field = FilterRadius1]
+short = radius1
+type = F
+usage = Cutoff radius for a high-pass filter that decays with the -lowpass sigma
+tooltip = 
+manpage = Cutoff radius for a high-pass filter that is 1.0 at this radius and
+falls off as a Gaussian to the left of this point with sigma equal to the
+Sigma2 value entered with -lowpass.  This entry corresponds to the
+Radius1 entry to Enhance(1) and other programs.  A negative Radius1 will
+make the inverted Gaussian invoked by -highpass be zero out to |Radius1|.
+
+[Field = MtfFile]
+short = mtf
+type = FN
+usage = File with MTF curve
+tooltip =
+manpage = File with MTF curve.  The format of the file is a series of lines,
+with a spatial frequency in reciprocal pixels and an MTF value on each line. 
+
+[Field = StockCurve]
+short = stock
+type = I
+usage = 1 to use the stock (built-in) MTF curve
+tooltip =
+manpage = The number of the stock (built-in) MTF curve to use.  Since there is
+only one curve, only an entry of 1 is allowed.
+
+[Field = MaximumInverse]
+short = maxinv
+type = F
+usage = Maximum value for inverse of MTF (default 4.0)
+tooltip =
+manpage = Maximum value for inverse of MTF.  The inverse should always
+be limited to reduce noise.
+
+[Field = InverseRolloffRadiusSigma]
+short = invrolloff
+type = FP
+usage = Radius and sigma for gaussian roll-off of inverse to 1.0 (default 0.12
+and 0.05)
+tooltip =
+manpage = 
+
+[Field = XScaleFactor]
+short = xscale
+type = F
+usage = Scaling factor for X-axis of MTF curve (default 1.0)
+tooltip =
+manpage = Scaling factor for X-axis of MTF curve.  Scaling the X axis is 
+probably an adequate way to adapt a curve from one camera or binning to 
+another.
+
+[Field = NoisePadding]
+short = noise
+type = B
+usage = Pad images with tapered noise before filtering
+tooltip =
+manpage = Use tapered noise based on nearby pixels along the edge of an image
+to pad an image before filtering.  The default
+is to pad with a simple taper that makes streaks outside the edge of the
+image. For low-dose
+images, low-pass filtering can spread these streaks into the image area after
+cropping and produce artifacts along the edge.  This option will avoid this
+effect, but is probably not suitable for higher-contrast images.
+
+[Field = DensityScaleFactor]
+short = denscale
+type = F
+usage = Density scaling factor (default 1.0)
+tooltip =
+manpage = Scaling factor for image intensities after filtering.
+
+[Field = RWeightedFilter]
+short = rweight
+type = B
+usage = Apply an R-weighted filter in the X-dimension, as in back-projection
+tooltip = 
+manpage = Apply an R-weighted filter in the X-dimension, as in
+back-projection.  This option implies \fB-1dfilter\fR.  It cannot be used
+along with an inverse MTF filter.  The filter will be scaled to be 1.0 at the
+cutoff radius specified with the \fB-lowpass\fR option, if any, or at a
+frequency of 0.5.  This will likely result in a smaller range for
+the output values, which could lose intensity resolution by making integer
+values occupy too few gray levels.  To overcome this problem, use the
+\fB-denscale\fR option to scale the data up, or change the output mode to
+floating point with "-mode 2".
+
+[Field = FakeSIRTiterations]
+short = fake
+type = LI
+usage = Apply a filter equivalent to one or more #s of SIRT iterations
+tooltip =
+manpage = Apply a filter to a standard R-weighted back-projection that is
+equivalent to doing a given number of iterations of SIRT. See the Tilt(1)
+man page section on SIRT for a description of the filter and the literature
+reference. If one number is entered, the output file will have the supplied
+name.  If a list of numbers (which can include ranges) is entered, a
+file is produced for each entered number, named by appending the number to the
+entered output name.
+This filter can be combined with others (sensibly or not).  In
+particular, it could be combined with \fB-rweight\fR and and applied in 1-D to
+tilt series.  It cannot be applied in 3-D, and when applied in 2-D, it is
+appropriate only when applied to a reconstruction in its original orientation
+as a stack of X/Z slices.  In the latter case, the output here will match the
+output of Tilt(1) very closely when there is no X-axis tilt or local
+alignments, and it will diverge increasingly with increasing X-axis tilt.
+Whether these differences are significant depends on your application.  In any
+case, applying multiple filters would be an efficient way to find the desired
+number of iterations.  Iteration numbers must be under 1000.
+
+[SectionHeader = DoseWeighting]
+usage = DOSE WEIGHT FILTERING OPTIONS
+manpage = DOSE WEIGHT FILTERING OPTIONS
+^  These options control "dose weighting", which filters out high frequencies
+as a function of the dose already applied to a cryo-specimen.
+
+[Field = TypeOfDoseFile]
+short = dtype
+type = I
+usage = Format of file with dose information (1: doses only, 2: prior dose and
+dose, 3: prior and ending dose, 4: mdoc)
+enum.1.tooltip = Use a file with one line per view containing just the dose
+for that view
+enum.2.tooltip = Use a file with one line per view containing the prior
+accumulated dose followed by the image dose
+enum.3.tooltip = Use a file with one line per view containing the prior dose
+followed by the cumulative dose at the end of that image
+enum.4.tooltip = Use dose information from a SerialEM .mdoc file that you select
+manpage = This option both enables dose weighting and indicates what kind of
+file is being provided with the dose information.  Types 1 to 3 are simple text
+files with a line for each image in the input file containing one or two
+numbers.  These types contain just the dose for each image (type 1), the prior
+accumulated dose followed by the image dose (type 2), or the prior dose
+followed by the cumulative dose at the end of that image (type 3).  Type 4
+indicates information in the autodoc format: either the ".mdoc" file produced
+by SerialEM, or an HDF file that has incorporated that information into its
+metadata.  In the latter case, no filename would be entered with the
+\fB-dfile\fR option.  Whichever form is used, the information in the file must
+be in the same order as the images in the tilt series file.  An original .mdoc
+file from SerialEM will not work if the input image file has been reordered so
+that the part of the series acquired first is at the end of the stack.
+
+[Field = DoseWeightingFile]
+short = dfile
+type = FN
+usage = Name of file with dose information for dose weighting
+tooltip =
+manpage = Name of file with dose information for dose weighting, or a
+short entry indicating how to derive the file name from the image input file
+name.  This entry is required if \fB-dtype\fR is entered, unless a 4 is
+entered and the input file is an HDF file with the equivalent metadata as in
+an ".mdoc" file.  Two kinds of entries can be used to derive the ".mdoc" name
+from the input name.  1) An entry with just an extension and starting with a
+period (like ".mrc") indicates to replace the extension of the input file with
+that entry and append ".mdoc".  For example, if the input is "setname.ali", an
+entry of ".mrc" will make it use the filename "setname.mrc.mdoc".  2) An entry
+starting with "_" and consisting of both a suffix and an extension will make
+it strip out the suffix from the input name (provided it is just before the
+extension), substitute the extension in the entry for the one in the input
+name, and append ".mdoc".  For example, if the input is "setname_ali.mrc", an
+entry of "_ali.mrc" will make it seek "setname.mrc.mdoc" and an entry of
+"_ali.st" will make it look for "setname.st.mdoc".
+
+[Field = FixedImageDose]
+short = dfixed
+type = F
+usage = Fixed dose for each image of the input file, in electrons/square Angstrom
+tooltip =
+manpage = Fixed dose for each image of the input file, in electrons/square
+Angstrom.  This option cannot be entered with \fB-dtype\fR. 
+
+[Field = InitialDose]
+short = initial
+type = F
+usage = Dose applied before any of the images in the input file were taken
+tooltip =
+manpage = Dose applied before any of the images in the input file were taken;
+this value will be added to all the prior dose values, however they were
+obtained.
+
+[Field = BidirectionalNumViews]
+short = bidir
+type = I
+usage = Number of views in first part of bidirectional tilt series file
+tooltip = Number of views in first part of bidirectional tilt series file; should
+not be needed with an .mdoc file
+manpage = Number of views in the first part of a bidirectional tilt series file,
+where the order of images in the input file is inverted from their order of
+acquisition.  This entry is essential for a bidirectional series if a fixed
+dose is entered with \fB-dfixed\fR or if just a dose for each image (dose file
+type 1) is entered.  The program assumes that the
+part of the tilt series acquired first occurs at the beginning of the
+stack.  If this is not
+  the case, you must enter the \fB-reversed\fR option.
+The \fB-bidir\fR option
+is ignored for dose file types 2 and 3.  It would be used for type 4 if there are neither
+PriorRecordDose nor DateTime entries; 
+the latter allow the initial order of images to be deduced when there are no
+PriorRecordDose entries.  Intact .mdoc files from SerialEM always have
+DateTime entries; PriorRecordDose was added in 2017.
+
+[Field = ReversedBidirectional]
+short = reversed
+type = B
+usage = Bidirectional series is stacked with part acquired first at the end
+tooltip = 
+manpage = A bidirectional series is stacked with the part acquired first at the end,
+and the second part at the beginning.  This entry is needed to make the
+\fB-bidir\fR option perform properly in the cases described there where it is
+needed.
+
+[Field = Voltage]
+short = volt
+type = I
+usage =  Microscope voltage in kV; must be either 200 or 300 (default 300)
+tooltip =
+manpage = Microscope voltage in kV; this value must be either 200 or 300.  The
+default is 300; if 200 is entered, the computed critical and optimal doses are
+multiplied by 0.8.
+
+[Field = OptimalDoseScaling]
+short = optimal
+type = F
+usage = Factor by which to scale the computed optimal and critical doses
+tooltip = Factor by which to scale the computed optimal and critical doses; a
+factor greater than 1 gives less filtering than the standard equations
+indicate
+manpage = Factor by which to scale the computed optimal and critical doses
+that determine how much to attenuate a spatial frequency for a particular
+dose.  Enter a factor greater than or less than 1. to indicate that the
+specimen is more or less resistant to damage than the equations indicate.
+Another use for this entry would be to adjust the critical dose for a voltage
+other than 200 and 300 kV.
+
+[Field = CriticalDoseFactors]
+short = critical
+type = FT
+usage = Replacement factors a, b, and c in the equation for critical dose
+tooltip =
+manpage = "Replacement factors a, b, and c in the equation 
+^   critical_dose = a * k^b + c
+^ where k is frequency in reciprocal Angstroms.  The default factors are
+directly from Grant and Grigorieff and the unblur program.  Enter 0 for any of
+the factors to use the default for that factor."
+
+[Field = PixelSize]
+short = pixel
+type = F
+usage = Pixel size in nanometers, overrides the pixel spacing in the file header
+tooltip =
+manpage = Pixel size in nanometers.  A pixel size is needed for dose weighting
+and to compute the cutoff radius for an amplifier filter from the phase plate
+parameters.  This entry is needed only if the pixel size in the image file
+header is incorrect.
+
+[Field = VerboseOutput]
+short = verbose
+type=I
+usage=Output additional information (doses and filters when dose weighting)
+tooltip=
+manpage= Enter a 1 to output the cumulative and image doses used and the
+filter functions applied for dose weighting.
+
+[SectionHeader = PhasePlate]
+usage = PHASE PLATE FILTER OPTIONS
+manpage = PHASE PLATE FILTER OPTIONS
+^  These options control an amplifier filter used to correct artifacts in
+images obtained with phase plates having a hole.
+
+[Field = AmplifierFactorAndPower]
+short = amplifier
+type = FP
+usage = Amplification factor and exponent for low-frequency amplifier filter
+tooltip =
+manpage = Amplification factor and exponent for low-frequency amplifier
+filter.  Either -cutoff or -phase must also be entered.
+
+[Field = CutoffForAmplifier]
+short = cutoff
+type = F
+usage = Cutoff radius in reciprocal pixels for amplifier filter
+tooltip =
+manpage = Cutoff radius in reciprocal pixels for amplifier filter.  This
+option cannot be entered together with -phase.
+
+[Field = PhasePlateParameters]
+short = phase
+type = FT
+usage = Phase plate diameter, voltage, focal length for amplifier filter
+tooltip =
+manpage = Parameters of phase plate imaging, used to compute a nominal cutoff
+radius for the low-frequency amplifier filter.  Enter the phase plate diameter
+in nanometers, the voltage in kilovolts, and the objective lens focal length in
+millimeters.
+
+[Field = ParameterFile]
+short=param
+type=PF
+usage=Read parameter entries from file
+tooltip=
+manpage=
+
+[Field = usage]
+short = help
+type=B
+usage=Print help output
+tooltip=
+manpage=

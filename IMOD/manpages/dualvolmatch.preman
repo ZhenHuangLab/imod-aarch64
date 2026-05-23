@@ -1,0 +1,58 @@
+.na
+.nh
+.TH dualvolmatch 1 4.8.125 IMOD
+.SH NAME
+dualvolmatch \- Find initial transformation between dual-axis volumes
+.SH SYNOPSIS
+dualvolmatch  [options]  rootname
+.SH DESCRIPTION
+This program will find the initial transformation between the two
+single-axis tomograms of a dual-axis dataset without using the
+corresponding fiducials or modeled points that are required by
+Solvematch(1).  It can do this
+automatically even when the rotation angle between the two axes is not
+close to 90 degrees, and when 
+.P
+The program starts by binning down each of the two volumes, both to
+speed up the computations and to improve the signal-to-noise ratio.  It
+then reprojects each volume at a small set of tilt angles and runs
+Matchrotpairs(1) to find which pair of reprojections match the
+best.  This process is repeated at least once (by default) to yield an
+estimate of the relative tilts needed to align the volumes, as well of
+the 2D linear transformation that aligns their reprojections.  The
+resulting tilt angles are accurate to within 0.5 degrees.  These values
+provide a preliminary estimate of the 3D transformation needed to align
+the volumes.  This transformation is applied to one binned-down volume,
+then corresponding patches from this transformed volume and the other
+binned-down volume are cross-correlated by Corrsearch3d(1).   These
+correlations use a single layer of patches that extend through the
+whole depth of the volume and are relatively large in the plane of the
+section as well.  Refinematch(1) is then used to obtain a better
+estimate of the initial transformation that includes the shift in
+the depth dimension.  If the error of the fit in Refinematch(1) is too
+high, the program drops back to using the preliminary estimate of the
+transformation, and refines the shifts in there with a single large
+patch correlated between the centers of the two volumes.
+.SH OPTIONS
+Dualvolmatch uses the PIP package for input (see the manual page
+for pip(1)).  Options can be specified either as command line
+arguments (with the -) or one per line in a command file
+(without the -).  Options can be abbreviated to unique letters; the currently
+valid abbreviations for short names are shown in parentheses.
+INSERT OPTION TEXT HERE
+.TP
+.B -StandardInput
+Read parameter entries from standard input
+.SH FILES
+Since temporary files produced by this procedure can be rather large,
+they are placed into the current directory instead of a temporary
+directory.  They are all deleted when the program exits unless the
+\fB-test\fR option is used to retain them.
+.SH AUTHOR
+.nf
+David Mastronarde
+.fi
+.SH SEE ALSO
+binvol(1), xyzproj(1), matchrotpairs(1), corrsearch3d(1), refinematch(1), matchvol(1)
+.SH BUGS
+Email bug reports to mast@colorado.edu.

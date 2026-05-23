@@ -1,0 +1,1346 @@
+.TH uitest 1 2/4/2009 IMOD
+.na
+.nh
+
+.SH NAME
+uitest - a script to run GUI tests against Etomo using JFCUnit
+
+.SH SYNOPSIS
+.P
+.B scripts/uitest \fITest_Section_name
+.P
+.B make -f tests/uitest.make \fR[\fItarget\fR ...]
+.P
+.B etomo.uitest.JfcUnitTests
+
+.SH DESCRIPTION
+\fBUitest\fR is a script that runs \fBJfcUnitTests\fR.  \fBJfcUnitTests\fR runs
+the \fBetomo\fR application and interacts with it by using JfcUnit to grab
+named GUI elements.  \fBEtomo\fR automatically names most of its GUI elements.
+\fBJfcUnitTests\fR gets its instructions from a set of autodoc files which are
+read sequentially.
+
+.P
+JfcUnits is the library used to manipulate GUI elements in Etomo.  It is an
+extension of JUnit which interacts with Java GUI elements.  JfcUnit
+is not adequate for demos or automation.  It finds an element's location on the
+screen and then accesses the element using its physical location.  If the
+element was moved during the lag time these two events, manipulating the
+element will fail.  Also, since JfcUnitTests is not part of Etomo, it does not
+wait until a task is finished in Etomo and can easily go too fast.
+
+.SH ENVIRONMENT
+The IMOD environment that allows Etomo to be run must be in place.
+
+.TP 4
+.B IMOD_UITEST_DATA
+Should be set to the directory where files that will be copied into a test
+dataset are stored.
+
+.TP 4
+.B IMOD_UITEST_IMAGE_DATA
+Should be set to the directory where images files that will be copied into a test
+dataset are stored.
+
+.TP 4
+.B IMOD_UITEST_SOURCE
+should be set the Etomo/tests directory.
+
+.SS Used by the Uitest Script
+
+.TP 4
+.B IMOD_JUNIT_HOME
+Should be set to the directory containing the JUnit jar file.
+
+.TP 4
+.B IMOD_JUNIT_JAR
+Should be set to the name of the JUnit jar file.
+
+.TP 4
+.B IMOD_JFCUNIT_HOME
+Should be set to the directory containing the JfcUnit jar file.
+
+.TP 4
+.B IMOD_JFCUNIT_JAR
+Should be set to the name of the JfcUnit jar file.
+
+.TP 4
+.B IMOD_JAKARTA_REGEXP_HOME
+Should be set to the directory containing the Jakarta regexp jar file.
+
+.TP 4
+.B IMOD_JAKARTA_REGEXP_JAR
+Should be set to the Jakarta regexp jar file.
+
+.SS Used in Uitest.make
+
+.TP 4
+.B IMOD_UITEST_SCRIPT
+Should be set the directory containing uitest.
+
+.SS Used by JfcUnitTests
+
+.TP 4
+.B IMOD_TEST_SECTION
+Only needs to be set if \fBJfcUnitTests\fR is being run directly.  It should be
+set to the name of \fBTest\fR section that will be run (see Section
+Relationships below).
+
+.SH FILES
+
+.SS Autodocs
+The main \fBuitest\fR autodoc file is \fBuitest.adoc\fR.  Test autodocs are
+referred to by \fBuitest.adoc\fR.  Function autodocs are referred to by Test
+autodocs.
+
+.SS File Name Standardization
+In order to use standard naming conventions and still keep backwards compatibility
+Etomo sets an image file naming style.  This can be set for a new dataset with
+the Etomo parameter \fB--namingstyle\fR which overrides the primary source:
+the IMOD_IMAGE_FORMAT environment variable.  File names will be automatically
+standardized when the old style is not in force.  Only the old-style names
+should be used when writing tests.  Files with a single backup suffix "~" are
+standardized but files with more then one "~" suffix are currently not supported.
+
+
+.SH USAGE
+.SS Section Relationships
+
+The \fBuitest.adoc\fR file contains \fBTest\fR, \fBdataset\fR, and
+\fBinterface\fR sections.  A \fBTest\fR section contains descriptions of tests
+that will be run together.  A \fBTest\fR section refers to a single
+\fBdataset\fR section for information on the dataset being tested.  Each
+\fBdataset\fR section refers to one \fBinterface\fR section.  A \fBTest\fR
+section also refers to at least one Test autodoc and specifies a section type to
+be accessed in it.  Sections specified by a \fBTest\fR section are called Dialog
+sections, and are accessed one after another.  Sections may also be called like
+functions.  Subsections with a section type of \fBif\fR or \fBifnot\fR act as
+simple if clauses.
+
+
+.SS Testing
+The TestRunner class picks a \fBTest\fR Section based on the
+\fBIMOD_TEST_SECTION\fR environment variable (set by \fBuitest\fR).  Each
+\fBTest\fR Section is associated with one dataset.  A list of autodocs are added
+to the section using the \fBadoc\fR command.  Each autodoc is associated with
+one Axis.  The \fBetomo.uitest.TestRunner\fR class runs a test on each autodoc
+in turn, based on the order they appear in the \fBTest\fR Section.  Each test
+will run until it starts to wait for a process, then it will return control to
+\fBTestRunner\fR.  The \fBTestRunner\fR will keep running tests on each autodoc
+in turn until all tests in the autodoc have been completed.  This allows
+\fBuitest\fR to mimic the way a person might work with \fBEtomo\fR - moving from
+one axis to another.
+
+
+.SS Grammer
+Every possible combination of the grammer has not been implemented.  See individual commands in the
+following sections.
+
+.TP 4
+.I command
+.I action \fB=\fR [\fIvalue\fR]
+.RS 4
+
+.P
+.I action\fR[\fB.\fImodifier\fR]\fB.\fIfield \fB=\fR [\fIvalue\fR]
+
+.P
+.I action\fR[\fB.\fImodifier\fR]\fB.\fIfield.subcommand \fB=\fR [\fIvalue]
+
+.P
+.I action\fR[\fB.\fImodifier\fR]\fB.\fIsubject \fB=\fR [\fIvalue]
+
+.P
+.I action\fR[\fB.\fImodifier\fR]\fB.\fIsubject\fB.\fIfield \fB=\fR [\fIvalue]
+
+.P
+.I action\fR[\fB.\fImodifier\fR]\fB.\fIsubject\fB.\fIsubcommand \fB=\fR [\fIvalue]
+
+.TP
+.I field \fB=\fR [\fIvalue\fR]
+A field command has an implied action; for instance the implied action for a
+button (\fBbn\fR) is to push it.
+.RE
+
+.TP 4
+.I subcommand
+.RS
+
+.P
+.I subcommand_action\fR[\fB.\fImodifier\fR]\fB.\fIfield \fB=\fR [\fIvalue]
+
+.P
+.I subcommand_action\fR[\fB.\fImodifier\fR]\fB.\fIsubject \fB=\fR [\fIvalue]
+
+.P
+.I subcommand_action\fR[\fB.\fImodifier\fR]\fB.\fIsubject\fB.\fIfield \fB=\fR [\fIvalue]
+.RE
+
+.TP 4
+.I action
+.B assert\fR, \fBcopy\fR, \fBend\fR, \fBformat\fR, \fBif\fR, \fBget\fR, \fBgoto\fR,
+\fBopen\fR, \fBpause\fR,
+\fBprint\fR, \fBreturn\fR, \fBrun\fR, \fBset\fR, \fBskipto\fR, \fBsleep\fR,
+\fBstart\fR, \fBtouch\fR,
+\fBunset\fR, \fBuse\fR, \fBwait\fR, \fBwrite
+
+.TP 4
+.I subcommand_action
+.B assert\fR, \fBend\fR, \fBreturn\fR, \fBrun\fR, \fBset\fR, \fBwait
+
+.TP 4
+.I modifier
+.B always\fR, \fBcontains\fR, \fBdisabled\fR, \fBenabled\fR,
+\fBequals\fR, \fBexists\fR, \fBexternal\fR, \fBge\fR, \fBkeep\fR, \fBle\fR, \fBnot\fR,
+\fBnot-equals\fR, \fBnot-exists\fR, \fBsame\fR, \fBsingle\fR, \fBwait
+
+.TP 4
+.I subject
+.I subject_type\fR[\fB.\fIsubject_name\fR][\fB.\fIaxis\fR]
+.RS 4
+
+.TP 4
+.I subject_type
+.B adoc\fR, \fBaxis\fR, \fBdataset\fR, \fBdebug\fR, \fBdialog\fR,
+\fBdir\fR, \fBfile\fR, 
+ \fBframe\fR, \fBfunction\fR, \fBindex\fR, \fBinstance\fR, \fBimage-file\fR,
+\fBinterface\fR, \fBparam\fR, \fBprocess\fR, \fBsection\fR, \fBtest\fR,
+\fBtestdir\fR, \fBtool\fR, \fBvar
+
+.TP 4
+.I subject_name
+Name of the subject.  May contain variables.  May not be \fBa\fR, \fBb\fR, an
+\fIsubcommand_action\fR string, or a \fIfield\fR string.
+
+.TP 4
+.I axis
+.B a \fRor \fBb\fR.  Default is single axis or all axes (depending on context).
+.RE
+
+.TP 4
+.I field
+.I field_type\fB.\fIfield_name\fR[\fB.\fIindex\fR]
+.RS 4
+
+.P
+.I field_type
+.RS 4
+
+.TP 4
+.B bn
+A button; the implied action is to press the button.
+
+.TP 4
+.B cb
+A check box; the implied action is to check the check box.
+
+.TP 4
+.B cbb
+A combo box; the implied action is to add an item to the combo box and select it.
+
+.TP 4
+.B file-chooser
+A file chooser; the implied action is to open the file chooser and fill in the file name.
+
+.TP 4
+.B ef
+An external function; the implied action is to run the function.
+
+.TP 4
+.B mb
+A mini-button; the implied action is to press the mini-button.
+
+.TP 4
+.B mn
+A menu item; the implied action is to click on the menu item.
+
+.TP 4
+.B pnl
+A panel; the implied action is to go to the panel.
+
+
+.TP 4
+.B popup
+A popup; the implied action is to press a button on the popup (specified by the value).
+
+.TP 4
+.B sp
+A spinner; the implied action is to either enter a number into the spinner's text
+field or press one of its arrows.
+
+.TP
+.B tb
+A tab; the implied action is to click on the tab.
+
+.TP
+.B tf
+A text field; the implied action is to enter a string into the text field.
+.RE
+
+.TP 4
+.I field_name
+Name of the field.  May contain variables.  See Naming.
+
+.TP 4
+.I index
+An integer.  Default: 0.  Used when multiples fields of the same type and name
+are present on a panel.
+.RE
+
+.TP 4
+.I value
+May contain a single value or a list divided by "\fB|\fR".
+May contain a directory, file name, process result, command line parameter,
+button state, or field value.  See the \fBVariables\fR section.
+.RS
+
+.P
+.I text
+
+.P
+.I number
+
+.TP 4
+.I boolean
+Booleans are case insensitive
+.br
+.B 1
+.br
+.B 0
+.br
+.B t
+.br
+.B f
+.br
+.B true
+.br
+.B false
+.br
+.B y
+.br
+.B n
+.br
+.B yes
+.br
+.B no
+.br
+.B on
+.br
+.B off
+
+.TP 4
+.I mini-button_labels
+.B +
+.br
+.B -
+.br
+.B A
+.br
+.B B
+.br
+.B >
+.br
+.B <
+
+.TP 4
+.I spinner_arrow
+.B up
+.br
+.B down
+.RE
+
+.TP 4
+Operators
+.RS
+
+.TP 4
+.B |
+List separator.  Only valid in values.  Whitespace surrounding separator is stripped.
+
+.TP 4
+\fB" "
+Ignore variable operator.  Valid everywhere.
+
+.TP 4
+.B %{ }
+Reference to a variable.  The current value of the variable is substituted.
+Valid everywhere.
+
+.TP 4
+Precedence
+\fB|\fR, \fB" "\fR, \fB%{ }
+.RE
+
+.SS Scope
+Autodocs, sections, and subsections have scope.  Settings defined in a section
+are in force in that section and in any sections or autodocs that are run from
+that section.  So variables in a \fBTest\fR section are global for the entire
+test.  Variables set in a \fBdataset\fR section also global for the entire test;
+as if they where set in a  \fBTest\fR section.  The scope for settings in the
+global section of an autodoc is all the sections in the autodoc and any sections
+or autodocs that are run from them.
+
+.SS Variables
+Variable are created by the \fBset.var\fR command and removed by the
+\fBunset.var\fR command.  They are refered to with the format
+\fB%{\fIvariable_name\fB}\fR.  Variables set in \fBuitest.adoc\fR are global,
+except for variables in the dataset that have axis a or b in the their subject;
+these variables are global but limited to a single axis.
+Variable references cannot exist inside of other variable references, but
+variables references can be placed in variable values.
+
+.P
+To avoid variable substitution, use double quotes (\fB" "\fR).  The area inside
+the quotes will no be changed and the quotes will be removed.
+
+.TP 4
+Examples:
+.P
+set.var.axisbob = robert%{axis}
+.br
+When the axis is b, %{axisbob} equals robertb.
+.P
+assert.contains.file=log%{axis}.txt|"%{axis} is a variable"
+.br
+When the axis is b, the assert statement becomes:
+.br
+assert.contains.file=logb.txt|%{axis} is a variable
+
+.P
+.B Built in variables
+.RS 4
+
+.TP 4
+.B testdir
+A global variable containing the test directory path, which is created when the
+set.testdir command executed in a Test section.
+
+.TP 4
+.B testdir-name
+A global variable containing the test directory name, which is created when the
+set.testdir command executed in a Test section.
+
+.TP 4
+.B dataset
+A global variable created when the set.var.dataset command is executed in a Test section.
+
+.TP 4
+.B keep-dataset-dir
+A global variable created when the set.keep.dataset command is executed in a Test section.
+
+.TP 4
+.B axis
+A variable created when a Test autodoc is executed.  It is global to the Test autodoc.
+.RE
+
+.SS Wildcards
+"\fB*\fR" can be used to replace 0 or more characters in the \fIliteral_string\fR in
+\fBassert.contains.file\fR.  "\fB*\fR" cannot match the end of the line.
+
+.SS Relative paths
+The "\fB/\fR" separator must always be used for relative file paths.
+"\fB..\fR" can be used to describe a file that is not in a subdirectory
+of the test directory.
+
+.SS Waiting
+The \fBwait\fR command creates a wait state in a tester and causes the tester to
+wait until the situation specified in the \fBwait\fR command occurs.  If multiple
+Dialog autodocs where specified in the Test section, the tester for the current
+Dialog autodoc will cease testing and the tester for the next Dialog autodoc
+will continue where it left off whenever there is a wait in the current tester.
+
+.SS Naming
+To name a field in \fBetomo\fR, its associated label is changed to all lower
+case, one "-" is substituted for each space or contiguious group of spaces,
+everything from ":" on is truncated, and strings in parenthesis are removed.
+To see the field names in \fBetomo\fR, run \fBetomo\fR with the \fB--names\fR
+option.  Panels with headers or boundary titles are named in the same way.  The
+exceptions are the top-level panels for the frames, which are always called
+\fBmain-frame\fR and \fBsub-frame\fR.  Popups are identified by their titles,
+which are turned into names the same way a label is.
+
+.TP 4
+.B Naming buttons with symbol labels
+Buttons labeled with single characters or symbols such as \fB>\fR, \fBB\fR, or
+\fB+\fR are called mini-buttons (\fBmb\fR).  They are labeled with the name
+taken from panel or text field they are associated with.  If there are multiple
+buttons with the same name, for instance a \fB+\fR/\fB-\fR button and an
+\fBA\fR/\fBB\fR button on the same dialog, use an \fBindex\fR for all but the first
+one, going left to right.  The left-most mini-button has a default index of 0.
+
+.TP 4
+.B Indexing
+Multiple fields of the same type and name can be referred to with an index.  The
+index defaults to 0.
+
+.SS Order
+Commands are always read in the order they are written, so order is always
+meaningful.  Don't use variables before setting them.  In the \fBTest\fR
+sections, always set the test directory and the autodocs before setting the
+dataset.  The only exception to this is the Interface Section, where order does
+not count, except in its subsections.
+
+.SS The B Axis
+The B axis is tested in the \fBsub-frame\fR (the second window).  Tests will
+automatically try to open their frame if an \fBopen.frame\fR command is placed
+in the interface section that is being used.  If the frame can't be opened the
+test will fail.
+
+.SS UITest Autodoc
+.B uitest.adoc
+
+.TP 4
+.B Test Section
+.B [Test = \fItest_suite_name\fB]
+.br
+.I command
+.br
+ .
+.br
+ .
+.br
+ .
+
+.RS 4
+.P
+Required.  Only valid in \fBuitest.adoc\fR.  A section describing a suite of
+tests which will run against a single dataset.  Put \fItest_suite_name\fR in the
+environment variable \fBIMOD_TEST_SECTION\fR to run the test suite.  There is
+one test directory and one dataset per test.  There can be multiple Test
+Autodocs per test suite (see below).  Order counts in this section.  For best
+results order the commands as they are ordered in this man page.
+.RE
+
+.TP 4
+.B set.var.\fIvariable_name\fB = \fR[\fIvalue\fR]
+Causes a variable called \fIvariable_name\fR to be set to \fIvalue\fR.
+Variables can be set anywhere in the this section and will be available for use
+immediately.  Variables set in the Test Section are in force for the
+entire test.  See Variables and Scope above.  It is usually important to create
+a global variable called \fBdataset\fR.  Set this variable before setting the
+dataset because it is usually used in the Dataset section.
+.RE
+
+.TP 4
+.B set\fR[\fB.keep\fR]\fB.testdir\fB = \fItest_directory
+Required.  Only one is allowed.  Give the location where the test suites will be
+run.  \fITest_Directory\fR will be created under \fB./UITests\fR.  If the
+directory already exists and the \fBkeep\fR modifier was not used, the directory
+will be deleted and re-added.  The \fBkeep\fR modifier makes it possible to test
+a partially completed dataset by keeping the \fItest_directory\fR from being
+deleted.  This command also causes two global variables to be created:  \fBtestdir\fR,
+which contains the directory path of the test directory, and \fBtestdir-name\fR, which
+contains the name of the test directory.
+
+.TP 4
+.B set.adoc.\fItest_section_type\fR[\fB.\fR(\fBa\fR|\fBb\fR)]\fB = \fItest_autodoc_name\fB.adoc
+Required.  Creates a test.  Sets a test autodoc for the test, and a section type
+to be tested.  It is also used to set the axis for the test (\fBa\fR or \fBb\fR
+- the default is single axis).  If more then one test is being done, the axis
+letter will serve as a test name and must be unique in the \fBset.adoc\fR
+commands in the Test section.  The test can be refered to by the axis
+letter set here.  This axis letter is also used in the Dataset section to
+copy the correct files for the axis.  \fItest_autodoc_name\fB.adoc\fR should be
+placed in the directory pointed to by the environment variable
+\fBIMOD_UITEST_SOURCE\fR.
+
+.TP 4
+.B set.dataset = \fIdataset_dir
+Required.  Only one allowed.  Causes the Dataset Section for this test
+suite to be read and executed.  See the Dataset Section below.
+
+.TP 4
+.B copy.file\fR[\fB.\fR(\fBa\fR|\fBb\fR)]\fB = \fIfile_name
+Causes a file called \fIfile_name\fR to be copied from \fIdataset_dir\fR (see
+the Dataset Section header) to the \fBtestdir\fR (see Test Section above).  The
+file will only be copied if the axis matches the axis of one of the autodocs
+listed in the Test Section.  If the \fBset.dataset\fR command in the
+Test Section used the \fBkeep\fR modifier, then the file is only copied if
+it is not already in the \fBtestdir\fR.  Must appear after the \fBset.dataset\fR
+command.
+
+.TP 4
+.B set.interface.\fIinterface_section_name\fB =
+Required to be in either the Test section or the Dataset section.  Sets the
+Interface Section associated with the dataset.  Must appear after the \fBset.dataset\fR
+command.
+.RE
+
+.TP 4
+.B set.param = \fIparameter
+Causes \fBetomo\fR to be run with \fIparameter\fR added to the commmand line.
+More then one \fBset.param\fR command can be used.  \fIParameter\fRs will be
+added to the command line in the order they appear in the Test Section.
+.RS 4
+
+.TP 4
+Examples
+
+# Send the names of fields to the out log.
+.br
+set.param = --names
+.br
+# Open a existing dataset.
+.br
+set.param = BB.edf
+.RE
+
+
+.TP 4
+.B Dataset Section
+.B [dataset = \fIdataset_dir\fB]
+.br
+.I command
+.br
+ .
+.br
+ .
+.br
+ .
+
+.RS 4
+.P
+Required.  Only valid in \fBuitest.adoc\fR.  The section that describes the
+dataset settings and files that will be copied into the directory where the
+suite of tests will be run.  \fIDataset_dir\fR is a set of two directories containing
+files that can be copied to the \fItest_directory\fR (see \fBset.testdir\fR under Test
+Section).  One directory (the directory pointed to by the environment variable
+\fBIMOD_UITEST_IMAGE_DATA\fR) contains the image files.  The other directory (the
+directory pointed to by the environment variable \fBIMOD_UITEST_DATA\fR) contains
+non-image files.  Order counts in this section.
+For best results order the commands as they are ordered in this man page.
+
+.TP 4
+.B copy.file\fR[\fB.\fR(\fBa\fR|\fBb\fR)]\fB = \fIfile_name
+Causes a file called \fIfile_name\fR to be copied from \fIdataset_dir\fR (see
+the Dataset Section header) to the \fBtestdir\fR (see Test Section above).  The
+file will only be copied if the axis matches the axis of one of the autodocs
+listed in the Test Section.  If the \fBset.dataset\fR command in the
+Test Section used the \fBkeep\fR modifier, then the file is only copied if
+it is not already in the \fBtestdir\fR.
+
+.TP 4
+.B set.var.\fIvariable_name\fR[\fB.\fR(\fBa\fR|\fBb\fR)]]\fB = \fR[\fIvalue\fR]
+Causes a variable called \fIvariable_name\fR to be set to \fIvalue\fR.
+Variables set in the Dataset Section are in force for the entire test.
+See Variables and Scope above.  If the axis letter is used then the variable is
+only set for that axis.
+
+.TP 4
+.B set.interface.\fIinterface_section_name\fB =
+Required to be in either the Test section or the Dataset section.  Sets the
+Interface Section associated with the dataset.
+.RE
+
+.TP 4
+.B use.dataset = \fIdataset_dir
+Take all the settings, except the \fIdataset_dir\fR, from another dataset
+section.
+.RE
+
+.TP 4
+.B Interface Section
+.B [interface = \fIinterface_section_name\fB]
+.br
+.I command
+.br
+ .
+.br
+ .
+.br
+ .
+ 
+.RS 4
+.P
+Required.  Only valid in \fBuitest.adoc\fR.  A section describing an interface.
+Currently there are four interface:  Reconstruction, PEET, Parallel-Processing,
+and Join.  An Interface Section describes how to open an interface.  It
+also describes how to open and go to the frames and dialogs used with the
+interface.  The commands in this section are not run in order; they are run when
+it is time to manipulate an interface, frame, or dialog.  This means the
+commands are retrieved with a unique key.  The portion of each command which is
+used as the key (and must be unique in its section) is enclosed in "<>" below.
+
+.TP 4
+<\fBgoto.frame\fR[\fB.\fR(\fBa\fR|\fBb\fR)]>\fB.\fIfield =
+Required.  Contains the \fIfield\fR command to grab the \fBmain-frame\fR or the
+\fBsub-frame\fR.  This command is run every time control is passed to an Autodoc
+Tester once the \fBopen = interface\fR subsection has been run once.  Only the command
+which matches the Autodoc Tester's axis will be run.
+See Grammer above.
+.RS 4
+
+.TP 4
+Examples
+goto.frame.pnl.main-frame =
+.br
+goto.frame.a.pnl.main-frame =
+.br
+goto.frame.b.pnl.sub-frame =
+.RE
+
+.TP 4
+<\fBopen.dialog.\fIdialog_name\fR>\fB.\fIfield\fB =
+Optional.  A command to open a dialog.  \fIDialog_name\fR is a section name in a
+Test Autodoc (see below).  The rest of the command is the \fIfield\fR command
+that must be executed to open the dialog.
+.br
+Example:  open.dialog.PreProc.bn.pre = 
+
+.TP 4
+open.tool.\fItool-name =
+Opens a popup tool and returns the manager of the tool to the test language interpretor.
+Tools should be opened this way rather then via the menu field command, or the wrong manager
+will be used in the test.  Only one tool should be opened per test.  The manager associated
+with the last tool opened will be used.
+
+.P
+<\fB[[open = interface]]\fR>
+.br
+	\fIcommand\fR
+.br
+	.
+.br
+	.
+.br
+	.
+.br
+.B [[]]
+.RS 4
+.P
+The Open Interface Subsection.  Optional.  Provides a way to open
+interfaces which don't open automatically.  The subsection is
+automatically run one time when A axis or single axis test loop starts.  It
+does not use \fBgoto.frame\fR command to grab the panel, so a \fBpnl\fR
+field command should be the first command in the subsection.
+.TP 4
+Example
+[[open = interface]]
+.br
+	pnl.main-frame =
+.br
+	mn.tools =
+.br
+	mn.flatten-volume =
+.br
+[[]]
+.RE
+.RE
+
+
+
+.SS Other Autodocs
+\fIautodoc_file_name\fB.adoc
+
+.TP 4
+.B Test Autodoc
+Test Autodocs are refered to by the \fBset.adoc.\fItest_section_type\fR command
+in the \fBuitest.adoc\fR Test Sections.  Sections of \fItest_section_type\fR
+will be tested in the order in which they appear in a Test Autodoc.  The tester
+is called the Autodoc Tester.  The sections being tested in this way are called
+Dialog Sections.  A variable called axis is created for each Test Autodoc.
+
+.TP 4
+.B Dialog Section
+.B [\fItest_section_type\fB = \fIdialog_section_name\fB]
+.br
+.I command
+.br
+ .
+.br
+ .
+.br
+ .
+ 
+.RS 4
+.P
+Required in a Test Autodoc.  A Dialog Section describes a test against a dialog
+or tab panel.  \fITest_section_type\fR must match a \fBset.adoc\fR command
+placed in the Test Section being used.  The
+\fItest_section_type\fR/\fIdialog_section_name\fR combination must be unique in
+the autodoc.  This is because \fIdialog_section_names\fR are recorded when their
+section is finished (see the \fBwait.test\fR command below).  Dialog Sections
+have their own scope.  Order counts in this section.
+.RE
+
+.TP 4
+.B Function Section
+.B [\fIfunction_section_type\fB = \fIfunction_section_name]
+.br
+.I command
+.br
+ .
+.br
+ .
+.br
+ .
+ 
+.RS 4
+.P
+A Function Section has its own scope and is called like a function; the Autodoc
+Tester jumps to it, executes it, and then goes back to the location where the
+call was made and continues from there.  A Function Section may be in the same
+autodoc as the Dialog Sections, or it can be in a different autodoc.  A Dialog
+Section can also be called as a Function Section.  See \fBset.adoc\fR and
+\fBrun.function\fR, below, for information on how to jump to a Function Section.
+Order counts in this section.
+.RE
+
+.TP 4
+.B assert.\fR(\fBbn\fR|\fBcb\fR|\fBrb\fR)\fB.\fIname\fR[\fB.\fIindex\fR] = \fIboolean
+Tests whether \fIboolean\fR matches the state of the button, check box, or radio
+button.  \fIBoolean\fR refers to whether the button has been pressed (a button
+that has been pressed is dark), the check box is checked, or the radio button is
+selected.
+
+.TP 4
+.B assert.contains.\fR(\fBfile\fR|\fBimage-file\fR) = \fR(\fIfile_name\fR|\fIrelative_path\fR)\fB|\fIliteral_string
+Tests whether a file in the \fItest_directory\fR called \fIfile_name\fR contains
+\fIliteral_string\fR.  All or part of the \fIliteral_string\fR can be quoted with
+double quotes (\fB" "\fR) to prevent variable substitution.  The wildcard (\fB*\fR)
+will work in \fIliteral_string\fR.  The \fIliteral_string\fR can only contain one
+line.  \fILiteral_string\fR doesn't have to start at the beginning of the line, 
+or go on until the end of the line.
+Note that the "\fB|\fR" is part of the command.  It is used for making a list of values.
+Using \fBimage-file\fR will
+cause the file name to be standardized
+if the Etomo parameter \fB--namingstyle\fR is set to \fB1\fR or \fB2\fR.
+
+.TP 4
+.B assert.contains.\fR(\fBccb\fR|\fBtf\fR).\fItext_field_name\fR[\fB.\fIindex\fR]\fB = \fIsearch_pattern
+Tests whether the text field or combo box value matches a search pattern.  The only special character
+valid for this search pattern is \fB*\fR, which matches zero or more characters.
+It is not necessary to put \fB*\fR at the beginning or end of the search pattern: partial
+matches are allowed.
+
+.TP 4
+.B assert.\fR(\fBenabled\fR|\fBdisabled\fR)\fB.\fR(\fBbn\fR|\fBcb\fR|\fBcbb\fR|\fBmn\fR|\fBmb\fR|\fBrb\fR|\fBsp\fR|\fBtb\fR|\fBtf\fR)\fB = 
+Tests whether the \fIfield\fR is enabled or disabled.  Panels are not
+valid for this command.
+.RS 4
+
+.P
+Example:  assert.enabled.bn.compute-alignment =
+.RE
+
+.TP 4
+.B assert.exists.\fR(\fBbn\fR|\fBcb\fR|\fBcbb\fR|\fBmn\fR|\fBmb\fR|\fBrb\fR|\fBsp\fR|\fBtb\fR|\fBtf\fR)\fB = 
+Tests whether the \fIfield\fR exists and is visible,.    Panels are not
+valid for this command.
+
+.TP 4
+.B assert.\fR(\fBexists\fR|\fBnot-exists\fR)\fB.\fR(\fBfile\fR|\fBimage-file\fR) = \fR(\fIfile_name\fR|\fIrelative_path\fR)
+Tests whether a file exists or does not exist.  \fIFile_name\fR or
+\fIrelative_path\fR is assumed to be in the \fItest_directory\fR.  See
+\fBset.testdir\fR in UITest Autodoc.  Using \fBimage-file\fR will
+cause the file name to be standardized
+if the Etomo parameter \fB--namingstyle\fR is set to \fB1\fR or \fB2\fR.
+
+.TP 4
+.B assert.\fR(\fBge\fR|\fBle\fR)\fB.\fBtf.\fItext_field_name\fR[\fB.\fIindex\fR]\fB = \fIvalue
+Tests whether the text field value is greater or equal to or less then or equal
+to \fIvalue\fR.
+
+.TP 4
+.B assert.mb.\fIassociated_name\fR[\fB.\fIindex\fR]\fB = \fImini-button_label
+Tests whether \fImini-button_label\fR matches the current label of the
+mini-button.
+
+.TP 4
+.B assert.same.\fR(\fBfile\fR|\fBimage-file\fR) = \fR(\fIfile_name\fR|\fIrelative_path\fR)[\fB|\fIcompare_to_file_name\fR]
+Compare a file to another file.  If \fIcompare_to_file_name\fR is not used,
+the file is compared to another file of the same name stored in
+$IMOD_UITEST_DATA.  If \fIcompare_to_file_name\fR is used, the file is compared
+to a file called \fIcompare_to_file_name\fR, which is stored in
+$IMOD_UITEST_DATA.
+Files are sorted and then compared line by line, with comments and blank lines
+being ignored.  \fIFile_name\fR or
+\fIrelative_path\fR is assumed to be in the \fItest_directory\fR.  See
+\fBset.testdir\fR in UITest Autodoc.
+Using \fBimage-file\fR will
+cause both file names to be standardized
+if the Etomo parameter \fB--namingstyle\fR is set to \fB1\fR or \fB2\fR.
+
+.TP 4
+.B assert.sp.\fIspinner_name\fR[\fB.\fIindex\fR]\fB = \fInumber
+Tests whether \fInumber\fR equals the number in the text field of the spinner.
+
+.TP 4
+.B assert.tf.\fItext_field_name\fR[\fB.\fIindex\fR]\fB = \fR[\fIvalue\fR]
+Tests whether the text field value is equal to \fIvalue\fR.  If \fIvalue\fR
+is missing, tests whether the text field is empty.
+
+.TP 4
+.B bn.\fIbutton_name\fR[\fB.\fIindex\fR]\fB =
+Press a button called \fIbutton_name\fR.  See Naming above.
+
+.TP 4
+.B cb.\fIcheck_box_name\fR[\fB.\fIindex\fR]\fB = \fR[\fIboolean\fR]
+Click a check box called \fIcheck_box_name\fR.  If \fIboolean\fR is present, the
+check box will only be clicked if it is NOT the same as \fIboolean\fR.
+.RS 4
+.TP 4
+Example
+# Turn on parallel processing if it not already on.
+.br
+cb.parallel-processing = on
+.RE
+
+.TP 4
+.B cbb.\fIcombo_box_name\fR[\fB.\fIindex\fR]\fB = \fIvalue
+Add a new \fIvalue\fR in a combo box and select it.
+
+.TP 4
+.B copy\fR[\fB.always\fR]\fB.file = \fIfile_name\fR[\fB|\fIto_file_name\fR]
+Causes a file called \fIfile_name\fR to be copied from \fIdataset_dir\fR (see
+UITest Autodoc - Dataset Section) to \fItest_directory\fR (see
+\fBset.testdir\fR).  If the \fBset.testdir\fR command in the Test Section
+used the \fBkeep\fR modifier, and \fBalways\fR is not used in this command, then
+only copy the file if it is not already in the \fItest_directory\fR.
+
+.TP 4
+.B end =
+Ends the test of an axis.  For a single axis test, the test succeeds immediately.
+For dual axis, the other axis will continue.  If the other axis was waiting for the
+axis that ended, if will stop waiting and start executing commands.  So the \fBend\fR command
+can violate dependencies created by \fBwait.test\fR.  If an \fBend\fR command is called for both axes, the test will succeed as soon as both axes have reached the command.
+
+.TP 4
+.B file-chooser.\fIfile_chooser_name\fB = \fIfile
+Open a file chooser named \fIfile_chooser_name\fR.  Identifies the file
+chooser by its title, which is converted to a name (see Naming).  When the file
+chooser appears, choose \fIfile\fR and close the file chooser.
+.RS 4
+
+.TP 4
+Example
+# Open a file chooser and add a section
+.br
+bn.add-section =
+.br
+wait.file-chooser.choose-a-section = %{dataset}3.rec
+.RE
+
+
+
+.TP 4
+.B format\fR[\fB.\fIfield\fR]\fB =
+Has Etomo format itself and then, optionally, executes \fIfield\fR.
+
+
+.TP 4
+.B get.instance.\fIclass_tag\fB =
+Gets and saves an instance of a class that implements ExternalUITestSuite.
+This instance will be used for all subsequent external function calls.
+If the instance is newly constructed, it will be initialized.  \fIClass_tag\fR
+is a string used to identify the class.
+
+.P
+.B [[if\fR[\fBnot\fR]\fB = \fIvariable_name\fB]]
+.br
+	\fIcommand\fR
+.br
+	.
+.br
+	.
+.br
+	.
+.br
+.B [[]]
+.RS 4
+.P
+If and Ifnot Subsections function like simple, non-nestable if statements.  They
+have their own scope.  If Subsections are only executed if the variable called
+\fIvariable_name\fR has been defined.  Ifnot Subsections are only executed if
+the variable called \fIvariable_name\fR has not been defined.
+\fIVariable_name\fR may not start with "=".  The indentation is for readability
+and is not required.
+.RE
+
+.TP 4
+.B if.\fR(\fBenabled\fR|\fBdisabled\fR)\fB.\fIfield\fB.\fIsubcommand\fB = \fR[\fIsubcommand_value\fR]
+If \fIfield\fR is \fBenabled\fR/\fBdisabled\fR, execute the \fIsubcommand\fR.
+
+.TP 4
+.B if.\fR(\fBequals\fR|\fBnot-equal\fR)\fB.var.\fIvariable_name\fB.\fIsubcommand\fB = \fR[\fIvariable_value\fR]
+Compares a variable called \fIvariable_name\fR to \fIvariable_value\fR using
+either \fBequals\fR or \fBnot-equals\fR.  If the result is true, execute the
+\fIsubcommand\fR.  If the result is false, continue without executing the
+\fIsubcommand\fR.  Only subcommands without values can be used in this
+statement.
+
+.TP 4
+.B if\fR[\fB.not\fR]\fB.var.\fIvariable_name\fB.\fIfield\fB = \fR[\fIfield_value\fR]
+Execute a \fIfield\fR command if a variable called \fIvariable_name\fR has
+either been defined or not been defined, depending on whether \fBnot\fR is used.
+
+.TP 4
+.B if\fR[\fB.not\fR]\fB.var.\fIvariable_name\fB.\fIsubcommand\fB = \fR[\fIsubcommand_value\fR]
+Execute a \fIsubcommand\fR if a variable called \fIvariable_name\fR has either
+been defined or not been defined, depending on whether \fBnot\fR is used.
+
+.TP 4
+.B mb.\fIassociated_name\fR[\fB.\fIindex\fR]\fB = \fR[\fImini-button_label\fR]
+Press a mini-button.  The mini-buttons are small, square buttons with
+one of the following symbols on them:  \fB>\fR, \fB<\fR, \fB+\fR, \fB-\fR,
+\fBA\fR, or \fBB\fR.  They are refered to by their \fIassociated_name\fR, which
+is the name of the panel they are on, or the field they are related to.  See
+Naming.  Use \fIindex\fR if there is more then one mini-button with the same
+\fIassociated_name\fR of the same name.  Mini-button are two-state buttons.  If
+\fImini-button_label\fR is used, the button is only pressed if the button's
+current label matches \fImini-button_label\fR.
+.RS 4
+
+.TP 4
+Examples
+# Open the Parallel Processing panel.
+.br
+mb.parallel-process = +
+.br
+# Show less of the Parallel Processing panel.
+.br
+mb.parallel-process.1 = <
+.br
+# Show advanced fields in the Tilt panel
+.br
+mb.tilt.1 = A
+.br
+# Close the Trial Tilt panel
+.br
+mb.trial-tilt = -
+.RE
+
+.TP 4
+.B mn.\fImenu_choice\fB =
+Click on a pull-down menu choice.
+.RS 4
+
+.TP 4
+Examples
+# Open a new PEET interface
+.br
+mn.file =
+.br
+mn.new-peet =
+.RE
+
+.TP 4
+.B open.dialog.\fIdialog_name\fB =
+Tells the autodoc tester that it must call the \fBopen.dialog.\fIdialog_name\fR
+command in the current \fBinterface\fR section.
+
+.TP 4
+.B pause\fR[\fB.axis\fR(\fBa\fR|\fBb\fR)] =
+When pause \fBpause\fR is encountered a dialog will be popped up.  Both axes will be halted.
+The dialog will give three options: ending the test and exiting, ending the test and leaving etomo
+running, and continuing the test.  When \fB.axis.a or \fBb is included this will only happen on the
+matching axis - but both axes will be halted.
+
+.TP 4
+.B print.var.\fIvariable_name\fB = \fR[\fIvariable_value\fR]
+Prints the value of a variable called \fIvariable_name\fR to the error log.  See Variables above.
+
+.TP 4
+.B pnl.\fIpanel_name\fB =
+Go to a panel named \fIpanel_name\fR.  See Naming.  It is usually only a good
+idea to go to a panel associated with one of the frames.  The other panels are
+usually too limiting.  For instance a Done button will be outside of a dialog
+panel and therefore unreachable.
+.RS 4
+
+.TP 4
+Examples
+pnl.main-frame =
+.br
+pnl.sub-frame =
+.RE
+
+.TP 4
+.B rb.\fIradio_button_name\fR[\fB.\fIindex\fR]\fB =
+Press a radio button called \fIradio_button_name\fR.  If there are multiple
+radio buttons of the same name, use \fIindex\fR.  See Naming above.
+
+.TP 4
+.B return\fR[\fB.var.\fIvariable_name\fR]\fB =
+Closes the current scope.  If the return is used in a Dialog Section, the
+current Dialog Section will end and the Autodoc Tester will go on to the next
+Dialog section.  If the return is used in function section, the Autodoc Tester
+will leave the section and go to the command following the function call.  If
+the return is used in a subsection, the Autodoc Tester will go to the command
+after the end of the subsection.  When \fBvar.\fIvariable_name\fR is used it
+also passes a local variable up to the enclosing scope when it returns.
+
+.TP 4
+.B run.external.function.\fIexternal_test_suite_function_name\fB =
+Runs the function called \fIexternal_test_suite_function_name\fR in the current
+class instance set by most recent \fBget.instance\fR command.
+
+.TP 4
+.B run.function.\fIfunction_section_name\fB =
+Executes a section like a function; jumps to the other section, executes it, and
+then jumps back.  The function will be in the file specified by the most recent
+\fBset.adoc\fR command.  The section type of the function must be set by a
+\fBset.adoc\fR command prior to running the function.  Functions contain the
+same commands used in Dialog Sections.  For exampes see \fBset.adoc\fR.
+
+
+.TP 4
+.B save =
+Saves the dataset.  Equivalent to \fBmn.file\fR followed by \fBmn.save\fR, but
+more reliable for when it is the result of the save and not the menu functionality
+that is being tested.  Command is ignored if the "Save" menu option is disabled.
+
+.TP 4
+.B set.adoc.\fIfunction_section_type\fB = \fR[\fIfile_name\fB.adoc\fR]
+Sets an autodoc containing sections that will be called like functions using the
+\fBrun.function\fR command.  If \fIfile_name\fB.adoc\fR is not used, then the
+command refers to the current autodoc.  \fIfunction_section_type\fR set the type of
+section that can be called.  Only the most recent \fBset.adoc\fR command in the
+current scope remains in force.  The Autodoc Tester looks for autodocs in the
+directory pointed to by the environment variable \fBIMOD_UITEST_SOURCE\fR.
+.RS 4
+
+.TP 4
+Examples
+# Call [dialog = PreProc] in current autodoc.
+.br
+set.adoc.dialog =
+.br
+run.function.PreProc =
+.br
+# Call [function = main] in setup-recon.adoc.
+.br
+set.adoc.function = setup-recon.adoc
+.br
+run.function.main =
+.RE
+
+.TP 4
+.B set.debug = \fIboolean
+Turns debug on and off.  Debug causes any debug statements available in the the
+test software and in Etomo to print.  Turning debug off may not completely stop
+debug prints because class instances may have been created with debug while it
+was on.  Debug in Etomo can also be turned on by using the \fBset.param\fR
+command in the Test Section.  Turning debug off with the \fBset.debug\fR command
+will always turn off debug in Etomo.
+
+.TP 4
+.B set.index.cbb.\fIcombo_box_name\fR[\fB.\fIindex\fR]\fB = \fIindex
+Select an existing \fIindex\fR in a combo box.
+
+.TP 4
+.B set.file.tf.\fItext_field_name\fR[\fB.\fIindex\fR]\fB = \fIfile_name
+Set the absolute path of \fIfile_name in a text field.  Location is the current directory
+and based on the Java user.dir property, so it should be the same as the dataset directory.
+
+
+.TP 4
+.B set.var.\fIvariable_name\fB = \fR[\fIvariable_value\fR]
+Sets a variable called \fIvariable_name\fR to \fIvariable value\fR.  To refer to
+the variable later, use \fB%{\fIvariable_name\fB}\fR.  See Variables above.
+
+.TP 4
+.B skipto.section.\fIdialog_section_name\fB =
+For Dialog Sections only.  Immediately exits the current Dialog Section and
+jumps to a later Dialog Section called \fIdialog_section_name\fR.
+
+.TP 4
+.B sleep = \fR[\fItime_in_milliseconds\fR]
+Tells the tester to sleep for \fItime_in_milliseconds\fR.  The default time is
+1000.
+
+.TP 4
+.B sp.\fIspinner_name\fR[\fB.\fIindex\fR]\fB = \fR(\fInumber\fR|\fIspinner_arrow\fR)
+Changes the number in the spinner's editor panel or presses an up or down arrow
+one time.
+
+.TP 4
+(\fBsp\fR|\fBtf\fR).\fItable_label\fB-\fIrow_label\fB-\fItop_column_label\fR[\fB.\fIindex_within_column\fR]\fB = \fR[\fIvalue\fR]
+Works just like a regular field command and can be used in the same places,
+except that the name and index refer to a field in a table.  \fITable_label\fR
+is the name of the table.  \fIRow_label\fR is the name of the left most column
+in the table.  \fITop_column_label\fR is the name of the header in the top row.
+See Naming to learn how these names are created from the text displayed on the
+dialog.  The \fIindex_within_column\fR is used when columns share a top row
+header.  The first column on the left will have a default index of 0.  This
+functionality has not been implemented for all columns and tables.
+.RS 4
+
+.TP 4
+Examples
+# Fill in the rotation angles in the third row.
+.br
+tf.section-table-3-rotation-angles.0 = 0
+.br
+tf.section-table-3-rotation-angles.1 = 180
+.br
+tf.section-table-3-rotation-angles.2 = 0
+.br
+# Adjust the boundary between sections 2 and 3.
+.br
+sp.boundary-table-2-&-3-adjusted = up
+.RE
+
+.TP 4
+.B tb.\fIfirst_tab_name\fR[\fB.\fIindex\fR]\fB =
+Click on a tab.  Tabs are all named after the first tab.  The rest must be
+referred to with index.  See Naming above.
+
+.TP 4
+.B tf.\fItext_field_name\fR[\fB.\fIindex\fR]\fB = \fR[\fItext\fR|\fInumber\fR]
+Write value to a text field called \fItext_field_name\fR.  If there are multiple
+text fields of the same name, use \fIindex\fR.  See Naming above.
+
+.TP 4
+.B popup.\fIpopup_name\fB = \fIpopup_button_name
+Use to identify a popup and dismiss it.
+Identifies the popup by its title, which is
+converted to a name (see Naming).  Presses the button on the popup identified by
+\fIpopup_button_name\fR.
+
+.TP 4
+.B touch.dir = \fIdirectory_name
+Causes the last modified date of the directory called \fIdirectory_name\fR
+in the \fItest_directory\fR (see \fBset.testdir\fR) to be changed to the current
+date and time.  If the directory doesn't exist, this command creates an empty
+directory called \fIdirectory_name\fR in the \fItest_directory\fR.
+
+.TP 4
+.B touch.file = \fIfile_name
+Causes the last modified date of the file called \fIfile_name\fR in the
+\fItest_directory\fR (see \fBset.testdir\fR) to be changed to the current date
+and time.  If the file doesn't exist, this command creates an empty file called
+\fIfile_name\fR in the \fItest_directory\fR.
+
+.TP 4
+.B unset.var.\fIvariable_name\fB = 
+Removes a variable called \fIvariable_name\fR.  A variable can only be removed in
+the scope where it was created.
+
+.TP 4
+.B wait.popup.\fIpopup_name\fB = \fIpopup_button_name
+Used to wait for a popup dialog which will take some time to appear.
+Good for finding popups that come up during a process.
+Identifies the popup by its title, which is
+converted to a name (see Naming).  Presses the button on the popup identified by
+\fIpopup_button_name\fR.
+
+.TP 4
+.B wait.\fBprocess.\fIprocess_name\fB = done\fR|\fBfailed\fR|\fBkilled\fR|\fBpaused
+Waits for a process to reach the specified end state.  The \fIprocess_name\fR
+comes from the string describing the process, which appears at the top of the
+window when the process is running (see Naming).  The Autodoc Tester will wait
+until process is done before comparing the value of this command to the string
+in the progress bar.  This command should only be used for a single process, or
+the last process in a sequence.
+
+
+.TP 4
+.B wait.test.\fR(\fBa\fR|\fBb\fR)\fB = \fIdialog_section_name
+Causes the test to wait until another test has completed a Dialog Section named dialog_section_name.
+.RS 4
+
+.TP 4
+Example
+# In the B axis, wait for Fine Alignment to complete in the A axis.
+.br
+wait.test.a = FineAlign
+.br
+# In the A axis, wait for Tomogram Generation to complete in the B axis.
+.br
+wait.test.b = TomoGen
+.RE
+
+.TP 4
+.B write.file = \fIfile_name\fB|\fIliteral_string
+Append a new line and \fIliteral_string\fR to \fIfile_name\fR.  Double quotes (\fB" "\fR)
+can be used to avoid variable substitution.
+
+.SH EXAMPLES
+
+.TP 4
+Excerpt from a makefile (\fBuitest.make\fR) used to run multiple test suites
+all: single dual
+.br
+single:
+.br
+	$(IMOD_UITEST_SCRIPT)/uitest single
+.br
+dual:
+.br
+	$(IMOD_UITEST_SCRIPT)/uitest dual
+
+.TP 4
+Test Section for a dual axis reconstruction
+[Test = dual]
+.br
+# Create a test directory called dual.
+.br
+set.testdir = dual
+.br
+# Use reconA.adoc as a Test Autodoc - axis set to "a".
+.br
+set.adoc.dialog.a=reconA.adoc
+.br
+# Use reconB.adoc as a Test Autodoc - axis set to "b".
+.br
+set.adoc.dialog.b=reconB.adoc
+.br
+# Use the dataset BB
+.br
+set.dataset = BB
+
+.TP 4
+Using the same Test Autodoc for two Autodoc Testers
+[Test = dual]
+.br
+set.testdir = dual
+.br
+# Use a "dialog" section type in recon.adoc for axis A.
+.br
+set.adoc.dialog.a=recon.adoc
+.br
+# Use a "bdialog" section type in recon.adoc for axis B.
+.br
+set.adoc.bdialog.b=recon.adoc
+.br
+set.dataset = BB
+.RS 4
+
+.P
+The Autodoc Tester for Axis A runs the sections with a section type of
+"dialog".  The Autodoc Tester for Axis B runs the sections with a section type
+of "bdialog".
+.RE
+
+.TP 4
+Using variables
+[Test = single-montage]
+.br
+set.testdir = single-montage
+.br
+# Only need one Test Autodoc - axis is set to "".
+.br
+set.adoc.dialog = recon.adoc
+.br
+# Using midzone2 as the dataset.
+.br
+set.dataset = midzone2
+.br
+# Create a variable called single.
+.br
+set.var.single=
+.br
+# Create a variable called montage.
+.br
+set.var.montage=
+.RS 4
+.P
+In recon.adoc use these variables to decide which radio buttons to check and
+which processes to wait for.
+
+.SH AUTHOR
+Sue Held
+
+.SH SEE ALSO
+etomo(1), imodenv(1), pip(1).

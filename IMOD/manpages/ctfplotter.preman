@@ -1,0 +1,186 @@
+.na
+.nh
+.TH ctfplotter 1 3.10.18 IMOD
+.SH NAME
+ctfplotter \- estimate defocus values of a tilt series 
+.SH SYNOPSIS
+ctfplotter  options
+.SH DESCRIPTION
+This GUI program will plot the logarithm of a rotationally averaged power
+spectrum of an input tilt 
+series after subtracting the noise floor.  The method is based on periodogram 
+averaging; namely, averaging of spectra from small, overlapping areas of
+the images, referred to as tiles.  The user can interactively choose which
+projection views are included in the averaging.  It is also possible to
+run the program non-interactively for automatic fitting.
+
+.SS Noise Files
+The noise floor is usually based on actual measurements of noise in an image taken
+with no specimen in the beam.  The program does have an alternative
+method of subtracting a background level that is based on fitting two
+lines to the spectrum, one to the rapidly falling region at low
+frequencies and one to the
+more gradually falling high-frequency end.  This method may work well
+enough with some data, particularly from an electron counting camera.
+However, if this method does not work, you need to supply noise images.
+.P
+To get noise images, collect a set of blank images at a series of beam
+intensities.  They can be placed in separate files or all in one stack.
+These noise images are specific not only to the
+microscope but also to the camera used, the operating voltage, and the
+binning.  However, these are not factors that vary over time (unless
+there is some radical change in the camera), so you should only have to
+collect these images once.  The mean counts in these images should span
+the range of the mean counts in the data being analyzed.  The interval
+between intensities can be a factor of 1.5; interpolation is used to
+estimate the noise for an image whose mean counts do not match one of
+the noise images.  For example, for a camera that has a gain of 10
+counts per electron, one might collect images at mean counts near 100,
+150, 225, etc., up to 1710.  With a 1 nm pixel size, these noise images
+could be used with images where the dose recorded at the camera ranged
+from 0.1 to 1.7 electrons per square Angstrom.  If you need images for
+analyzing both unbinned and binned data, you can take one set of
+unbinned noise images and then bin them with a Newstack(1) command like
+this:
+   newstack -bin 2 -mult 4,0  input_file output_file
+
+The multiplication by 4 (the square of the binning factor) is necessary to make
+the counts be the same as they would be for binned images from the microscope
+with the same exposure.
+
+If there are significant numbers of X-rays in the noise images, you should
+clean them with Ccderaser(1), such as with:
+   ccderaser -find -peak 8 -diff 6  input_file output_file
+
+The noise images must have positive means; i.e., their values should be
+proportional to the recorded electrons.  If they are acquired with software
+that subtracts 32768 before storing as signed integers, then you need to add
+this offset back to the data in order to use them as noise images.
+
+If the noise images are in one stack, its file name is entered directly
+with the \fB-config\fR option. If the noise images are in separate
+files, they are listed in a simple text file, the configuration file
+specified by the \fB-config\fR option.  To be found easily from within
+Etomo, the
+latter file, or a single stack, should be placed in a directory named
+/usr/local/ImodCalib/CTFnoise or in $IMOD_CALIB_DIR/CTFnoise if the
+environment variable IMOD_CALIB_DIR has been defined differently from the
+default.  Noise files can be placed in a subdirectory of CTFnoise,
+for example, F20.  In this case, the configuration file would contain a
+list like this:
+.nf
+F20/file1.st
+F20/file2.st
+F20/file3.st
+...
+.fi
+
+.SS Noise Files for Direct Detector Cameras
+For direct electron detector cameras, the actual power spectra may not
+fit the noise spectra very well,
+particularly if motion correction is applied to tilt
+series movie frames, or if electron counting is used.  The fitting of a polynomial to the
+baseline of the power spectrum, described below, will generally give
+a flat enough power spectrum at higher frequencies.  However, when using
+motion correction, there are two potential solutions that may give
+better noise files.  Spectra from ordinary noise images will not fit
+the actual spectra if the aligning and summing of movie frames
+attenuates the high frequencies, which is inevitable if 
+interpolation is done in real space to align the images.  The best remedy is
+to shift frames into alignment with phase shifts in Fourier space
+instead of with interpolation.  This operation preserves the high frequency
+power.  Frames that have been aligned in SerialEM's plugin to
+DigitalMicrograph or in Alignframes(1) have been shifted in Fourier
+space, preserving the power.  If you determine the frame alignment some
+other way, you can transform the frames in Newstack(1) with the
+\fB-phase\fR option to shift them in Fourier space.  The
+second remedy would be to collect movie frames for the noise images and
+apply small shifts to them by the same method used to shift actual
+frames before summing them.  Since the noise frames cannot be aligned,
+the shifts need to be obtained some other way; either take a set of
+shifts from real images, or use some random numbers between 0 and 1.
+.P
+At least currently, the response of an electron counting camera depends
+on the dose rate, which raises the question of whether to 
+vary exposure time or beam intensity when taking the set of noise
+images.  In principle, varying beam intensity will replicate the
+differences between light and dark areas in the same image; varying
+exposure time will give noise images applicable to a range of images
+taken with the same dose rate but different exposure times.  There does
+not seem to be a good solution here.
+.P
+As of IMOD 4.10.18, the baseline fitting option is turned on by default
+since its performance has been improved.  It can be disabled, or the
+polynomial order set, 
+in a template file when processing through Etomo;
+for example, the template directive
+  comparam.ctfplotter.ctfplotter.BaselineFittingOrder = 2
+.br
+will restrict the fitting to a parabolic baseline.
+
+.SS Program operation
+When you start the program, it will first load and analyze all of the noise
+images.  Then it will read in the images within the specified initial angular
+range and compute power spectra from the central tiles.  This initial
+computation of tile power spectra is the most time-consuming step, whereas
+recomputing a summed power spectrum from the spectra of individual tiles is
+quick.  The program thus stores the power spectrum for each tile in a cache
+when it is computed.  You will have to wait several seconds whenever you change the
+angular range to include views that have not been analyzed before.  However,
+once all of the tiles on all views have been analyzed, the program will
+respond quickly when you change angular ranges or defocus values.
+
+You may find that the power spectrum curves up or down at high
+frequencies, indicating that the noise power spectra do not adequately
+describe the noise in the actual data and that the baseline fitting is
+not working optimally to make the power spectrum be flat at
+high frequencies.  This fitting is controlled by an entry set in the
+Fitting dialog, whose value can be initialized with the \fB-baseline\fR
+option.  To do this fitting, the program first identifies points that
+could define a noise floor, primarily using points at local minima in
+the spectrum, but sampling other points if needed at the highest
+frequencies.  The program then fits a concave or convex polynomial of a
+selected order to those points and subtracts it from the power
+spectrum.  The result is
+to flatten the spectrum, except perhaps past 0.45/pixel. The order can
+be set to 1 to fit a line, 2 to fit a parabola, or 3 or 4 to fit 3rd or
+4th order equations.  (To keep higher order polynomials well-behaved,
+they are constrained to have a monotonically changing first derivative,
+as a parabola does.)  This fitting should be adjusted when the baseline
+deviates from flat by enough to impair the ability to visualize the
+zeroes or fit the spectrum.
+
+To read a general description of the plots and tool buttons, click the handbook
+icon to access the HTML help page.
+
+The defocus values found by the program, as well as astigmatism and
+phase shift if those are also found, can be saved in a text file that
+can be used as input to the CTF correction program Ctfphaseflip(1).
+
+.SH OPTIONS
+Ctfplotter uses the PIP package for input (see the manual page
+for pip(1)).  Options can be specified either as command line
+arguments (with the -) or one per line in a command file
+(without the -).  Options can be abbreviated to unique letters; the currently
+valid abbreviations for short names are shown in parentheses.
+INSERT OPTION TEXT HERE
+.TP
+.B -StandardInput
+Read parameter entries from standard input
+
+.SH AUTHORS
+.nf
+Quanren Xiong
+David Mastronarde
+John Heumann
+.fi
+.SH SEE ALSO
+ctfphaseflip(1), newstack(1)
+.SH BUGS
+Prior to IMOD 4.0.29, Ctfplotter had a bug in which the view numbers written
+to the defocus file were numbered from 0, not 1.  When Ctfplotter reads in
+an existing defocus file, it will do its best to detect this situation
+and adjust all the view numbers up by 1.  If it does detect an inconsistency
+between view numbers and angular ranges, it will issue a warning.
+.P
+Email bug reports to mast@colorado.edu.

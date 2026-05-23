@@ -1,0 +1,31 @@
+[function = main]
+copy.file = BBa.st|BB.st
+copy.file = BBa.st
+copy.file = BBb.st
+pnl.main-frame=
+[[if = test-gui]]
+  #values
+  assert.rb.stacks-are-already-in-dataset-directories=on
+  assert.rb.move-all-stacks-to-dataset-directories-under=off
+  assert.tf.move-all-stacks-to-dataset-directories-under=
+  assert.rb.move-stacks-to-dataset-directories-under-their-current-locations=off
+  assert.tf.starting-directive-file=
+  assert.contains.cbb.scope-template=*None available*
+  assert.contains.cbb.system-template=*No selection*
+  assert.contains.cbb.user-template=*No selection*
+  assert.contains.tf.batchruntomo-root-name=*batch*
+  assert.contains.tf.location=*batch*
+  #enabled
+  assert.enabled.rb.stacks-are-already-in-dataset-directories=
+  assert.enabled.rb.move-all-stacks-to-dataset-directories-under=
+  assert.disabled.tf.move-all-stacks-to-dataset-directories-under=
+  assert.enabled.rb.move-stacks-to-dataset-directories-under-their-current-locations=
+  assert.disabled.tf.starting-directive-file=
+  assert.disabled.cbb.scope-template=
+  assert.enabled.cbb.system-template=
+  assert.enabled.cbb.user-template=
+  assert.enabled.tf.batchruntomo-root-name=
+  assert.enabled.tf.location=
+[[]]
+cbb.system-template=plasticSection.adoc
+tf.batchruntomo-root-name=%{dataset}

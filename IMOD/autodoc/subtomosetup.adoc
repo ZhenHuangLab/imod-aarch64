@@ -1,0 +1,196 @@
+Version = 1.0
+Pip = 1
+
+[Field = RootName]
+short = root
+type = CH
+usage = Root name of dataset, including a or b if dual axis (required)
+tooltip =
+manpage = Root name of dataset.  For one axis of a dual-axis data set,
+include the "a" or "b" in this name.  This option is required.
+
+[Field = CenterPositionFile]
+short = center
+type = FN
+usage = Name of IMOD model or text file with centers of subvolumes (required)
+tooltip =
+manpage = Name of an IMOD model file or a point coordinate file with the center
+positions of the desired subvolumes.  A point coordinate file should have one
+point per line, with its X, Y, and Z coordinates separated by spaces, not
+commas.  These coordinates should correspond to pixels in the full file
+specified with \fB-volume\fR, where the first pixel in any dimension spans
+coordinates from 0 to 1. This option is required. 
+
+[Field = VolumeModeled]
+short = volume
+type = FN
+usage = Volume that was modeled or on which points were picked (required)
+tooltip =
+manpage = Name of the image volume in which points were selected.  If a model file
+is supplied for the \fB-center\fR option, this entry should be the image
+volume that was modeled.  If a point
+coordinate file is supplied with \fB-center\fR, the coordinates must correspond to pixel
+positions in this volume file.  This option is required.
+
+[Field = RawStackFile]
+short = raw
+type = FN
+usage = Name of raw image stack
+tooltip = 
+manpage = Name of raw image stack.  This option is needed only if this
+filename cannot be determined by analyzing command files in the directory.
+
+[Field = AxisAngle]
+short = axis
+type = F
+usage = Angle that the tilt axis is rotated from vertical in raw stack
+tooltip =
+manpage = Angle that the tilt axis is rotated from vertical (counterclockwise
+positive) in the raw image stack, used to determine whether the X and Y sizes of
+a full aligned stack are transposed from those of the raw stack.  This entry
+is needed only if it cannot be found in an alignment log file.
+
+[Field = ObjectsToUse]
+short = objects
+type = LI
+usage = List of model objects with desired point positions
+tooltip =
+manpage = If only a subset of objects in the model contain points to be
+reconstructed, this option can be used to enter a list of those objects
+(comma-separated ranges are allowed).
+
+[Field = SizeInXYZ]
+short = size
+type = IT
+usage = Final unbinned size of subvolumes in X, Y, and Z (required)
+tooltip =
+manpage = Final size of subvolumes in X, Y, and Z, in unbinned pixels.  If the
+modeled volume was reoriented by rotation or flipping, subvolumes will be
+treated similarly, and this entry specifies the size after reorienting.  If
+the aligned stack is binned, the actual size will the specified size divided
+by its binning.  This option is required.
+
+[Field = DirectoryForOutput]
+short = dir
+type = FN
+usage = Name of directory to place subvolumes into
+tooltip =
+manpage = Name of directory to place subvolumes into.  By default, the
+subvolumes will be written into the dataset directory; this option can be used
+to place them in a subdirectory or, in fact, in a directory located anywhere.
+If the directory does not exist yet, it will be created.
+
+[Field = SkipSubVolNumbers]
+short = skip
+type = B
+usage = Make subvolume and point numbers correspond even if points are skipped
+tooltip =
+manpage = Skip subvolume numbers whenever points near the border of the volume
+are skipped, thus keeping the subvolume and point numbers in register even when
+points are skipped.  The default is to put out sequentially numbered subvolumes
+with no gaps, which is required when processing the subvolumes in PEET with 
+template specifications for a series of volumes.
+
+[Field = CommandFile]
+short = com
+type = FN
+usage = Starting command file for running Tilt (default tilt.com)
+tooltip =
+manpage = Starting command file for running Tilt to make the reconstructions.  The
+default is to use "tilt.com", so this option is needed for a dual-axis data
+set or to use a copy of the file.
+
+[Field = NumberOfZLevels]
+short = zlevels
+type = I
+usage = Number of different depths in Z at which to do CTF correction
+tooltip =
+manpage = Number of different depths in Z at which to make CTF-corrected
+aligned stacks.  Either this option or \fB-thickness\fR must be
+entered, but not both.  This entry must be at least 2.
+
+[Field = ExtentOfZLevelsInNm]
+short = extent
+type = I
+usage = Maximum depth in Z over which to use one CTF correction, in nanometers
+tooltip =
+manpage = The maximum depth in Z over which to use one CTF correction, in
+nanometers.  This value, if entered, must be less than the maximum distance in
+Z between subvoluyme centers, so that at least two CTF corrections are computed.
+
+[Field = CorrectionComFile]
+short = ctfcom
+type = FN
+usage = Command file for CTF correction (with or without extension)
+tooltip =
+manpage = Command file for CTF correction, which can be entered with or
+without its extension of ".com".  If this option is not entered,
+"ctfcorrection" will be substituted for "tilt" in the name of the command file
+for reconstruction.
+
+[Field = EraseFiducials]
+short = erase
+type = B
+usage = Run a command file to erase gold after CTF correction of aligned stack
+tooltip =
+manpage = Run a command file to erase gold after CTF correction of the aligned
+stack.  Gold may be erased in the aligned stack prior to CTF correction, but
+this option can be used to erase after correction, which is 
+the preferred order of operations in Etomo(1) and Batchruntomo(1).  That order
+is better in principle but may make little difference in practice.
+
+[Field = GoldEraserComFile]
+short = goldcom
+type = FN
+`usage = Name of command file to use for erasing gold after CTF correction
+tooltip =
+manpage = Name of command file to use for erasing gold after CTF correction,
+which can be entered with or without its extension of ".com".  If this option
+is not entered, "golderaser" will be substituted for "tilt" in the name of the
+command file for reconstruction.
+
+[Field = ReorientionType]
+short = reorient
+type = I
+usage = -1, 1, or 0 if volume was reoriented by rotation around X, swapping Y
+and Z, or not at all
+tooltip = 
+manpage = This option can be used to specify the type of reorientation that
+was applied to the original reconstruction to obtain the modeled volume, in
+the unlikely event that the program cannot detect which was used.
+Reorientation by rotation around the X axis can be detected by the tilt
+angles in the volume header; swapping of Y and Z can be detected
+only if the "clip: flipyz" title is still present.  If necessary, the program
+will assume that swapping occurred if the Y dimension is more than twice the Z
+dimension, or that no reorientation occurred if the Z dimension is more than
+twice the Y dimension.  If the program makes a wrong assumption or insists
+that this option be used, enter a 0 for no reorientation, 1 for swapping of Y
+and Z, or -1 for rotation around X.
+
+[Field = ProcessorNumber]
+short = proc
+type = I
+usage = Number of processing units (CPU or GPU) that the jobs will be run on
+tooltip =
+manpage = Number of processing units, either CPUs or GPUs, that the jobs will
+be run on.  The program will divide the jobs into 10 command files (chunks)
+per processor if this results in fewer than 1000 chunks, or with fewer chunks
+per processor, down to 5, in an attempt to keep the number of chunks under
+1000.
+
+[Field = RunsPerChunk]
+short = runs
+type = I
+usage = Number of Tilt runs per command file
+tooltip =
+manpage = Number of Tilt runs per command file (chunk).  The program will
+create chunks with this number of runs, or with more runs to keep the total
+number of chunks under 100,000.  This option cannot be entered with
+\fB-proc\fR.  The default is 10.
+
+[Field = usage]
+short = help
+type = B
+usage = Print help output
+tooltip = 
+manpage = 

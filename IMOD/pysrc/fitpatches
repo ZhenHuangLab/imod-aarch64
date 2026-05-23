@@ -1,0 +1,214 @@
+#!/usr/bin/env python
+# fitpatches - program to manage patch models and patch text files and do
+# global and local fitting to them
+#
+# Author: David Mastronarde
+#
+# $Id$
+#
+
+progname = 'fitpatches'
+prefix = 'ERROR: ' + progname + ' - '
+
+
+#### MAIN PROGRAM  ####
+#
+# load System Libraries
+import os, sys
+
+#
+# Setup runtime environment
+if os.getenv('IMOD_DIR') != None:
+   sys.path.insert(0, os.path.join(os.environ['IMOD_DIR'], 'pylib'))
+   from imodpy import *
+   addIMODbinIgnoreSIGHUP()
+else:
+   sys.stdout.write(prefix + " IMOD_DIR is not defined!\n")
+   sys.exit(1)
+
+#
+# load IMOD Libraries
+from pip import *
+from supermont import *
+
+setSMErrorPrefix(prefix)
+
+# Initializations
+scale = 10.
+targets = '0.3,0.5,0.75,1.,1.25,1.5'
+clipsize = 600
+
+
+# Fallbacks from ../manpages/autodoc2man 3 1 fitpatches
+options = ["info:InfoFile:FN:", "xrun:XRunStartEnd:IP:",
+           "yrun:YRunStartEnd:IP:", "zrun:ZRunStartEnd:IP:",
+           "target:TargetMeanResidual:FA:", "clip:ClippingPlaneBoxSize:I:",
+           "scale:ScaleFactor:F:", "rescale:RescaleModels:B:"]
+
+(numOpts, numNonOpts) = PipReadOrParseOptions(sys.argv, options, progname, 1, \
+                                              1, 0)
+infofile = PipGetInOutFile('InfoFile', 0)
+if not infofile:
+   exitError(" Info file name must be entered")
+
+if not os.path.exists(infofile):
+   exitError(fmtstr(" Info file {} does not exist", infofile))
+
+# Initialize dictionary arrays, then read existing info file 
+predata = {}
+pieces = []
+edges = []
+slices = []
+readMontInfo(infofile, predata, slices, pieces, edges)
+
+xrunStart, yrunStart, zrunStart = -10000, -10000, -10000
+xrunEnd, yrunEnd, zrunEnd = 10000, 10000, 10000
+
+xrunStart, xrunEnd = PipGetTwoIntegers('XRunStartEnd', xrunStart, xrunEnd)
+yrunStart, yrunEnd = PipGetTwoIntegers('YRunStartEnd', yrunStart, yrunEnd)
+zrunStart, zrunEnd = PipGetTwoIntegers('ZRunStartEnd', zrunStart, zrunEnd)
+targets = PipGetString('TargetMeanResidual', targets)
+scale = PipGetFloat('ScaleFactor', scale)
+rescale = PipGetBoolean('RescaleModels', 0)
+
+
+# Scan Z values
+(xmin, xmax, ymin, ymax, zmin, zmax, zlist) = montMinMax(pieces)
+
+xrunStart = max(xmin, xrunStart)
+xrunEnd = min(xmax, xrunEnd)
+yrunStart = max(ymin, yrunStart)
+yrunEnd = min(ymax, yrunEnd)
+zrunStart = max(zmin, zrunStart)
+zrunEnd = min(zmax, zrunEnd)
+wroteFile = 0
+for z in range(zrunStart, zrunEnd + 1):
+   delx = 1
+   dely = 0
+   for xory in ('X', 'Y'):
+      for x in range(xrunStart, xrunEnd + dely):
+         for y in range(yrunStart, yrunEnd + delx):
+            addedKeys = 0
+            for edge in edges:
+               if edge[kXorY] == xory and edge[kLower][0] == x \
+                  and edge[kLower][1] == y and edge[kLower][2] == z and \
+                  kPatch in edge:
+
+                  prnstr("\n\nPROCESSING PATCH FILES FOR EDGE " + edge['name'])
+                  madeReduced = 0
+
+                  # Update the patch files from the models
+                  modname = changeExtension(edge[kPatch], "_ccc.mod")
+                  updatedOrig = updatePatchFromModel(edge[kPatch], modname)
+                  updatedReduce = 0
+                  if kReduce in edge:
+                     modname = changeExtension(edge[kReduce], ".mod")
+                     updatedReduce = updatePatchFromModel(edge[kReduce],
+                                                          modname)
+                     if updatedReduce:
+                        if not kRedEdit in edge:
+                           addedKeys = 1
+                        edge[kRedEdit] = 1
+                  updatedResid = 0
+                  if kResid in edge:
+                     modname = changeExtension(edge[kResid], ".mod")
+                     updatedResid = updatePatchFromModel(edge[kResid], modname)
+                     if updatedResid:
+                        if not kResEdit in edge:
+                           addedKeys = 1
+                        edge[kResEdit] = 1
+
+                  try:
+
+                     # Process original to reduced if reduced wasn't ever
+                     # edited and original was updated, or if reduced doesn't
+                     # exist
+                     if (updatedOrig and not kRedEdit in edge) or \
+                            not kReduce in edge:
+                        reduceName = edge['name'] + "_reduce.patch"
+                        input = ['PatchFile ' + edge[kPatch],
+                                 'VolumeOrSizeXYZ 6000 6000 200',
+                                 'ReducedVectorOutput ' + reduceName,
+                                 'MeanResidualLimit 1000']
+                        prnstr("\nRunning Refinematch to make reduced vector"+\
+                              " patches with CCC values")
+                        runcmd('refinematch -StandardInput', input)
+                        if not kReduce in edge:
+                           addedKeys = 1
+                        edge[kReduce] = reduceName
+                        madeReduced = 1
+
+                     elif updatedOrig and not updatedReduce:
+                        prnstr("Not updating reduced patches from original " +\
+                              "patches because\n reduced patches were " + \
+                              "edited previously")
+
+                     if madeReduced or rescale:
+                        modname = edge['name'] + '_reduce.mod'
+                        patchcom = fmtstr('patch2imod -s {:f} -c {} -d -f -n ' +\
+                                          '"Values are CCCs; clip planes ' +\
+                                          'exist" {} {}', scale, clipsize,
+                                          edge[kReduce], modname)
+                        runcmd(patchcom, None)
+
+                     # We are going to run findwarp regardless - set up to run
+                     # it in place on existing resid patches, then see if it
+                     # should be run on reduce instead
+                     residInFile = edge['name'] + "_resid.patch"
+                     residname = residInFile
+                     if (((updatedOrig and madeReduced) or updatedReduce) and \
+                         not kResEdit in edge) or \
+                         not kResid in edge:
+                        residInFile = edge['name'] + "_reduce.patch"
+                     elif ((updatedOrig and madeReduced) or updatedReduce) \
+                          and not updatedResid:
+                        prnstr("Not updating residual patches from reduced " +\
+                              "patches because\n residual patches were " +\
+                              "edited previously")
+                          
+                     tmpname = edge['name'] + "_resid.tmppatch"
+                     input = ['PatchFile ' + residInFile,
+                              'VolumeOrSizeXYZ 6000 6000 200',
+                              'ResidualPatchOutput ' + tmpname,
+                              'TargetMeanResidual ' + targets]
+                     prnstr('\nRunning Findwarp on patches in ' + residInFile+\
+                           " to make new patches with residual values")
+                     try:
+                        fwout = runcmd('findwarp -StandardInput', input, \
+                                       'stdout')
+                     except ImodpyError:
+                        prnstr(" ")
+
+                     # And now we rename the temp file and make a new model
+                     makeBackupFile(residname)
+                     try:
+                        os.rename(tmpname, residname)
+                     except:
+                        exitError("Error renaming " + tmpname + " to " +\
+                                  residname)
+
+                     if not kResid in edge:
+                        addedKeys = 1
+                     edge[kResid] = residname
+                     modname = edge['name'] + '_resid.mod'
+                     patchcom = fmtstr('patch2imod -s {:f} -c {} -d -f -n ' +\
+                                       '"Values are residuals; clip planes ' +\
+                                       'exist" {} {}', scale, clipsize,
+                                       residname, modname)
+                     runcmd(patchcom, None)
+
+
+                  except ImodpyError:
+                     exitFromImodError(progname)
+
+            if addedKeys:
+               writeMontInfo(infofile, predata, slices, pieces, edges)
+               wroteFile = 1
+
+      # Bottom of loop on x or y: switch direction increments
+      delx = 0
+      dely = 1
+
+
+if wroteFile:
+   prnstr('\nNew info file written')

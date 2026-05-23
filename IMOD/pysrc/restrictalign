@@ -1,0 +1,383 @@
+#!/usr/bin/env python
+# restrictalign - script to restrict tilt alignment parameters based on number of bead
+#
+# Author: David Mastronarde
+#
+# $Id$
+#
+
+progname = 'restrictalign'
+prefix = 'ERROR: ' + progname + ' - '
+
+# A set of indices to the variable array
+ROT_OPT = 0
+ROT_GROUP = 1
+MAG_OPT = 2
+MAG_GROUP = 3
+TILT_OPT = 4
+SKEW_OPT = 5
+XSTRETCH_OPT = 6
+BEAM_TILT_OPT = 7
+xTILT_OPT = 8
+XTILT_GROUP = 9
+PROJ_STRETCH = 10
+SKEW_GROUP = 11
+XSTRETCH_GROUP = 12
+TILT_GROUP = 13
+
+# Tiltalign option values
+TA_ONE_ROT = -1
+TA_GROUP_ROT = 3
+TA_ALL_ROT = 1
+TA_ALL_MAG = 1
+TA_GROUP_MAG = 3
+TA_ALL_TILT = 2
+TA_GROUP_TILT = 5
+TA_GROUP_SKEW = 3
+TA_GROUP_XSTRETCH = 3
+TA_BEAM_TILT = 2
+TA_LINEAR_XTILT = 3
+TA_BLOCK_XTILT = 4
+
+# Restrictions
+RES_GROUP_ROTS = 1
+RES_ONE_ROT = 2
+RES_FIX_TILTS = 3
+RES_GROUP_MAGS = 4
+RES_FIX_MAGS = 5
+
+# Compute number of variables for a grouped parameter
+def groupedUnknowns(size):
+   if size <= 1:
+      return numViews
+   return (numViews + max(1, size) - 1) // max(1, size) + 1
+
+
+# Estimate the ratio of measurements to unknowns
+def measuredToUnknown(param):
+   measured = numPoints * 2.
+   unknowns = 3. * (numBeads - 1) + 2. * (numViews - 1)
+   if param[ROT_OPT] == TA_ALL_ROT:
+      unknowns += numViews
+   elif param[ROT_OPT] == TA_GROUP_ROT:
+      unknowns += groupedUnknowns(param[ROT_GROUP])
+   elif param[ROT_OPT] == TA_ONE_ROT:
+      unknowns += 1
+   if param[TILT_OPT] == TA_GROUP_TILT:
+      unknowns += groupedUnknowns(param[TILT_GROUP])
+   elif param[TILT_OPT] == TA_ALL_TILT:
+      unknowns += numViews - 1
+   if param[MAG_OPT] == TA_ALL_MAG:
+      unknowns += numViews - 1
+   elif param[MAG_OPT] == TA_GROUP_MAG:
+      unknowns += groupedUnknowns(param[MAG_GROUP])
+   if param[SKEW_OPT] == TA_GROUP_SKEW:
+      unknowns += groupedUnknowns(param[SKEW_GROUP])
+   if param[XSTRETCH_OPT] == TA_GROUP_XSTRETCH:
+      unknowns += groupedUnknowns(param[XSTRETCH_GROUP])
+   if param[xTILT_OPT] == TA_LINEAR_XTILT or param[xTILT_OPT] == TA_BLOCK_XTILT:
+      unknowns += groupedUnknowns(param[XTILT_GROUP])
+   if param[BEAM_TILT_OPT]:
+      unknowns += 1
+   if param[PROJ_STRETCH]:
+      unknowns += 1
+   return measured / unknowns
+
+
+# Change one of the rotation, mag, or tilt and/or its grouping
+def setOptAndGrouping(optInd, groupInd, groupOpt, variable, prefix):
+   opt = newParam[optInd]
+   if origParam[optInd] != opt:
+      if not opt:
+         prnstr('Turned off solving for ' + variable)
+      elif opt == groupOpt:
+         prnstr('Turned on grouping of ' + variable + 's')
+      elif variable == 'rotation' and opt == TA_ONE_ROT:
+         prnstr('Switched to solving for one rotation')
+      sedcom.append(sedModify(prefix + 'Option', opt))
+   if opt == groupOpt and origParam[groupInd] != newParam[groupInd]:
+      prnstr('Changed ' + variable + ' grouping to ' + str(newParam[groupInd]))
+      sedcom.append(sedModify(prefix + 'DefaultGrouping', newParam[groupInd]))
+
+
+#### MAIN PROGRAM  ####
+#
+# load System Libraries
+import os, sys, copy, math
+
+#
+# Setup runtime environment
+if os.getenv('IMOD_DIR') != None:
+   sys.path.insert(0, os.path.join(os.environ['IMOD_DIR'], 'pylib'))
+   from imodpy import *
+   addIMODbinIgnoreSIGHUP()
+else:
+   sys.stdout.write(prefix + " IMOD_DIR is not defined!\n")
+   sys.exit(1)
+
+#
+# load IMOD Libraries
+from pip import *
+from pysed import *
+
+# Fallbacks from ../manpages/autodoc2man 3 1 restrictalign
+options = ["align:AlignCommandFile:FN:", "fiducials:NumberOfFiducials:I:",
+           "views:NumberOfViews:I:", "target:TargetMeasurementRatio:F:",
+           "minimum:MinMeasurementRatio:F:", "order:OrderOfRestrictions:IA:",
+           "skipbeam:SkipBeamTiltWithOneRot:B:"]
+
+# default in adoc = 1, 4, 3, 2, 5 will override this
+order = [RES_GROUP_ROTS, RES_GROUP_MAGS, RES_FIX_TILTS, RES_ONE_ROT, RES_FIX_MAGS]
+minMagGrouping = 4
+minRotGrouping = 5
+minTiltGrouping = 5
+
+(opts, nonopts) = PipReadOrParseOptions(sys.argv, options, progname, 1, 1, 0)
+
+comfile = PipGetInOutFile('AlignCommandFile', 0)
+if not comfile:
+   exitError('The name of the tiltalign command file must be entered')
+
+comLines = readTextFile(comfile)
+
+# Get the order of actions and check it
+orderArr = PipGetIntegerArray('OrderOfRestrictions', 0)
+for ind in range(min(len(orderArr), len(order))):
+   order[ind] = orderArr[ind]
+for action in order:
+   if order.count(action) > 1:
+      exitError(fmtstr('Restriction {} is in the order list more than once', action))
+   if action < 1 or action > len(order):
+      exitError(fmtstr('Restriction entry {} is outside the allowed range of 1 to {}',
+                       action, len(order)))
+
+numViews = PipGetInteger('NumberOfViews', -1)
+if not PipGetErrNo() and numViews < 1:
+   exitError('The number of views entered must be positive')
+
+numBeads = PipGetInteger('NumberOfFiducials', -1)
+if not PipGetErrNo() and numBeads < 1:
+   exitError('The number of beads entered must be positive')
+targetRatio = PipGetFloat('TargetMeasurementRatio', 3.6)   # default in adoc
+minRatio = PipGetFloat('MinMeasurementRatio', 3.2)         # default in adoc
+skipBeamTilt = PipGetBoolean('SkipBeamTiltWithOneRot', 0)
+
+# Get the model file and number of beads from the model file
+numPoints = 0
+if numBeads < 0:
+   modelFile = optionValue(comLines, 'ModelFile', STRING_VALUE)
+   if not modelFile:
+      exitError('The number of fiducials was not entered and a ModelFile entry ' +\
+                   'cannot be found in ' + comfile)
+   if not os.path.exists(modelFile):
+      exitError('The number of fiducials was not entered and the model file ' + modelFile
+                + ' does not exist')
+   try:
+      infoLines = runcmd('imodinfo "' + modelFile + '"')
+   except ImodpyError:
+      exitError('The number of fiducials was not entered and an error occurred ' +\
+                   'running imodinfo on the model file ' + modelFile)
+
+   numBeads = 0
+   conMatch = re.compile('^\s*CONTOUR\s#\S*\s*([0-9]*)\s*points.*')
+   for line in infoLines:
+      if re.match(conMatch, line):
+         contPoints = convertToInteger(re.sub(conMatch, r'\1', line),
+                                       'number or contour points in imodinfo output')
+         if contPoints > 1:
+            numBeads += 1
+            numPoints += contPoints
+
+   if not numBeads:
+      exitError('The number of fiducials was not entered and the model file ' + modelFile
+                + ' has no contours with more than one point')
+
+# Get the image file and number of views from it if not entered
+if numViews < 0:
+   imageFile = optionValue(comLines, 'ImageFile', STRING_VALUE)
+   if not imageFile:
+      exitError('The number of views was not entered and a ImageFile entry ' +\
+                   'cannot be found in ' + comfile)
+   if not os.path.exists(imageFile):
+      exitError('The number of views was not entered and the image file ' + imageFile
+                + ' does not exist')
+   try:
+      (nx, ny, numViews) = getmrcsize(imageFile)
+   except ImodpyError:
+      exitError('The number of views was not entered and an error occurred ' +\
+                   'running header on the image file ' + imageFile)
+
+# if no model, now set number of points assuming a complete model
+if not numPoints:
+   numPoints = numBeads * numViews
+      
+# Determine the current state of the parameters
+origParam = 15 * [None]
+origParam[ROT_OPT] = optionValue(comLines, 'RotOption', INT_VALUE, numVal = 1)
+origParam[ROT_GROUP] = optionValue(comLines, 'RotDefaultGrouping', INT_VALUE,
+                                   numVal = 1)
+origParam[MAG_OPT] = optionValue(comLines, 'MagOption', INT_VALUE, numVal = 1)
+origParam[MAG_GROUP] = optionValue(comLines, 'MagDefaultGrouping', INT_VALUE,
+                                   numVal = 1)
+origParam[TILT_OPT] = optionValue(comLines, 'TiltOption', INT_VALUE, numVal = 1)
+origParam[TILT_GROUP] = optionValue(comLines, 'TiltDefaultGrouping', INT_VALUE,
+                                    numVal = 1)
+origParam[SKEW_OPT] = optionValue(comLines, 'SkewOption', INT_VALUE, numVal = 1)
+origParam[SKEW_GROUP] = optionValue(comLines, 'SkewDefaultGrouping', INT_VALUE,
+                                    numVal = 1)
+origParam[XSTRETCH_OPT] = optionValue(comLines, 'XStretchOption', INT_VALUE, numVal = 1)
+origParam[XSTRETCH_GROUP] = optionValue(comLines, 'XStretchDefaultGrouping', INT_VALUE,
+                                        numVal = 1)
+origParam[BEAM_TILT_OPT] = optionValue(comLines, 'BeamTiltOption', INT_VALUE, numVal = 1)
+origParam[xTILT_OPT] = optionValue(comLines, 'XTiltOption', INT_VALUE, numVal = 1)
+origParam[XTILT_GROUP] = optionValue(comLines, 'XTiltDefaultGrouping', INT_VALUE,
+                                     numVal = 1)
+origParam[PROJ_STRETCH] = optionValue(comLines, 'ProjectionStretch', BOOL_VALUE)
+localAlign = optionValue(comLines, 'LocalAlignments', BOOL_VALUE)
+robustAlign = optionValue(comLines, 'RobustFitting', BOOL_VALUE)
+
+# Copy parameter and change None entry to 0
+newParam = copy.deepcopy(origParam)
+for ind in range(len(origParam)):
+   if newParam[ind] == None:
+      newParam[ind] = 0
+
+newRatio = measuredToUnknown(newParam)
+
+# batchruntomo looking for 'No restriction'
+if newRatio >= targetRatio:
+   prnstr(progname + ': No restriction of parameters needed')
+   sys.exit(0)
+
+oneBead = numBeads == 1
+for orderInd in range(-1, len(order)):
+   nextParam = copy.deepcopy(newParam)
+
+   # Turn off hard variables on first round
+   if orderInd < 0:
+      if newParam[SKEW_OPT]:
+         nextParam[SKEW_OPT] = 0
+      if newParam[XSTRETCH_OPT]:
+         nextParam[XSTRETCH_OPT] = 0
+      if newParam[xTILT_OPT] and (newParam[XTILT_GROUP] < numViews or numBeads < 3):
+         nextParam[xTILT_OPT] = 0
+      if newParam[TILT_OPT] == TA_ALL_TILT \
+             or (newParam[TILT_OPT] == TA_GROUP_TILT \
+                    and newParam[TILT_GROUP] < minTiltGrouping):
+         nextParam[TILT_OPT] = TA_GROUP_TILT
+         nextParam[TILT_GROUP] = max(nextParam[TILT_GROUP], minTiltGrouping)
+      restrict = 0
+   else:
+      restrict = order[orderInd]
+
+   # Handle switching to grouped rots of minimum group size and to one rot
+   if restrict == RES_GROUP_ROTS and (newParam[ROT_OPT] == TA_ALL_ROT or \
+                                       (newParam[ROT_OPT] == TA_GROUP_ROT and \
+                                           newParam[ROT_GROUP] < minRotGrouping)):
+      nextParam[ROT_OPT] = TA_GROUP_ROT
+      nextParam[ROT_GROUP] = max(minRotGrouping, nextParam[ROT_GROUP])
+   elif restrict == RES_ONE_ROT and newParam[ROT_OPT] > 0:
+      nextParam[ROT_OPT] = TA_ONE_ROT
+      if not skipBeamTilt:
+         nextParam[BEAM_TILT_OPT] = 2
+
+   # Handle fixing tilts
+   if restrict == RES_FIX_TILTS or oneBead:
+      nextParam[TILT_OPT] = 0
+
+   # Handle fixing mags or grouping them
+   if restrict == RES_FIX_MAGS or oneBead:
+      nextParam[MAG_OPT] = 0
+   elif restrict == RES_GROUP_MAGS and (newParam[MAG_OPT] == TA_ALL_MAG or \
+                                         (newParam[MAG_OPT] == TA_GROUP_MAG and \
+                                             newParam[MAG_GROUP] < minMagGrouping)):
+      nextParam[MAG_GROUP] = minMagGrouping
+      nextParam[MAG_OPT] = TA_GROUP_MAG
+
+   # Fix everything else if one bead; skip beam tilt and projection stretch for 2
+   if oneBead:
+      nextParam[ROT_OPT] = 0
+   if numBeads < 3:
+      nextParam[PROJ_STRETCH] = 0
+      nextParam[BEAM_TILT_OPT] = 0
+
+   # Get the ratio on the next restriction and see if it is good enough or if there is
+   # just one bead
+   nextRatio = measuredToUnknown(nextParam)
+   if oneBead or nextRatio >= targetRatio:
+
+      # Adopt the next parameter set if one bead, or last ratio below the minimum, or
+      # the next one is closer to target
+      if oneBead or newRatio < minRatio or \
+             math.fabs(newRatio - targetRatio) > math.fabs(nextRatio - targetRatio):
+         newParam = copy.deepcopy(nextParam)
+         newRatio = nextRatio
+      break
+
+   # Otherwise shift the next set into the "new" set for the next iteration
+   newParam = copy.deepcopy(nextParam)
+   newRatio = nextRatio
+
+
+# After all that, are there any changes?  If not, exit
+robustOff = robustAlign and newRatio < minRatio
+noParamChange = False
+for ind in range(len(origParam)):
+   if (not origParam[ind] and newParam[ind]) or \
+          origParam[ind] and origParam[ind] != newParam[ind]:
+      break
+else:     # ELSE ON FOR
+   noParamChange = True
+   if not robustOff:
+      prnstr(progname + ': No restriction of parameters needed')
+      sys.exit(0)
+
+# Now that we know what to do, build up the sed command for the changes and list them
+sedcom = []
+if noParamChange:
+   prnstr(fmtstr('{}: Changed {} given the measured/unknown ratio of ~{:.1f}', progname,
+              comfile, newRatio))
+else:
+   prnstr(fmtstr('{}: Changed {} to achieve measured/unknown ratio of ~{:.1f}', progname,
+                 comfile, newRatio))
+if localAlign:
+   prnstr('Turned off local alignments')
+   sedcom.append(sedModify('LocalAlignments', 0))
+
+# batchruntomo looking for 'off robust'
+if robustOff:
+   prnstr('Turned off robust fitting because ratio is so low')
+   sedcom.append(sedModify('RobustFitting', 0))
+if origParam[XSTRETCH_OPT] and not newParam[XSTRETCH_OPT]:
+   prnstr('Turned off solving for X stretch')
+   sedcom.append(sedModify('XStretchOption', 0))
+   sedcom.append(sedModify('LocalXStretchOption', 0))
+if origParam[SKEW_OPT] and not newParam[SKEW_OPT]:
+   prnstr('Turned off solving for skew')
+   sedcom.append(sedModify('SkewOption', 0))
+   sedcom.append(sedModify('LocalSkewOption', 0))
+if origParam[PROJ_STRETCH] and not newParam[PROJ_STRETCH]:
+   prnstr('Turned off solving for projection stretch')
+   sedcom.append(sedModify('ProjectionStretch', 0))
+
+setOptAndGrouping(ROT_OPT, ROT_GROUP, TA_GROUP_ROT, 'rotation', 'Rot')
+setOptAndGrouping(TILT_OPT, TILT_GROUP, TA_GROUP_TILT, 'tilt angle', 'Tilt')
+setOptAndGrouping(MAG_OPT, MAG_GROUP, TA_GROUP_MAG, 'magnification', 'Mag')
+
+if origParam[xTILT_OPT] and not newParam[xTILT_OPT]:
+   prnstr('Turned off solving for X-axis tilt')
+   sedcom.append(sedModify('XTiltOption', 0))
+
+beamOpt = newParam[BEAM_TILT_OPT]
+if (not origParam[BEAM_TILT_OPT] and beamOpt) or \
+       origParam[BEAM_TILT_OPT] and origParam[BEAM_TILT_OPT] != beamOpt:
+   if beamOpt:
+      prnstr('Added beam tilt solution because solving for only one rotation')
+   else:
+      prnstr('Turned off solving for beam tilt')
+   sedcom += sedDelAndAdd('BeamTiltOption', beamOpt, 'OutputTransformFile')
+
+makeBackupFile(comfile)
+pysed(sedcom, comLines, comfile)
+sys.exit(0)
+

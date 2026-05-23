@@ -1,0 +1,34 @@
+Version = 2.1
+
+[flatten-volume = run]
+get.instance.gpu=
+set.adoc.function = gpu.adoc
+run.external.function.go=
+run.function.gpu-test=
+
+
+[function = gpu-test]
+[[if = test-gui]]
+	#check values
+	#assert.tf.#-of-minutes=1
+	#assert.sp.gpu-#=0
+	#check enabled/disabled
+	#assert.enabled.tf.#-of-minutes=
+  #assert.enabled.sp.gpu-#=
+  #assert.enabled.bn.run-gpu-test=
+  #test field validation
+  #tf.#-of-minutes=1abc
+  #bn.run-gpu-test=
+  #popup.field-validation-failed=OK
+  #assert.disabled.bn.kill-process=
+  #tf.#-of-minutes=1
+[[]]
+#tf.#-of-minutes=.5
+#bn.run-gpu-test=
+#wait.popup.gputilttest-succeeded=OK
+#wait.process.running-gputilttest=done
+sp.gpu-#=8
+bn.run-gpu-test=
+popup.gputilttest-terminated=OK
+wait.process.running-gputilttest=failed
+assert.exists.file= gputest.log

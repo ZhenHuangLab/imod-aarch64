@@ -1,0 +1,352 @@
+Version = 1.0
+Pip = 1
+
+[Field = WatchDirectory]
+short = watch
+type = CH
+usage = Directory in which to find Alignframes command files or stacks
+tooltip =
+manpage = Directory to watch for Alignframes(1) command files, whose extension
+should be .pcm, or stacks, whose extension should be .mrc or .tif.
+
+[Field = OutputDirectory]
+short = output
+type = CH
+usage = Directory in which to write aligned sums and other output
+tooltip =
+manpage = Directory in which to write aligned sums and other output.  This
+directory must already exist.  By
+default, files are written to the command file directory.  
+
+[Field = ProcessedDirectory]
+short = processed
+type = CHM
+usage = Directory into which finished frame stacks will be moved
+tooltip =
+manpage = One or more directories into which frame stacks will be moved when they are
+finished being processed.  If a relative path is entered, it will be treated
+as relative to the watched directory, not the current directory.  The
+directory will be created if it does not exist.  If multiple
+directories are entered, the program will cycle through them.  When a
+command file to process a single frame file is done, the program will move the
+stack, command file, and log file into the directory.  If this directory is on
+another filesystem, the files will be copied there and deleted from their
+current location.  If the command file has options to use a gain reference
+file or a defect correction file, copies of these files will also be
+maintained in the processed directory.  Alternatively, when moving files
+without a command file, the program will look for the names of the gain and
+defect files in the stack header and make sure there are copies of those.
+When a command file to process a whole
+tilt series is done, nothing is moved unless the last component of the path to
+the frame files is the same as the tilt series root name.  SerialEM will write
+files in this way if the option to use the file name of the current open file
+in the name of the frame stack folder is selected in the Frame File Options
+dialog.  In that case, the directory itself is moved to the processed
+directory, since it can be assumed not to contain other frame stacks to be
+processed.  If this \fB-processed\fR option is not
+entered, the program will just rename each ".pcm" file used to align the frames
+to "...pcm.done".
+
+[Field = MasterCommandFile]
+short = master
+type = FN
+usage = Name of command file to use if watching for frame stacks
+tooltip =
+manpage = Name of a command file to use if watching for frame stacks 
+instead ".pcm" files.  For each stack, the entries will be modified appropriately,
+a file will be written with the root name of the stack plus ".pcm", and that
+file will be run.  This master file should have either commands to run
+Alignframes(1) (including lines with the options "InputFile" and
+"OutputImageFile") or entries INPUTFILE and OUTPUTFILE that will be substituted
+with the names of the frame stack and aligned sum file, respectively.  If a
+file contains Alignframes(1) options to apply a gain reference or defect file,
+the specified files will be used without any checking for whether there is a
+newer file that applies to the current frames.  Thus, be sure these entries are
+correct for the current session before using a command file with such entries.
+
+[Field = NoCommandFile]
+short = nocom
+type = B
+usage = Just watch for frame stacks without a command file to run
+tooltip = 
+manpage = Just watch for frame stacks without running a command file.  This
+option cannot be entered with \fB-master\fR and must be accompanied by either
+\fB-processed\fR, \fB-before\fR, or \fB-after\fR; i.e., there must be
+something for the program to do with each stack.  If a command file does
+exist with the same root name as the stack, it will be copied also.
+
+[Field = MinimumAgeOfStacks]
+short = age
+type = F
+usage = Time since last modification of a stack before starting to process it
+tooltip = 
+manpage = When watching for frame stacks, use this option to set the minimum time
+interval between the last detected change in the modification time of the stack
+and starting to process the stack.  The default is 15 seconds.
+
+[Field = UseGPU]
+short = gpu
+type = I
+usage = Use GPU for computation; 0 for best available one or number of GPU
+tooltip =
+manpage = Use the GPU (graphical processing unit) for computations;
+enter 0 to use the best GPU on the system, or the number of a
+specific GPU (numbered from 1).  This entry overrides whatever was originally
+written into the command file.
+
+[Field = BinningOfSum]
+short = binning
+type = I
+usage = Image reduction to apply to summed frames
+tooltip =
+manpage = Image reduction to apply to summed frames; this will override the
+value in the command files, which was set from the 
+binning of the image returned to SerialEM.
+
+[Field = ScalingOfSum]
+short = sumscale
+type = F
+usage = Amount to scale summed values before output
+tooltip = 
+manpage = Amount to scale summed values before output; this will override the
+value in the command files, which was set to match the scaling of images
+returned to SerialEM.  If dose-weighting is being used without the
+\fB-dnorm\fR option, additional scaling may be needed to preserve intensity
+resolution in highly filtered images.
+
+[Field = DosesInMetadataFile]
+short = dmdoc
+type = B
+usage = Do dose weighting with dose values in metadata (".mdoc") file
+tooltip =
+manpage = Do dose weighting with dose values in metadata file, if it is
+present.  This entry will lead to an entry "TypeOfDoseFile 4" in the ".pcm" file
+and remove entries for FixedTotalDose or FixedFrameDoses.  When frames sets
+are being aligned for a whole tilt series, the metadata file entry is already
+present in the ".pcm" file.  In other cases, the program will look for a frame
+stack ".mdoc" file, i.e., a file with ".mdoc" appended to the name of the input
+stack.  If this file is present, the MetadataFile option will be added to the
+".pcm" file; otherwise nothing will be added.  This option cannot be entered
+with \fB-dframe\fR or \fB-dtotal\fR.
+
+[Field = FixedTotalDose]
+short = dtotal
+type = F
+usage = Total dose for each set of frames, in electrons/square Angstrom
+tooltip =
+manpage = Total dose for each set of frames (not for entire tilt series), in
+electrons/square Angstrom. This entry will lead to a corresponding entry in
+the ".pcm" file, replacing an existing one if any, and remove
+entries for TypeOfDoseFile or FixedFrameDoses.  This option cannot be entered
+with \fB-dmdoc\fR or \fB-dframe\fR.
+
+[Field = FixedFrameDoses]
+short = dframe
+type = F
+usage = List of frame doses and numbers that applies to all frame sets
+tooltip =
+manpage = List of frame doses and numbers that applies to all sets of frames.
+The list is a set of paired numbers: a dose in electrons/square Angstrom and
+the number of frames taken at that dose (e.g., enter "2,10,4,5" for 10
+frames of 2 e/A^2 and 5 frames of 4 e/A^2).  This entry will lead to a
+corresponding entry in the ".pcm" file, replacing an existing one if any, and
+remove entries for TypeOfDoseFile or FixedTotalDose.
+This option cannot be entered with \fB-dmdoc\fR or \fB-dtotal\fR.
+
+[Field = InitialPriorDose]
+short = dprior
+type = F
+usage = Dose applied before any of the images in each frame set were taken
+tooltip =
+manpage = Dose applied before any of the images in each frame set were taken;
+this value will lead to a corresponding entry in the ".pcm" file, replacing an
+existing one if any.
+
+[Field = NormalizeDoseWeighting]
+short = dnorm
+type = B
+usage =  Normalize the dose weight filters to sum to 1 within each frame set
+tooltip =
+manpage = Normalize the dose weight filters so that they add up to to 1.0
+within each set of frames.  This entry will lead to a corresponding entry in
+the ".pcm" file.  It is useful for tilt series where dose weighting of the
+tilt images is to be done in a later step.
+
+[Field = UnweightedFileSuffix]
+short = unweight
+type = CH
+usage = Suffix for output file with non-dose weighted summed images
+tooltip =
+manpage = Suffix for name of output file of summed images that have not been dose
+weighted, created in addition to the dose-weighted images placed in the main output
+file.  The file will be named with _suffix.mrc after the stack root name.
+
+[Field = Voltage]
+short = volt
+type = I
+usage =  Microscope voltage in kV; must be either 200 or 300 
+tooltip =
+manpage = Microscope voltage in kV; this value must be either 200 or 300.  
+This entry will lead to a
+corresponding entry in the ".pcm" file, replacing an existing one if any; if
+none is entered, the default in Alignframes(1) is 300 kV.
+
+[Field = DriftLimitDistAndNumber]
+short = drift
+type = FP
+usage = Shift above which to drop initial frames, and max # or fraction to
+drop
+tooltip =
+manpage = Maximum shift between frames above which to drop initial frames of
+the set (in unbinned pixels), and either the maximum fraction or the maximum
+number of frames to drop.  This entry will lead to a corresponding entry in
+the ".pcm" file. It is particularly useful for single-exposure (frame) tilt
+series.
+
+[Field = ReducedSum]
+short = reduce
+type = I
+usage = Image reduction or target size for small copy of sum
+tooltip =
+manpage = Amount to reduce image by, or target size, to get a reduced copy of
+the summed image.  A value of 32 or less will be taken as the shrinkage
+factor, and a value greater than 32 will be taken as the target size to shrink
+too.  In the latter case, the geometric mean of the X and Y size will be
+divided by the target size and rounded to an integer.  The output file will be
+named as the stack root name followed by "_redN.mrc", where N is the reduction
+factor.  The file will be placed in the same directory as the aligned sum
+unless a different destination  is specified with the \fB-thumb\fR option.  If
+the summed file is a tilt series, only the middle image will be used.
+
+[Field = PowerSpectrum]
+short = power
+type = I
+usage = Height for JPEG of side-by-side reduced sum and power spectrum
+tooltip =
+manpage = Height for a JPEG file with a side-by-side reduced sum and
+reduced power spectrum.  The summed image will be reduced by exactly the
+amount to give the specified height.  The power spectrum will be computed on
+the full-sized summed image and reduced to the given height, so it shows all
+the frequencies in the summed image.  The output file will be named as the
+stack root name followed by "_power.jpg".  The file will be placed in the
+same directory as the aligned sum unless a different destination is specified with
+the \fB-thumb\fR option.  If the summed file is a tilt series, only the middle
+image will be used.
+
+[Field = ScaleSpectrum]
+short = scale
+type = FP
+usage = Background gray level and saturated annulus diameter for spectrum
+tooltip =
+manpage = Background gray level near the edge of the power spectrum, and the
+relative diameter of the annulus around the center whose mean will be scaled
+to be white.  The default gray level is 48, and the default diameter is 0.02.
+Making the diameter smaller will saturate less area at the center of the power
+spectrum; making it bigger may give more dynamic range to show Thon rings away
+from the center.
+
+[Field = ThumbnailDirectory]
+short = thumb
+type = CH
+usage = Directory to place small sum or power spectrum into
+tooltip =
+manpage = Directory into which the reduced sums or power spectra will be
+written.  If this option is not entered, they will be placed in the same
+directory as the aligned sums.  The directory will be created if it does not
+exist.  
+
+[Field = RunCommandBefore]
+short = before
+type = CH
+usage = Command to run before a command file, if any
+tooltip =
+manpage = Command to run before running a command file, if any.  The command
+can include items enclosed in %{...} to be substituted with the actual values
+for the current frame stack.  These items include:
+^  %{frameFile} - Frame stack, including original path when watching for ".pcm" files
+^  %{outputFile} - Aligned sum output file, including path
+^  %{gainReference} - Gain reference file, including path
+^  %{defectFile} -  Defect file, including path
+^  %{rootName} - Root name of command file/stack 
+^  %{outputDir} - Directory entered with \fB-output\fR, if any
+^  %{processedDir} - Directory entered with \fB-processed\fR, if any
+^  %{reducedDir} - Directory entered with \fB-thumb\fR, if any
+^ The substituted text will be enclosed in double quotes, unless it is a root
+name with no spaces included.  Despite the quotes, it may be possible to
+concatenate these items with other text (it works in Linux).  The output file
+will not exist when a command is run before a command file.
+
+[Field = RunCommandAfter]
+short = after
+type = CH
+usage = Command to run after a command file, if any
+tooltip =
+manpage = Command to run after running a command file, if any.  The command
+can include the items enclosed in %{...} just described.  This command will be
+run after any moving or renaming of processed files, so the input stack may no
+longer exist by the same name.
+
+[Field = TextForNone]
+short = none
+type = CH
+usage = Text to substitute in command if file or directory is unavailable
+tooltip =
+manpage = Text to substitute in a command entered with \fB-before\fR or
+\fB-after\fR if the file or directory is not available for a particular item.
+The default is simply to remove the %{...} item if it has no value.
+Using a defined text such as "NONE" can make it easier for a script to parse
+the command, for example, because then each option entered to the script would
+always be followed by another token instead of a blank.
+
+[Field = KeepCommandLogs]
+short = keep
+type = B
+usage = Keep log files with output from running commands before or after
+tooltip =
+manpage = Keep log files with output from running commands before or after a
+command file.  The default is to write a log then delete it if there is no
+error.
+
+[Field = AvoidWindowsCopy]
+short = avoid
+type = I
+usage = 1 to not use Robocopy, 2 to not use Xcopy either
+tooltip =
+manpage = 1 to use Xcopy in Windows instead of Robocopy, or 2 to use neither
+Xcopy nor Robocopy.  In the latter case, Cygwin commands will be
+used when running through Cygwin or Python commands when running a Windows
+Python.  This option exists because Robocopy can give obscure failures in some
+cases.   Xcopy can do the same operations but is "deprecated".  Copies with
+Cygwin commands may be significantly slower in some cases (e.g., with a 10G
+network); copies of whole directories through Python may be incredibly slow.
+
+[Field = NicenessSetting]
+short = nice
+type = I
+usage = Priority at which to run jobs (higher is less, default 15)
+tooltip =
+manpage = Priority at which to run jobs, a number between 1 and 19, where a
+higher value has lower priority.  All values in this range are meaningfully
+different on Linux or Mac OS X, but they will be translated into a smaller
+selection of priority levels on Linux.  The default is 15.
+
+[Field = ThreadLimit]
+short = thread
+type = I
+usage = Limit on number of threads used for processing
+tooltip =
+manpage = Limit on number of threads used for processing. This value will be
+used to set OMP_NUM_THREADS, which sets an upper limit to the number of
+threads used for operations that are multi-threaded with OpenMP (image
+reductions, FFTs).  This thread number is already limited to the number of
+real cores when hyperthreading is enabled, but allowing that many threads may
+be counterproductive when other multi-threaded operations are running.
+You can determine the number of physical and logical cores by
+entering "imodqtassist -t" in a terminal.
+
+[Field = usage]
+short = help
+type = B
+usage = Print help output
+tooltip = 
+manpage = 

@@ -1,0 +1,19 @@
+.na
+.nh
+.TH convertmod 1 4.6.34 IMOD
+.SH NAME
+convertmod - to convert an IMOD model file to a WIMP model file
+.SH SYNOPSIS
+convertmod [inputFile] [outputFile]
+.SH DESCRIPTION
+Convertmod  will read in a model file (WIMP ASCII or IMOD) and
+output a WIMP-style ASCII model file.
+
+As of IMOD 4.10.12, the program accepts the input and output file names
+as command line arguments, or queries for the names if the arguments
+are not there.  When an IMOD model is read in, it is now written with
+the same C library routine used to write models from 3dmod, after
+undoing the scaling imposed when it was read in to this Fortran
+program.
+.SH BUGS
+Email bug reports to mast@colorado.edu.

@@ -1,0 +1,475 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>PrefScalingForm</class>
+ <widget class="QWidget" name="PrefScalingForm">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>311</width>
+    <height>446</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout_4">
+   <item>
+    <widget class="QCheckBox" name="loadUshortBox">
+     <property name="toolTip">
+      <string>Store images in program memory as 16-bit integers instead of converting to bytes</string>
+     </property>
+     <property name="text">
+      <string>Load non-byte data into program as 16-bit integers</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QCheckBox" name="loadIntIfMeanSDBox">
+     <property name="toolTip">
+      <string>When setting the limits for scaling data with mean and standard deviation, load as 16-bit integers to preserve dynamic range</string>
+     </property>
+     <property name="text">
+      <string>Load data as 16-bit when scaling by mean &amp;&amp; SD</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QCheckBox" name="loadIntIfEstimateBox">
+     <property name="toolTip">
+      <string>When scaling information is unavailable, load as 16-bit integers to avoid scanning integer files and preserve dynamic range</string>
+     </property>
+     <property name="text">
+      <string>Load data as 16-bit when scaling is estimated</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QCheckBox" name="preferMeanSDBox">
+     <property name="toolTip">
+      <string>Set scaling limits from mean and SD, if they are available, instead of from min and max</string>
+     </property>
+     <property name="text">
+      <string>Scale by mean &amp;&amp; SD whenever it is available</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <widget class="QLabel" name="label">
+       <property name="text">
+        <string>When scaling by mean &amp; SD, truncate at</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QSpinBox" name="truncateAtSpinBox">
+       <property name="toolTip">
+        <string>Truncate as black or white beyond this # of SDs from the mean when scaling limits are set from mean and SD</string>
+       </property>
+       <property name="minimum">
+        <number>2</number>
+       </property>
+       <property name="maximum">
+        <number>30</number>
+       </property>
+       <property name="value">
+        <number>6</number>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="label_2">
+       <property name="text">
+        <string>SDs</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout_2">
+     <item>
+      <widget class="QGroupBox" name="groupBox">
+       <property name="title">
+        <string>When files must be scanned to find scaling</string>
+       </property>
+       <layout class="QVBoxLayout" name="verticalLayout">
+        <property name="spacing">
+         <number>2</number>
+        </property>
+        <property name="topMargin">
+         <number>5</number>
+        </property>
+        <property name="bottomMargin">
+         <number>5</number>
+        </property>
+        <item>
+         <widget class="QRadioButton" name="fullScanButton">
+          <property name="toolTip">
+           <string>Read whole file to find min and max when scaling is unknown</string>
+          </property>
+          <property name="text">
+           <string>Do full scan for true min and max</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QRadioButton" name="subsetMinMaxButton">
+          <property name="toolTip">
+           <string>Scan 1 MB chunks at ~10 MB intervals to estimate min and max when scaling is unknown</string>
+          </property>
+          <property name="text">
+           <string>Scan subset to estimate min and max</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QRadioButton" name="subsetMeanSDButton">
+          <property name="toolTip">
+           <string>Scan 1 MB chunks at ~10 MB intervals to estimate the mean and SD when scaling is unknown</string>
+          </property>
+          <property name="text">
+           <string>Scan subset to estimate mean and SD</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer_2">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <widget class="QCheckBox" name="changeMRCstatsBox">
+     <property name="toolTip">
+      <string>After scanning to find scaling, insert min and max, or mean and SD, into MRC file header</string>
+     </property>
+     <property name="text">
+      <string>Modify MRC file header with values from scan</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout_4">
+     <item>
+      <widget class="QLabel" name="label_3">
+       <property name="text">
+        <string>Read EER file with super-resolution</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QSpinBox" name="superResSpinBox">
+       <property name="toolTip">
+        <string>Set the amount of super-resolution(1 for 2x, 2 for 4x) to retain when reading an EER file</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="label_4">
+       <property name="text">
+        <string>Z binning</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QSpinBox" name="eerZbinSpinBox">
+       <property name="toolTip">
+        <string>Set number of frames to sum when reading from EER file</string>
+       </property>
+       <property name="minimum">
+        <number>1</number>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer_4">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="groupBox_2">
+     <property name="title">
+      <string>When using montage piece coordinates from .mdoc</string>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout_3">
+      <property name="spacing">
+       <number>2</number>
+      </property>
+      <property name="topMargin">
+       <number>5</number>
+      </property>
+      <property name="bottomMargin">
+       <number>5</number>
+      </property>
+      <item>
+       <widget class="QRadioButton" name="unaliCoordButton">
+        <property name="toolTip">
+         <string>Use just the regular piece coordinates from the .mdoc file for a montage</string>
+        </property>
+        <property name="text">
+         <string>Use nominal, regularly spaced coordinates</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QRadioButton" name="alignedCoordButton">
+        <property name="toolTip">
+         <string>Use aligned coordinates from a montage's .mdoc file, preferably the ones with &quot;very sloppy&quot; off</string>
+        </property>
+        <property name="text">
+         <string>Use aligned coordinates, non-&quot;very sloppy&quot; first</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QRadioButton" name="alignedVSCoordButton">
+        <property name="toolTip">
+         <string>Use aligned coordinates from a montage's .mdoc file, preferably the ones with &quot;very sloppy&quot; selected</string>
+        </property>
+        <property name="text">
+         <string>Use aligned coordinates, &quot;very sloppy&quot; first</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout_3">
+     <item>
+      <layout class="QVBoxLayout" name="verticalLayout_2">
+       <item>
+        <widget class="QGroupBox" name="groupBox7">
+         <property name="title">
+          <string>Autocontrast targets</string>
+         </property>
+         <layout class="QVBoxLayout" name="_2">
+          <property name="spacing">
+           <number>4</number>
+          </property>
+          <property name="leftMargin">
+           <number>5</number>
+          </property>
+          <property name="topMargin">
+           <number>2</number>
+          </property>
+          <property name="rightMargin">
+           <number>5</number>
+          </property>
+          <property name="bottomMargin">
+           <number>5</number>
+          </property>
+          <item>
+           <layout class="QHBoxLayout" name="_3">
+            <item>
+             <widget class="QLabel" name="textLabel1">
+              <property name="text">
+               <string>Mean:</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+              </property>
+              <property name="wordWrap">
+               <bool>false</bool>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QSpinBox" name="autoMeanSpinBox">
+              <property name="toolTip">
+               <string>Mean intensity to display</string>
+              </property>
+              <property name="minimum">
+               <number>5</number>
+              </property>
+              <property name="maximum">
+               <number>250</number>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="textLabel2">
+              <property name="text">
+               <string>  SD:</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+              </property>
+              <property name="wordWrap">
+               <bool>false</bool>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QSpinBox" name="autoSDspinBox">
+              <property name="toolTip">
+               <string>Contrast range occupied by one Standard Deviation</string>
+              </property>
+              <property name="minimum">
+               <number>5</number>
+              </property>
+              <property name="maximum">
+               <number>100</number>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="_4">
+            <item>
+             <spacer name="spacer12">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeType">
+               <enum>QSizePolicy::Expanding</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>40</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item>
+             <widget class="QPushButton" name="setTargetButton">
+              <property name="toolTip">
+               <string>Set the target mean and SD so that they would generate the contrast currently seen</string>
+              </property>
+              <property name="text">
+               <string>Set from Current Contrast</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="spacer11">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeType">
+               <enum>QSizePolicy::Expanding</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>40</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="_5">
+         <item>
+          <widget class="QLabel" name="textLabel1_2">
+           <property name="text">
+            <string>Do autocontrast at start</string>
+           </property>
+           <property name="wordWrap">
+            <bool>false</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QComboBox" name="autoConAtStartBox">
+           <property name="toolTip">
+            <string>Set contrast with &quot;Auto&quot; on first section shown</string>
+           </property>
+           <item>
+            <property name="text">
+             <string>Never</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>If no model loaded</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Always</string>
+            </property>
+           </item>
+          </widget>
+         </item>
+        </layout>
+       </item>
+      </layout>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer_3">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

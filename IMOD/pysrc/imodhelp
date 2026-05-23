@@ -1,0 +1,194 @@
+#!/usr/bin/env python
+# imodhelp - starts Qt Assistant in background
+#
+# Author: David Mastronarde
+#
+# $Id$
+
+progname = 'imodhelp'
+prefix = 'ERROR: ' + progname + ' - '
+liblist = ['libimod', 'libcfshr', 'libiimod', 'libifft', 'libimesh', 'libiwarp',
+           'libdiaqt', 'libfft', 'libmesh', 'libwarp']
+liburls = ['libimod', 'libcfshr', 'libiimod', 'libifft', 'libmesh', 'libwarp',
+           'libdiaqt', 'libifft', 'libmesh', 'libwarp']
+
+# New documents need to be added individually to index.html, qhpStub, and here
+htmls = ['3dmodguide.html', 'asciispec.html', 'batchExample.html', 'batchGuide.html',
+         'binspec.html', 'cryoExample.html', 'CTFexamples.html', 'directives.html',
+         'distortionCal.html', 'etomoTutorial.html', 'guide.html', 'JoinTutorial.html',
+         'NADexample.html', 'patchTrackExample.html', 'PEETmanual.html',
+         'program_listing.html', 'serialalign.html', 'SIRTexample.html',
+         'tomoExtra.html', 'tomoguide.html', 'tomojoin.html', 'UsingEtomo.html']
+
+# insensitive_glob was gem from stackoverflow that didn't work on full Windows path in
+# Cygwin, so just return the string to be used on the entered expression only
+def insensitive_for_glob(pattern):
+   def either(c):
+      if c.isalpha():
+         return(fmtstr('[{}{}]', c.lower(), c.upper()))
+      else:
+         return c
+   return ''.join(either(char) for char in pattern)
+
+
+def basicUsage():
+   prnstr('Enter "imodhelp" with all or start of a program name to open ' +\
+             'its man page')
+   prnstr('Enter "imodhelp -d" with any part of the name of another document to '+\
+             'open it')
+   prnstr('     This name-matching is case insensitive')
+   
+
+# load System Libraries
+import sys, os, glob
+
+#
+# Setup runtime environment
+if os.getenv('IMOD_DIR') != None:
+   sys.path.insert(0, os.path.join(os.environ['IMOD_DIR'], 'pylib'))
+   from imodpy import *
+   addIMODbinIgnoreSIGHUP()
+else:
+   sys.stdout.write(prefix + " IMOD_DIR is not defined!\n")
+   sys.exit(1)
+
+#
+# load IMOD Libraries
+from pip import exitError, setExitPrefix
+
+setExitPrefix(prefix)
+
+if len(sys.argv) > 1 and sys.argv[1] == '-h':
+   basicUsage()
+   prnstr("""When more than one name matches your entry, it will open an exact match
+   if there is one, or give you a list to pick from
+Enter "imodhelp .name" to find programs that END in "name" instead
+   of starting in it
+You can also use "imodhelp =name" instead of "imodhelp -d name" to open
+   other documents
+Enter abbreviation of library name or its directory name to open library
+   documentation""")
+   sys.exit(0)
+   
+# Set up path stuff for Qt program and specifically for assistant
+setLibPath()
+if os.getenv('IMOD_QTLIBDIR') != None:
+   os.environ['PATH'] = os.environ['IMOD_QTLIBDIR'] + os.pathsep + os.environ['PATH']
+
+# get program name to run by and url to load
+prog = 'assistant'
+if sys.platform.find('darwin') >= 0:
+   prog = os.environ['IMOD_DIR'] +  '/qtlib/Assistant.app/Contents/MacOS/Assistant'
+
+# Set or add location of platform plugin for Qt 5 or Windows for image plugins
+plugPath = os.environ['IMOD_DIR'] + '/lib/imodplug/'
+if os.getenv('QT_PLUGIN_PATH') != None:
+   plugPath += os.pathsep + os.environ['QT_PLUGIN_PATH']
+os.environ['QT_PLUGIN_PATH'] = plugPath
+
+url = 'qthelp://bl3demc/IMOD/index.html'
+argInd = 1
+if len(sys.argv) > 1 and sys.argv[1] == '-d':
+   argInd = 2
+   
+if len(sys.argv) > argInd:
+   entered = sys.argv[argInd]
+
+   # Special library entries for me
+   if entered.startswith('lib'):
+      url = 'qthelp://bl3demc/IMOD/libraries.html#TOP'
+      match = None
+      for ind in range(len(liblist)):
+         if liblist[ind].startswith(entered):
+            if match != None:
+               match = None
+               break
+            match = ind
+      if match != None:
+         url = 'qthelp://bl3demc/IMOD/libhelp/' + liburls[match] +'.html#TOP'
+
+
+   else:
+
+      # Otherwise, look for things in bin that match the name
+      useglob = entered
+      globDir = '/bin/'
+      globExt = '*'
+      manDir = 'man/'
+      fileType = 'program'
+      if argInd > 1 or entered.startswith('='):
+
+         # Or look for documents in the html list, which are in top of help tree
+         if entered.startswith('='):
+            entered = entered[1:]
+         manDir = ''
+         fileType = 'html document'
+         exelist = []
+         for doc in htmls:
+            if entered.upper() in doc.upper():
+               exelist.append(doc)
+
+      else:
+         
+         if entered.startswith('.'):
+            useglob = '*' + entered[1:]
+            globExt = ''
+
+         exelist = glob.glob(os.environ['IMOD_DIR'] + globDir + \
+                                insensitive_for_glob(useglob) + globExt)
+      numexes = len(exelist)
+
+      # Extract base names and prune duplicates
+      if numexes:
+         exactMatch = False
+         baselist = []
+         for ind in range(numexes):
+            (base, ext) = os.path.splitext(os.path.basename(exelist[ind]))
+            if base == entered:
+               exactMatch = True
+            if base not in baselist:
+               baselist.append(base)
+         numexes = len(baselist)
+
+      # If one, use it, if 0, complain, if more than 1, give list and get choice
+      if numexes == 1:
+         entered = baselist[0]
+      elif not numexes:
+         prnstr('No ' + fileType + ' matches your entry ' + entered + '; trying anyway')
+      else:
+         prnstr('Several ' + fileType + 's match your entry:')
+         for ind in range(numexes):
+            prnstr('   ' + str(ind+1) + ': ' + baselist[ind])
+
+         if exactMatch:
+            prnstr('Using entered name.  Enter more letters to pick a different ' + \
+                      fileType + '.')
+         else:
+            if sys.version_info[0] > 2:
+               selectstr = input('Enter desired number or 0 to use your original entry: ')
+            else:
+                selectstr = raw_input('Enter desired number or 0 to use your original ' +\
+                                         'entry: ')
+            selection = 0
+            try:
+               selection = int(selectstr)
+            except:
+               pass
+            if selection > 0 and selection <= len(baselist):
+               entered = baselist[selection-1]
+
+      if entered == 'RAPTOR':
+         entered = 'raptor'
+         
+      url = 'qthelp://bl3demc/IMOD/' + manDir + entered + '.html#TOP'
+
+else:
+   basicUsage()
+   
+# Set up command argument array and run it
+commandArr = [prog, '-collectionFile', os.environ['IMOD_DIR'] +  '/html/IMOD.qhc', \
+                 '-showUrl', url, '-show', 'contents', '-show', 'index', \
+                 '-show', 'search', '-activate', 'contents']
+
+bkgdProcess(commandArr)
+sys.exit(0)

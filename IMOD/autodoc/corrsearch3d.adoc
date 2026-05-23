@@ -1,0 +1,311 @@
+Version = 1.0
+Pip = 1
+
+[Field = ReferenceFile]
+short = ref
+type = FN
+usage = Reference image file that is being aligned to
+tooltip = 
+manpage = 
+
+[Field = FileToAlign]
+short = align
+type = FN
+usage = Image file that will be transformed into alignment
+tooltip = 
+manpage = 
+
+[Field = OutputFile]
+short = output
+type = FN
+usage = Output file for patch displacements
+tooltip = 
+manpage = 
+
+[Field = RegionModel]
+short = region
+type = FN
+usage = Model file with contours enclosing regions to take patches from
+tooltip = 
+manpage = 
+
+[Field = PatchSizeXYZ]
+short = size
+type = IT
+usage = Size of patches in X, Y, and Z
+tooltip = 
+manpage = 
+
+[Field = NumberOfPatchesXYZ]
+short = number
+type = IT
+usage = Number of patches in the X, Y and Z directions
+tooltip = 
+manpage = 
+
+[Field = XMinAndMax]
+short = xminmax
+type = IP
+usage = Starting and ending X coordinates of region to take patches from
+tooltip = 
+manpage = Starting and ending X coordinates of region to take patches from.
+X, Y, and Z coordinates are numbered from 1.
+
+[Field = YMinAndMax]
+short = yminmax
+type = IP
+usage = Starting and ending Y coordinates of region to take patches from
+tooltip = 
+manpage = 
+
+[Field = ZMinAndMax]
+short = zminmax
+type = IP
+usage = Starting and ending Z coordinates of region to take patches from
+tooltip = 
+manpage = 
+
+[Field = TiltSeriesSizeXY]
+short = tilt
+type = IP
+usage = (Binned) size in X and Y of raw tilt series for volume being aligned to
+tooltip =
+manpage = Size in X and Y of raw tilt series for volume being aligned to,
+divided by the binning applied to make its aligned stack.  With this entry plus the
+\fB-axis\fR option with the rotation angle of the tilt axis, the program will
+eliminate patches outside the area that can be well-reconstructed from the
+original images.  This will avoid the need for a boundary model just to
+delineate well-reconstructed areas.  However, the method works only if the
+aligned stack and reconstruction were centered on the original tilt series.
+
+[Field = BTiltSeriesSizeXY]
+short = btilt
+type = IP
+usage = (Binned) size in X and Y of raw tilt series for volume being aligned
+tooltip =
+manpage =  Size in X and Y of raw tilt series for volume being aligned,
+divided by the binning applied to make its aligned stack.  This entry allows
+the program to eliminate patches outside the region that can be
+well-reconstructed in the second volume.
+
+[Field = AxisRotationAngle]
+short = axis
+type = F
+usage = Rotation angle from Y axis to tilt axis in raw tilt series
+tooltip =
+manpage = Rotation angle from Y axis to tilt axis in the raw tilt series,
+counterclockwise positive.  This entry is required with the \fB-tilt\fB or
+\fB-btilt\fR options.
+
+[Field = TapersInXYZ]
+short = taper
+type = IT
+usage = Number of pixels over which to taper the patches in X, Y and Z
+tooltip = 
+manpage = Number of pixels over which to taper the patches in X, Y and Z.  The
+default is 10% of the patch dimensions.
+
+[Field = PadsInXYZ]
+short = pad
+type = IT
+usage = Number of pixels to pad Fourier correlations in X, Y and Z
+tooltip = 
+manpage = Number of pixels to pad each side of the patch in X, Y, and Z for
+Fourier correlations .  The default is 20% of the patch dimensions.
+
+[Field = MaximumShift]
+short = maxshift
+type = I
+usage = Maximum displacement to determine by searching (default 10)
+tooltip = 
+manpage = Maximum displacement to determine by searching.  This is in addition
+to the local offset determined from adjacent patches.  The default is 10.
+
+[Field = VolumeShiftXYZ]
+short = volume
+type = FT
+usage = Overall displacement of volume B relative to A in X, Y, and Z
+tooltip = 
+manpage = Overall displacement of the volume being aligned relative to the
+reference volume in X, Y, and Z;
+namely, the amount to add to a pixel coordinate in the reference volume to
+obtain the coordinate of the corresponding pixel in the file being aligned.
+This shift is excluded from the shifts reported in the output file.  If no
+volume shift is entered, it is set equal to half the difference in size
+between the two volumes, if any.
+
+[Field = InitialShiftXYZ]
+short = initial
+type = FT
+usage = Initial displacement between volume centers in X, Y, and Z
+tooltip = Initial displacement between the center of the volume being aligned 
+and the center of the volume being matched to.  This shift will be used to
+start the search.
+manpage = Initial displacement between the center of the volume being aligned 
+and the center of the reference volume in X, Y, and Z.  This is the amount to
+add to the coordinate of a feature near the center of the reference volume to 
+obtain the coordinate of the same feature in the file being aligned, after
+accounting for any overall volume displacement entered with -volume.
+This shift will be used to start the search and will be included in 
+the shifts reported in the output file.
+
+[Field = BSourceOrSizeXYZ]
+short = bsource
+type = CH
+usage = File name or X, Y and Z size of source of file being aligned
+tooltip = 
+manpage = File name or X, Y and Z size of source of file being aligned.  This
+size must be entered if a 3-D transformation is supplied; otherwise the size
+of the file being aligned is used.
+
+[Field = BSourceTransform]
+short = bxform
+type = FN
+usage = 3-D transformation file used to generate file being aligned
+tooltip = 
+manpage = File with 3-D transformation that was used to generate the file being
+aligned from its source file.
+
+[Field = BSourceBorderXLoHi]
+short = bxborder
+type = IP
+usage = Lower and upper border in X in source for file being aligned
+tooltip = 
+manpage = Size of borders to be excluded on the lower and upper sides in X
+in the original source volume for the file being aligned
+
+[Field = BSourceBorderYZLoHi]
+short = byzborder
+type = IP
+usage = Lower and upper border in Y or Z in source for file being aligned
+tooltip = 
+manpage = Size of borders to be excluded on the lower and upper sides in Y or
+Z (whichever is the longer dimension) in the original source volume for the
+file being aligned.
+
+[Field = BRegionModel]
+short = bregion
+type = FN
+usage = Model file with contours enclosing good areas in B source file
+tooltip = 
+manpage = Model file with contours enclosing areas in the original source
+volume for the file being aligned that are suitable for correlation.
+
+[Field = LocalSDNumBinnings]
+short = binnings
+type = I
+usage = Number of binnings at which to analyze local SD
+tooltip = 
+manpage = Number of binnings at which to analyze the local standard deviation
+of pixel values.  See above for details.  An entry of 4 is appropriate unless
+the data are already binned.
+
+[Field = BoxSizeForLocalSD]
+short = box
+type = IT
+usage = Box size in X, Y, and Z for analyzing local SD
+tooltip = 
+manpage = Box size in X, Y, and Z for analyzing local standard deviation, in
+unbinned pixels.  For the binnings higher than 1, the number of binned pixels
+analyzed will be the entered number divided by the binning, so the box needs
+to be big enough to still have enough pixels for a reliable SD estimate at hte
+highest binning.  It should be thinner in the thickness dimension since that
+is the dimension where there are the most transitions between structure and
+non-structure.  It needs to be wide enough to span small variations in
+structure so that the SD estimate itself does not vary so much from one box to
+the next.  A size of 32 laterally and 8 in thickness is effective.
+
+[Field = EliminateByLocalSD]
+short = elim
+type = FP
+usage = 2 or 1 to eliminate patch by mean SD or by fraction of high boxes; and criterion
+tooltip = 
+manpage = This option enables patches to be eliminated after the analysis of
+local SD.  Enter 2 numbers: 1 to use the fraction of boxes with high SD values
+or 2 to use the relative mean SD value of the patch; and the threshold value
+required to retain the patch.
+
+[Field = KernelSigma]
+short = kernel
+type = F
+usage = Sigma in pixels for real-space smoothing with 3D Gaussian kernel
+tooltip = 
+manpage = Sigma for real-space smoothing with 3D Gaussian kernel (in pixels).
+The smoothing is with a 3x3x3 or 5x5x5 kernel whose coefficients are
+proportional to a Gaussian with the given sigma centered on the central
+pixel.  Each patch from the first volume is smoothed before being used for
+either the correlation search or a Fourier correlation.
+
+[Field = KernelSize]
+short = ksize
+type = F
+usage = Size of 3D Gaussian kernel for real-space smoothing (3 or 5)
+tooltip = 
+manpage = Size in pixels of the 3D Gaussian kernel used for real-space 
+smoothing.  The size can be either 3 or 5.  The default is 3 for a kernel sigma
+below 1.5 and 5 for larger sigmas since the filtering reaches a point of
+diminishing returns at about this sigma with a size of 3.
+
+[Field = LowPassRadiusSigma]
+short = lowpass
+type = FP
+usage = Radius and sigma for low pass filtering in Fourier correlations
+tooltip = 
+manpage = Cutoff radius and sigma for a low pass filter that imposes a
+high-frequency Gaussian roll-off in the Fourier cross-correlations.
+The default is no high-frequency filtering.
+
+[Field = HighPassSigma]
+short = sigma1
+type = F
+usage = Sigma for low frequency inverted Gaussian in Fourier correlations
+tooltip = 
+manpage = Sigma value to filter low frequencies in the Fourier correlations
+with a curve that is an inverted Gaussian.  This filter is 0 at 0 frequency
+and decays up to 1 with the given sigma value.
+
+[Field = FlipYZMessages]
+short = messages
+type = B
+usage = Exchange Y and Z in error messages if Y is short dimension
+tooltip = 
+manpage = 
+
+[Field = InvertYLimits]
+short = invert
+type = B
+usage = Invert Y limits because they come from Z slice values viewed in 3dmod
+tooltip = 
+manpage = Invert the starting and ending Y coordinates to take patches from by
+subtracting them from NY - 1 and exchanging the two values, where NY is the Y
+dimension of the file being matched to.  This entry is needed if the Y limits
+are set from Z slice values picked in 3dmod after loading the volume with rotation
+round the X axis.
+
+[Field = DebugMode]
+short = debug
+type = I
+usage = 1 for debug output, 2 for dummy patches, 3 to compare correlations
+tooltip = 
+manpage = Set to 1 for debugging output, 2 to obtain a dummy patch output file 
+to assess the positions of the patches, and 3 to do Fourier correlations at
+all positions, plus direct correlation searches wherever possible.  In the 
+latter case each line of the patch output file will have the results from the
+Fourier correlation, followed by the results from direct correlation, ending
+with a 3D distance between the two results.  Add 20 for histogram output from
+findHistogramDip.
+
+[Field = ParameterFile]
+short = param
+type = PF
+usage = Read parameter entries from file
+tooltip = 
+manpage = Read parameter entries as keyword-value pairs from a parameter file.
+
+[Field = usage]
+short = help
+type = B
+usage = Print help output
+tooltip = 
+manpage = 
+

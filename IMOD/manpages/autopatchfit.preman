@@ -1,0 +1,65 @@
+.na
+.nh
+.TH autopatchfit 1 4.8.14 IMOD
+.SH NAME
+autopatchfit \- Run 3D patch correlation and fitting iteratively
+.SH SYNOPSIS
+autopatchfit  options  tiltalign_command_file
+.SH DESCRIPTION
+Autopatchfit will run 3D patch correlations then fit transformations to
+the patch displacements, repeating the process with increasing patch size
+and possibly increasing density until a desired fitting error is
+achieved.  It is designed to be used as part of the tomogram
+combination process.  Thus, it works with the command files
+"patchcorr.com" (to run Corrsearch3d(1)) and "matchorwarp.com" (to run
+Refinematch(1) and Matchvol(1) or Findwarp(1) and Warpvol(1) via
+Matchorwarp(1)).  It relies on those files already having a number of
+of the options needed for optimal automated patch fitting, as set up by
+Setupcombine(1) with the \fB-autopatch\fR option.  As in
+Setupcombine(1), the thickness dimension is referred to as Z when
+specifying sizes, but is assumed to be the Y dimension in the actual tomograms.
+.P
+The program will start with the patch size and number already specified
+in "patchcorr.com", and when fitting fails, it will increase the patch
+size up to the size specified in the \fB-final\fR option.  It may also
+adjust the patch number to a standard spacing when increasing the size.  
+If the patchcorr.com file has an entry for initial
+shifts, the program will do a second trial with the final patch size but with
+double the patch density in X and Y, and higher density in Z also.  The logic
+here is that the initial shift is a sign of high warping between the
+tomograms, which may be fit better with much denser patches.  This
+default behavior can be modified with the 
+\fB-high\fR option.
+.P
+If the starting and final patch sizes match two of the stock sizes represented
+by the letters S, M, L, and E, the program will step through these
+fixed sizes.  Otherwise, it will increase patch size in each dimension by the same factor
+on each trial, where 1.25 is the target value of the factor, but the
+number of steps is rounded up to keep the factor from exceeding ~1.3.
+However, patch size in Z will not be increased above two-thirds of the
+range allowed by the Z limits for patch correlation if there is more
+than one patch in Z.
+.SH OPTIONS
+Autopatchfit uses the PIP package for input (see the manual page
+for pip(1)).  Options can be specified either as command line
+arguments (with the -) or one per line in a command file
+(without the -).  Options can be abbreviated to unique letters; the currently
+valid abbreviations for short names are shown in parentheses.
+INSERT OPTION TEXT HERE
+.TP
+.B -StandardInput
+Read parameter entries from standard input
+.SH FILES
+The initial patchcorr.com and matchorwarp.com will become backup files
+patchcorr.com~ and matchorwarp.com~.  After a fitting fails, except on
+the final step, the patch.out file will be renamed patch_NXxNYxNZ.out,
+where NX, NY, NZ are the sizes in X, Y, and Z.
+.SH AUTHOR
+.nf
+David Mastronarde
+.fi
+.SH SEE ALSO
+corrsearch3d(1), matchorwarp(1), refinematch(1), matchvol(1),
+findwarp(1), warpvol(1), setupcombine(1)
+.SH BUGS
+Email bug reports to mast@colorado.edu.

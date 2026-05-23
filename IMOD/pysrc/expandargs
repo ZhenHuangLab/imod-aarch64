@@ -1,0 +1,103 @@
+#!/usr/bin/env python
+# expandargs - expands wild cards in arguments and runs a command or saves list
+#
+# Author: David Mastronarde
+#
+# $Id$
+
+progname = 'expandargs'
+prefix = 'ERROR: ' + progname + ' - '
+
+# load System Libraries
+import sys, os, glob
+
+#
+# Setup runtime environment
+if os.getenv('IMOD_DIR') != None:
+   sys.path.insert(0, os.path.join(os.environ['IMOD_DIR'], 'pylib'))
+   from imodpy import *
+   addIMODbinIgnoreSIGHUP()
+else:
+   sys.stdout.write(prefix + " IMOD_DIR is not defined!\n")
+   sys.exit(1)
+
+#
+# load IMOD Libraries
+from pip import exitError, setExitPrefix
+setExitPrefix(prefix)
+
+lenarg = len(sys.argv)
+if lenarg < 2:
+   prnstr(fmtstr("""Usage:  {0} program arguments
+            OR
+        {0} -o filename [-s list] arguments            
+     Expands unix-style wild-cards (*, ?, and [ranges]) in all arguments
+     First form runs the given program with those arguments
+     Second form outputs the filenames one per line to the given file
+        or, if -s is given with a section list (like 0), outputs an input
+        file list for the -filein option to newstack""", progname))
+   sys.exit(1)
+
+argind = 1
+filename = ''
+secList = ''
+outlist = []
+
+# Get the two possible arguments
+while sys.argv[argind].startswith('-'):
+   if sys.argv[argind] == '-o':
+      if lenarg <= argind + 2:
+         exitError('Not enough arguments')
+      filename = sys.argv[argind + 1]
+      argind += 2
+      
+   if sys.argv[argind] == '-s':
+      if lenarg <= argind + 2:
+         exitError('Not enough arguments')
+      secList = sys.argv[argind + 1]
+      argind += 2
+
+if secList and not filename:
+   exitError('You cannot enter "-s list" without "-o filename"')
+
+   
+if not filename:
+   command = sys.argv[argind]
+   argind += 1
+   
+for ind in range(argind, len(sys.argv)):
+   arg = sys.argv[ind]
+   expand = [arg]
+
+   # Expand anything with possible wild-card specifiers
+   if '*' in arg or '?' in arg or '[' in arg or ']' in arg:
+      if '[^' in arg and arg.find('[^') < arg.find(']'):
+         arg = arg.replace('[^', '[!')
+      expand = glob.glob(arg)
+      expand.sort()
+
+   # Add item to command or to output list
+   for item in expand:
+      if filename:
+         outlist.append(item)
+         if secList:
+            outlist.append(secList)
+      else:
+         command += ' "' + item + '"'
+
+# Output the file or run the command
+if filename:
+   if secList:
+      num = str(len(outlist) // 2)
+      outlist.insert(0, num)
+   writeTextFile(filename, outlist)
+
+else:
+         
+   try:
+      runcmd(command, outfile='stdout')
+   except ImodpyError:
+      prnstr('ERROR: ' + progname + ' - ' + sys.argv[1] + ' exited with an error')
+      sys.exit(1)
+
+sys.exit(0)

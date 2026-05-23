@@ -1,0 +1,14 @@
+# This file has default settings applied by batchruntomo prior to any templates
+# or the batch directive file
+setupset.scanHeader=1
+runtime.Preprocessing.any.archiveOriginal=1
+comparam.eraser.ccderaser.LineObjects=2
+comparam.eraser.ccderaser.BoundaryObjects=3
+comparam.eraser.ccderaser.AllSectionObjects=1-3
+comparam.track.beadtrack.RoundsOfTracking=4
+runtime.BeadTracking.any.numberOfRuns=2
+comparam.align.tiltalign.RobustFitting=1
+comparam.align.tiltalign.WeightWholeTracks=1
+runtime.Cleanup.any.keepSIRT=1
+comparam.autofidseed.autofidseed.ElongatedPointsAllowed=3
+comparam.autofidseed.autofidseed.LowerTargetForClustered=5

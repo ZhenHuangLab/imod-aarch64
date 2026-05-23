@@ -1,0 +1,96 @@
+These instructions for installing an NVIDIA card to use with IMOD may be
+helpful.  They were updated in January 2017.  The list of steps assume that
+you have already installed Linux with xorg-X11 and its associated drivers.
+Most of the commands need to be run logged in as root or prefixed with sudo.
+
+1. You need to have an appropriate source and header packages corresponding to
+the kernel that you are running.  On Fedora/RHEL systems these are
+kernel-devel and kernel-headers packages.  You can install them with:
+   yum install kernel-devel
+   yum install kernel-headers
+or by installing the corresponding rpms from your distribution disk, e.g.
+   rpm -ivh kernel-devel*.rpm kernel-headers*.rpm
+
+2. Go to the NVIDIA web site (http://www.nvidia.com) and go to the driver
+download page.  Specify your card type and OS type and use Search to find the
+latest stable release drivers.  Download the file, e.g.
+NVIDIA-Linux-x86_64-340.76.run.  Notice links to the README file, which
+you may need to consult.  After you have installed the drivers, this file is
+in /usr/share/doc/NVIDIA_GLX-1.0.
+
+3. Switch the screen to console mode (Ctrl-Alt-F1) and log in, or ssh from
+another machine.  Bring the machine to runlevel 3 with:
+   init 3
+
+4. Go to the location where you have placed your NVIDIA install file and
+run it as recommended in the instructions, e.g.
+ sh ./NVIDIA-Linux-x86_64-340.76.run
+
+Allow it to modify your xorg.conf for you. If the procedure fails, you will
+need to research the problems with your version of Linux.
+
+On Red Hat 7 at least, installation can fail with the message
+   "Nouveau kernel driver is currently in use by your system"
+The steps for dealing with this are:
+
+  a) Make a file "/etc/modprobe.d/blacklist.conf" with the line
+        blacklist nouveau
+
+  b) Edit "/etc/default/grub" and add this to the GRUB_CMDLINE_LINUX:
+    rd.driver.blacklist=nouveau nouveau.modeset=0 modprobe.blacklist=nouveau
+     Then run
+        grub2-mkconfig -o /boot/grub2/grub.cfg
+
+  c) Start a bash shell if not running one and run
+    mv /boot/initramfs-$(uname -r).img /boot/initramfs-$(uname -r)-nouveau.img
+    dracut /boot/initramfs-$(uname -r).img $(uname -r)
+
+  d) Reboot the system and try installing the drivers again
+
+5. Check your /etc/X11/xorg.conf.  Make sure your driver line says "Driver
+nvidia".
+
+6a. If you are logged in to a screen in console mode, type startx and see what
+happens. Success is indicated by a Gnome or KDE desktop.  Failure is a message
+saying the X server cannot come up.  A frequent message is a complaint about
+no/missing screens.  This really means that the nvidia driver could not start
+for one reason or another. You can examine the start up process in detail by
+looking in the file /var/log/Xorg.0.log.  Make sure that the number of bits
+specified in the Display line matches up with one of the screens that is
+declared.
+
+6b. If you are are doing this over ssh, return to runlevel 5 with
+   init 5
+and assess whether X is running with 
+   ps -ael | grep X
+If not, consult /var/log/Xorg.0.log.
+
+7. Log out of a session started with startx.  Return to runlevel 5 with
+  init 5
+
+8. You can check whether the nvidia module is loaded with 
+  lsmod | grep nvidia
+This should give a line starting with nvidia
+
+9. Log in as a normal user.  Assuming IMOD is installed normally, run 3dmodv
+on the file obj7.mod (available in 
+http://bio3d.colorado.edu/ftp/benchmarks/obj7.mod):
+
+   3dmodv obj7.mod
+
+Start the model spinning by typing Enter and 8 on the numeric keypad.
+After 5 seconds or more, type o to get an output of frames/second.
+You should probably get close to 60 FPS.
+If it is a lot slower than this, the
+NVIDIA drivers and GL libraries may not be installed correctly.
+Note: You should get much faster rates with this model if you run
+nvidia-settings, select "OpenGL Settings", and turn off "Sync to VBlank",
+which limits the frame rate to 60.  For a better assessment of performance,
+use the larger model ivem2578.mod from the benchmarks directory.
+
+10. Note that you need to reinstall the NVIDIA drivers whenever either the
+kernel or X is updated to a new version.  After the machine is rebooted and
+fails to start X, you just need to log in and enter, e.g.,
+sudo /sbin/init 3
+sudo sh ./NVIDIA-Linux-x86_64-340.76.run -as
+sudo /sbin/init 5

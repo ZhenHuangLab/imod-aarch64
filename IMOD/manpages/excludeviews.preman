@@ -1,0 +1,67 @@
+.na
+.nh
+.TH excludeviews 1 4.8.7 IMOD
+.SH NAME
+excludeviews \- Reversibly remove views from a tilt series stack
+.SH SYNOPSIS
+excludeviews  options  stack_name
+.SH DESCRIPTION
+Excludeviews removes images from a stack, saves them in another stack,
+and replaces the original stack with one without those images.  This
+operation is most useful for excluding views from a tilt series.  It
+works with montaged or single-frame images.  Information about the
+operation is kept in a file with extension ".info"; this allows the
+operation to be run in reverse to restore the original image file.
+Because of this reversibility, it is safe to remove the original
+files with the \fB-delete\fR option.
+.P
+The program can be run repeatedly (up to 100 times), and each successive
+exclusion is similarly reversible.  This capability is achieved by
+including an iteration number in the names of the ancillary files
+produced on each run.  The program searches for the info file with the
+highest number and applies the next highest number in another
+exclusion, or restores the exclusion on that iteration.  When running a
+new exclusion, the list of views entered are numbered by their
+positions in the current stack, not the original one.
+.P
+Ancillary data are always preserved in both directions of operation.
+Specifically, if there is a ".rawtlt" file with tilt angles or a
+".mdoc" file with metadata, it will be split in two or recombined
+appropriately.
+If the stack is identified as a montage by internal data or by giving
+the \fB-montage\fR option, a ".pl" file with piece coordinates will
+also be split or recombined.  Metadata will also preserved
+appropriately when the input and/or output files are HDF files;
+specifically, metadata in an HDF file will be placed into an .mdoc file
+when the output is MRC type, metadata in a .mdoc file associated with
+an MRC file will be stored as attributes when the output is an HDF
+file; and attributes will be transferred between HDF files with
+appropriate modifications.  This transfer is accomplished with the
+\fB-mdoc\fR option to Newstack(1) or Edmont(1).
+.SH OPTIONS
+Excludeviews uses the PIP package for input (see the manual page
+for pip(1)).  Options can be specified either as command line
+arguments (with the -) or one per line in a command file
+(without the -).  Options can be abbreviated to unique letters; the currently
+valid abbreviations for short names are shown in parentheses.
+INSERT OPTION TEXT HERE
+.TP
+.B -StandardInput
+Read parameter entries from standard input
+
+.SH FILES
+Three different strings are inserted before the extension to identify
+files on a particular run, where "#" is the iteration nunber: 
+"_cutviews#" for views removed from a stack; "_keptviews#" for the
+retained views, "_allviews#" for a file with all the views.
+The info file on iteration # is named "rootname_cutviews#.info".  After
+an operation is reversed, the info file is renamed to
+"rootname_cutviews#_old.info".
+.SH AUTHOR
+.nf
+David Mastronarde
+.fi
+.SH SEE ALSO
+newstack(1), edmont(1)
+.SH BUGS
+Email bug reports to mast@colorado.edu.

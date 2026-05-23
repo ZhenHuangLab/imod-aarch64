@@ -1,0 +1,522 @@
+#!/usr/bin/env python
+# subtomosetup - make command files for reconstructing subvolumes around points
+#
+# Author: David Mastronarde
+#
+# $Id$
+#
+
+progname = 'subtomosetup'
+prefix = 'ERROR: ' + progname + ' - '
+yzRatioCrit = 2.
+xzShiftDecimals = 2
+maxChunks = 99990
+minChunks = 8
+maxChunkPerProc = 10
+minChunkPerProc = 5
+warnXtiltCrit = 0.3
+
+# Compose the next command file name and increment the number. making a sync if indicated
+def makeNextComName(doSync = False):
+   global comNum
+   if doSync:
+      comName = comRoot + fmtstr('-{:03d}', comNum) + '-sync.com'
+   else:
+      comName = comRoot + fmtstr('-{:03d}', comNum) + '.com'
+   comNum += 1
+   return comName
+
+
+#### MAIN PROGRAM  ####
+#
+# load System Libraries
+import os, sys, copy
+
+#
+# Setup runtime environment
+if os.getenv('IMOD_DIR') != None:
+   sys.path.insert(0, os.path.join(os.environ['IMOD_DIR'], 'pylib'))
+   from imodpy import *
+   addIMODbinIgnoreSIGHUP()
+else:
+   sys.stdout.write(prefix + " IMOD_DIR is not defined!\n")
+   sys.exit(1)
+
+#
+# load IMOD Libraries
+from pip import *
+from pysed import *
+from tomocoords import *
+
+# Fallbacks from ../manpages/autodoc2man 3 1 subtomosetup
+options = ["root:RootName:CH:", "center:CenterPositionFile:FN:",
+           "volume:VolumeModeled:FN:", "raw:RawStackFile:FN:", "axis:AxisAngle:F:",
+           "objects:ObjectsToUse:LI:", "size:SizeInXYZ:IT:",
+           "dir:DirectoryForOutput:FN:", "skip:SkipSubVolNumbers:B:",
+           "com:CommandFile:FN:", "zlevels:NumberOfZLevels:I:",
+           "extent:ExtentOfZLevelsInNm:I:", "ctfcom:CorrectionComFile:FN:",
+           "erase:EraseFiducials:B:", "goldcom:GoldEraserComFile:FN:",
+           "reorient:ReorientionType:I:", "proc:ProcessorNumber:I:",
+           "runs:RunsPerChunk:I:", "help:usage:B:"]
+
+(rootName, volName, centerFile, pointFile, modelFile, objList, comFile, \
+       reorientIn, enteredOrient) = getCommonOptions(options, progname)
+
+boundPixels = parallelBoundarySize()
+outDir = PipGetString('DirectoryForOutput', '')
+skipVolNumbers = PipGetBoolean('SkipSubVolNumbers', 0)
+(xSize, ySize, zSize) = PipGetThreeIntegers('SizeInXYZ', 0, 0, 0)
+if xSize < 1 or ySize < 1 or zSize < 1:
+   exitError('Positive sizes must be entered for the reconstructions')
+
+numZlevels = PipGetInteger('NumberOfZLevels', 0)
+maxZextent = PipGetFloat('ExtentOfZLevelsInNm', 0.)
+if numZlevels and maxZextent:
+   exitError('You cannot enter both a number of Z levels and their extent')
+doCTF = numZlevels > 0 or maxZextent > 0
+if numZlevels == 1:
+   exitError('The number of Z levels must be at least 2')
+
+if doCTF:
+   ctfComFile = getOrDeriveComFile('CorrectionComFile', 'ctfcorrection', comFile,
+                                   'CTF correction')
+   ctfLines = readTextFile(ctfComFile, 'CTF correction command file')
+
+doErase = PipGetBoolean('EraseFiducials', 0)
+if doErase and not doCTF:
+   exitError('You cannot erase fiducials unless doing CTF corrections at multiple' +\
+             ' Z levels')
+   
+(comExt, ifDual, rawRoot, typeExt, rawExt) = findRootAxisAndExtensions()
+axisLet = None
+if ifDual == 0:
+   axisLet = ''
+elif ifDual == 2:
+   if rootName.endswith('a'):
+      axisLet = 'a'
+   elif rootName.endswith('b'):
+      axisLet = 'b'
+
+# Get raw stack name 
+stackName = PipGetString('RawStackFile', '')
+if not stackName:
+   if not rawExt:
+      numCandid = 0
+      for ext in ['st', 'mrc', 'hdf']:
+         if os.path.exists(rootName + '.' + ext):
+            numCandid += 1
+            rawExt = ext
+
+      if not numCandid or numCandid > 1:
+         exitError('The raw stack name must be entered, it cannot be deduced')
+   
+   stackName = rootName + '.' + rawExt
+
+# Get the aligned stack name, or give up and assume it
+if typeExt:
+   aliName = datasetFilename('.ali', rootName, typeExt)
+else:
+   tiltLines = readTextFile(comFile)
+   aliName = optionValue(tiltLines, 'inputproj', 0, 1)
+   if not aliName:
+      aliName = rootName + '.ali'
+
+# Get the axis angle as input or from align log file
+axisAngle = PipGetFloat('AxisAngle', 0.)
+if PipGetErrNo():
+   if axisLet != None:
+      alignLog = 'align' + axisLet + '.log'
+   if axisLet == None or not os.path.exists(alignLog):
+      exitError('The tilt axis angle must be entered, it cannot be deduced')
+   logLines = readTextFile(alignLog, 'alignment log file')
+   found = False
+   for line in logLines:
+      tag = 'rotation angle is'
+      if tag in line:
+         ind = line.find(tag)
+         line = line[ind + len(tag):]
+         lsplit = line.split()
+         try:
+            axisAngle = float(lsplit[0])
+            found = True
+         except Exception:
+            pass
+
+   if not found:
+      exitError('The tilt axis angle must be entered, it cannot be ' +\
+                'determined from ' + alignLog)
+theta = axisAngle
+if theta <= -45.:
+   theta += 360.;
+rotFlip = int(round(theta / 90.))
+rotFlip = max(0, min(3, rotFlip))
+transposeXY = rotFlip % 2 != 0
+
+# Check that all the files exist
+checkList = [(stackName, 'raw stack'), (aliName, 'aligned stack'),
+             (volName, 'modeled volume'), (comFile, 'command file'),
+             (centerFile, 'center position file')]
+if doCTF:
+   checkList.append((ctfComFile, 'CTF correction command file'))
+   if doErase:
+      eraseComFile =  getOrDeriveComFile('GoldEraserComFile', 'golderaser', comFile,
+                                         'erasing gold')
+      checkList.append((eraseComFile, 'gold erasing command file'))
+   
+for (name, descrip) in checkList:
+   if not os.path.exists(name):
+      exitError('The ' + descrip + ', ' + name + ', does not exist')
+
+# Check and create output directory
+if outDir:
+   if os.path.exists(outDir):
+      if not os.path.isdir(outDir):
+         exitError('The specified name for output directory already exists and is ' +\
+                      'not a directory')
+   else:
+      try:
+         os.mkdir(outDir)
+      except OSError:
+         exitError('Making directory for output, ' + outDir)
+
+# Get possible entries for runs per chunk and # of processors
+numProc = PipGetInteger('ProcessorNumber', 0)
+numRunsPerChunk = PipGetInteger('RunsPerChunk', 10)
+if not PipGetErrNo() and numProc > 0:
+   exitError('You cannot enter both -proc and -runs')
+
+fullRec = None
+(pid, cleanList, pointList, aliBinning, reorient, tiltLines, \
+    nxRaw, nyRaw, nzRaw, pixXraw, pixYraw, pixZraw, \
+    nxAli, nyAli, nzAli, pixXali, pixYali, pixZali, origXali, origYali, \
+    origZali, nxVol, nyVol, nzVol, pixXvol, pixYvol, pixZvol, origXvol, \
+    origYvol, origZvol, nxFull, nyFull, nzFull, pixXfull, pixYfull, pixZfull, \
+    origXfull, origYfull, origZfull) = \
+    getPointsAndHeaders(modelFile, objList, pointFile, progname, stackName, aliName, \
+                           volName, fullRec, enteredOrient, reorientIn, comFile)
+
+if doCTF:
+   (nx, ny, nz, xaxisTilt, tiltUseGPU, ctfXtilt, ctfUseGPU, ctfPixSize, ctfInput,
+    ctfOutput) = getCTFoptionsCheckIfCorrected(progname, tiltLines, ctfLines)
+else:
+   tiltUseGPU = optionValue(tiltLines, 'UseGPU', 1, 1, numVal = 1)
+
+if doErase:
+   eraseLines = readTextFile(eraseComFile, 'Gold erasing command file')
+   (aliRoot, aliExt) = os.path.splitext(ctfOutput)
+   eraseName = fmtstr('{}_erase_tmp{}', aliRoot, aliExt)
+   eraseSed = [sedModify('InputFile', ctfOutput, delim = '|'),
+            sedModify('OutputFile', eraseName, delim = '|')]
+   eraseMod = pysed(eraseSed, eraseLines, delim = '|')
+   eraseMod.append(fmtstr('$b3drename "{}" "{}"', eraseName, ctfOutput))
+   
+(comRoot, ext) = os.path.splitext(comFile)
+comRoot += '-sub'
+cleanChunkFiles(comRoot)
+thickness = ySize
+numSlices = zSize // aliBinning
+if reorient:
+   thickness = zSize
+   numSlices = ySize // aliBinning
+
+# ASSUMING CENTER ALIGNED STACK, could use origins to overcome this
+if transposeXY:
+   (nxRaw, nyRaw) = (nyRaw, nxRaw)
+sssx = (nxRaw - nxAli * aliBinning) // 2
+sssy = (nyRaw - nyAli * aliBinning) // 2
+
+sedcomBase = [sedModify('IMAGEBINNED', aliBinning, delim = '|'),
+              sedModify('FULLIMAGE', fmtstr('{} {}', nxRaw, nyRaw), delim = '|'),
+              sedModify('SUBSETSTART', fmtstr('{} {}', sssx, sssy), delim = '|'),
+              sedModify('THICKNESS', thickness, delim = '|'),
+              '|savework|d'] + \
+   sedDelAndAdd('WIDTH', xSize, 'THICKNESS', delim = '|')
+
+if doCTF:
+   sedcomBase.append(sedModify('InputProjections', ctfOutput, delim = '|'))
+
+   # Work out GPU for CTF which can be independent: if it is on it stays on
+   # Do CTF in parallel if multiple procs explicitly entered and tilt is using GPUs,
+   # or if not using a GPU for CTF and no number was entered - assume 8 in thta case
+   maxSlices = 0
+   if ctfUseGPU == None or ctfUseGPU < 0:
+      ctfUseGPU = tiltUseGPU
+   procForCTF = numProc
+   if numProc == 0:
+      procForCTF = 8
+   if numProc > 1 or (numProc == 0 and ctfUseGPU < 0):
+      numChunks = 3 * procForCTF
+      maxSlices = max(1, (nz + numChunks - 1) // numChunks)
+                     
+# Get format string for particle names to get equal digits on all
+numDec = 1
+numPts = len(pointList)
+while numPts > 9:
+   numDec += 1
+   numPts = numPts // 10
+numFormat = '-{:0' + str(numDec) + 'd}'
+numPts = len(pointList)
+
+# Loop through all the points, getting their command file text and z shifts
+numPtTot = 0
+minZshift = 1.e10
+maxZshift = -1.e10
+shiftList = []
+sedList = []
+for ptNum in range(numPts):
+   numUse = numPtTot + 1
+   if skipVolNumbers:
+      numUse = ptNum + 1
+
+   chunkBase = rootName + fmtstr(numFormat, numUse)
+
+   # Use a forward slash so output is stable and tests work with Windows python
+   if outDir:
+      chunkBase = outDir + '/' + chunkBase
+   chunkName = chunkBase + '.mrc'
+   if reorient:
+      chunkName = chunkBase + '.tmp'
+   sedcom = copy.deepcopy(sedcomBase)
+   sedcom.append(sedModify('OutputFile', chunkName, delim = '|'))
+   point = pointList[ptNum]
+
+   # Convert points from a point list by the header transformation to match scaled
+   # values that came in from model conversion
+   if not modelFile:
+      point[0] = point[0] * pixXvol - origXvol;
+      point[1] = point[1] * pixYvol - origYvol;
+      point[2] = point[2] * pixZvol - origZvol;
+   
+   # Now need to get slice range and X/Z shifts.  X is easy and invariant
+   xInAli = (point[0] + origXali) / pixXali
+   xShift = aliBinning * (nxAli / 2. - xInAli)
+
+   # For no reorientation, Y comes from Z, Y from Y; z shift is negative of coordinate
+   if reorient == 0:
+      yInAli = (point[2] + origYali) / pixYali
+      zShift = -aliBinning * (point[1]) / pixXali
+
+   # For rotation, Y comes from Y, Z from inversion of Y
+   elif reorient < 0:
+      yInAli = (point[1] + origYali) / pixYali
+      zShift = aliBinning * (point[2]) / pixXali
+
+   # For flip, the origins were not swapped in the header, so undo the origin that was
+   # applied and adjust by origin that should have been applied
+   else:
+      yInAli = (point[1] + origYvol - origZvol - origYali) / pixYali
+      zShift = -aliBinning * (point[2] + origZvol - origYvol) / pixXali
+
+
+   # Get the slice range, skip if too far out of range
+   sliceStart = int(round(yInAli - numSlices / 2.)) * aliBinning
+   sliceEnd = sliceStart + numSlices * aliBinning - 1
+   if yInAli < numSlices / 6. or yInAli > nyAli - numSlices / 6.:
+      prnstr(fmtstr('WARNING: {} - Point # {} is skipped; it requires too many Y ' +\
+                  'slices outside the reconstructable range for this aligned stack',
+                    progname, ptNum + 1))
+      continue
+
+   # And set up for blank slices if partly out of the range
+   # Get the binned slice range that Tilt will use.  It uses slices numbered from 1
+   # and rounds up when binning, but (sl0 + 1 + bin - 1) / bin = sl0 / bin + 1
+   # numbered from 1, which is oddly just sl0 / bin numbered from 0.
+   newstRange = ''
+   binSliceStart = sliceStart // aliBinning
+   binSliceEnd = sliceEnd // aliBinning
+   if sliceStart < 0 or binSliceEnd >= nyAli:
+      if sliceStart < 0:
+         numBlank = numSlices - (binSliceEnd + 1)
+         newstRange = fmtstr('{}-{}', -numBlank, binSliceEnd)
+         sliceStart = 0
+      else:
+         numBlank = numSlices - (nyAli - binSliceStart)
+         newstRange = '0-' + str(numSlices - 1)
+         sliceEnd = nyAli * aliBinning - 1
+      prnstr(fmtstr('WARNING: {} - Point # {} is near the edge of the aligned stack' +\
+                    ' in Y and requires {} blank slices', progname, ptNum + 1,
+                    numBlank))
+
+   # Finish the sed com, process the lines
+   sedcom += sedDelAndAdd('SHIFT', fmtstr('{} {}', round(xShift, xzShiftDecimals),
+                                          round(zShift, xzShiftDecimals)), 'THICKNESS',
+                          delim = '|')
+   sedcom += sedDelAndAdd('SLICE', fmtstr('{} {}', sliceStart, sliceEnd), 'THICKNESS',
+                          delim = '|')
+   sedLines = pysed(sedcom, tiltLines, delim = '|')
+
+   # Add blank slices if needed
+   if newstRange:
+      sedLines += [fmtstr('$newstack -blank -sec {} "{}" "{}"', newstRange, chunkName,
+                          chunkBase + '.tmp2'), 
+                   '$b3dremove "' + chunkName + '"']
+      chunkName = chunkBase + '.tmp2'
+   
+   # Add final reorientation
+   if reorient:
+      oper = 'rotx'
+      if reorient > 0:
+         oper = 'flipyz'
+      sedLines += [fmtstr('$clip {} "{}" "{}"', oper, chunkName, chunkBase + '.mrc'), 
+                   '$b3dremove "' + chunkName + '"']
+
+   # Maintain min/max, save the lines and the z shift
+   minZshift = min(minZshift, zShift)
+   maxZshift = max(maxZshift, zShift + 0.01)
+   sedList.append(sedLines)
+   shiftList.append(zShift)
+   numPtTot += 1
+
+
+# if doing CTF, figure out the range of Z etc
+if doCTF:
+   ubPixSize = ctfPixSize / aliBinning
+   fullZpixels = maxZshift - minZshift
+   fullZnm = fullZpixels * ubPixSize
+   if maxZextent > 0:
+      numZlevels = int(math.ceil(fullZnm / maxZextent))
+   if numZlevels < 2:
+      exitError(fmtstr('The Z extent of {:.0f} nm would result in only one Z level ' +\
+                       'because the range of center positions is {:.0f} nm', 
+                       maxZextent, fullZnm))
+
+   zExtentNm = fullZnm / numZlevels
+   prnstr(fmtstr('CTF corrections will be computed at {} levels that are {:.0f} nm thick',
+                 numZlevels, zExtentNm))
+   delZpixels = zExtentNm / ubPixSize
+   numInLevel = []
+   ptIndList = []
+   defocusTol = optionValue(ctfLines, 'DefocusTol', INT_VALUE, numVal = 1) 
+   zNmInt = int(round(zExtentNm))
+   if defocusTol:
+      defocusTol = min(defocusTol, zNmInt)
+   else:
+      defocusTol = zNmInt
+
+   # Test for X tilt consistency and if it matters
+   checkXtiltCtfVsRec(xaxisTilt, ctfXtilt, warnXtiltCrit, 0.1 * nyAli * pixXali,
+                       zExtentNm, 'level', progname)
+
+   # Find the number in each level
+   for level in range(numZlevels):
+      shiftLow = minZshift + level * delZpixels
+      shiftHigh = shiftLow + delZpixels
+      numTmp = 0
+      levelInds = []
+      for ind in range(numPtTot):
+         if shiftList[ind] >= shiftLow and shiftList[ind] < shiftHigh:
+            numTmp += 1
+            levelInds.append(ind)
+      numInLevel.append(numTmp)
+      ptIndList.append(copy.deepcopy(levelInds))
+
+else:
+   numZlevels = 1
+   delZpixels = maxZshift - minZshift
+   numInLevel = [numPtTot]
+   ptIndList = [list(range(numPtTot))]
+
+# No processors entered and using GPU for tilt, assume 1
+if numProc == 0 and tiltUseGPU != None and tiltUseGPU >= 0:
+   numProc = 1
+
+# Loop on levels if any
+comNum = 1
+for level in range(numZlevels):
+   numPtsLvl = numInLevel[level]
+   if not numPtsLvl:
+      continue
+   maxChunkLvl = maxChunks
+   numOptimal = 1000
+   if doCTF:
+      maxChunkLvl = int(round((0.9 * maxChunks * numPtsLvl) / numPtTot))
+      numOptimal = (numOptimal * numPtsLvl) // numPtTot
+      
+   if numProc > 0:
+
+      # If # of processors entered, try for a large # of chunks per processor but lower it
+      # to give fewer than 1000 chunks; in any case limit chunks to maximum and to # pts
+      numChunkPerProc = maxChunkPerProc
+      while numChunkPerProc >= minChunkPerProc:
+         numChunks = min(numPtsLvl, numChunkPerProc * numProc, maxChunkLvl)
+         if numChunks < numOptimal:
+            break;
+         numChunkPerProc -= 1
+
+   else:
+
+      # Otherwise base it on default or entered # of runs per chunks; but it must be
+      # raised if that gives too many chunks, or lower it if it is too few
+      minRuns =  numPtsLvl // maxChunkLvl + 1
+      minChunksLvl = min(numPtsLvl, minChunks)
+      runsPerChunkLvl = max(numRunsPerChunk, minRuns)
+      numChunks = max(minChunksLvl, (numPtsLvl + runsPerChunkLvl - 1) // runsPerChunkLvl)
+
+   runsPerChunkLvl = numPtsLvl // numChunks
+
+   if doCTF:
+      offsetPix = ((level + 0.5) * delZpixels + minZshift) / aliBinning
+      ctfsed = sedDelAndAdd('OffsetInZ', round(offsetPix, 2), 'DefocusFile', 
+                            delim = '|')+\
+         sedDelAndAdd('UseGPU', ctfUseGPU, 'DefocusFile', delim = '|') + \
+         sedDelAndAdd('DefocusTol', fmtstr('{}', defocusTol), 'DefocusFile',
+                      delim = '|')
+      ctfMod = pysed(ctfsed, ctfLines, delim = '|')
+   
+      if maxSlices:
+         ctfComOut = 'ctfcorrection.tmp.com'
+         writeTextFile(ctfComOut, ctfMod)
+         try:
+            splitLines = runcmd(fmtstr('splitcorrection -i {} -o -m {} -b {} -uni ' +\
+                                       '-r {} {}', comNum, maxSlices, boundPixels, 
+                                       comRoot, ctfComOut))
+            numAdded = findSplitComNumber(splitLines, 'output of splitcorrection')
+            comNum += numAdded
+
+         except ImodpyError:
+            exitFromImodError(progname)
+
+      else:
+         ctfComOut = makeNextComName(True)
+         writeTextFile(ctfComOut, ctfMod)
+
+   if doErase:
+      eraseName = makeNextComName(True)
+      writeTextFile(eraseName, eraseMod)
+      
+   # Loop on chunks
+   indInLevel = 0
+   for chunk in range(numChunks):
+      numInChunk = runsPerChunkLvl
+      if chunk < numPtsLvl % numChunks:
+         numInChunk += 1
+
+      comName = makeNextComName(False)
+      chunkLines = []
+      for indInChunk in range(numInChunk):
+         ptInd = ptIndList[level][indInLevel]
+         indInLevel += 1
+
+         # Add lines to chunk
+         chunkLines += sedList[ptInd]
+
+      # Write the file
+      writeTextFile(comName, chunkLines)
+
+   if doCTF:
+      comName = makeNextComName(True)
+      writeTextFile(comName, [fmtstr('$b3dremove {}', ctfOutput)])
+
+
+# Write finish file
+finlines = [fmtstr('$b3dremove -g "{0}-[0-9][0-9][0-9]*.com*" ' + \
+                     '"{0}-[0-9][0-9][0-9]*.log*" "{0}-finish*.com*"', comRoot)]
+if doCTF and maxSlices > 0:
+   finlines.append('$b3dremove ' + ctfComOut)
+writeTextFile(comRoot + '-finish.com', finlines)
+prnstr(fmtstr('Created {} command files for {} subtomograms; run them with:', comNum,
+              numPtTot))
+prnstr(fmtstr('    "subm {0}*.com"   or   "processchunks ... {0}"', comRoot))
+if doCTF and maxSlices:
+   cleanupFiles([ctfComOut])
+sys.exit(0)

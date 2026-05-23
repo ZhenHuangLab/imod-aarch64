@@ -1,0 +1,584 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+  <head>
+    <title>Cryo Example Data Set</title>
+    <META HTTP-EQUIV="Content-Type" Content="text/html;
+                                             charset=Windows-1252">
+      <style type="text/css"> <!-- BODY { font-family:"Arial" }
+        TD { font-size:16 }
+        -->
+        p.style1
+        {margin-bottom:.3em;
+        margin-top: 0em;
+        }
+        
+      </style>
+    </head>
+    <body BGCOLOR="#ffffff" TEXT="#000000">
+      <A NAME = "TOP"></A>
+      <basefont size="2">
+        <p class="style1" align=center><a NAME="hidd_tsextrafile"></a><b><font size="5" 
+            >Processing a Cryo-Tilt Series with Fiducials</font></b></p>
+      <p class="style1" align=center>(IMOD 4.11)</p>
+      <p class="style1" align=center style="font-weight: bold">University of Colorado, 
+        Boulder</p>
+  <p class="style1">
+    <o:p>&nbsp;</o:p></p>
+      <p class="style1">
+        This is a guided introduction to generating a tomogram from a tilt series 
+        of a cryo-sample with gold beads as fiducial markers for alignment.&nbsp; It 
+        presents the most important concepts and details and provides brief explanations 
+        of some points.&nbsp; For more details, consult the <a href="guide.html#TOP">Tomography Guide</a>, which you 
+        can open from the Help menu in Etomo.&nbsp; It is also advisable to read through 
+        relevant sections of the <a href="guide.html#TOP">Tomography Guide</a> before trying to process your own tilt 
+        series.&nbsp; If you have processed a tilt series in Etomo before, you may want 
+        to do the <a href="etomoTutorial.html#TOP">dual-axis tutorial</a> before this 
+        example, especially if you have difficulty following the steps below without 
+        shots of how the screen should appear.</o:p></p>
+      <p class="style1">
+        <o:p></o:p>
+      </p>
+      <p class="style1">
+        The example data set is from a plunge-frozen PtK2 cell and was taken
+        with a Gatan Ultracam camera on a Tecnai F30 by Cindi Scwartz.</o:p></p>
+      <p class="style1">
+        <o:p></o:p>
+      </p>
+      <p class="style1">
+        <o:p>First, a few points on conventions: labels in the Etomo or 3dmod interface are shown 
+        in <b>Bold</b>, and entries in fields are shown in <i>italics</i>.&nbsp; For 
+        mouse operations in the Zap window in 3dmod, the buttons are referred to as 
+        &quot;first&quot;, &quot;second&quot;, and &quot;third&quot; because the buttons can be remapped in 3dmod.&nbsp; 
+        If you have not changed the mapping, this corresponds to left, middle, and 
+        right; otherwise, it refers to whatever you have chosen to be the first, second, 
+        and third buttons.&nbsp;&nbsp;&nbsp; </o:p>
+      </p>
+      <p class="style1">
+        <o:p></o:p>
+      </p>
+  <p class="style1" style="text-decoration: underline">
+    Getting started:</p>
+      <ul>
+        <LI><a href="http://bio3d.colorado.edu/imod/files/cryoExampleData.tar.bz">
+      Download</a> the sample data set from our web site.</li>
+        <LI>Move the data set file &quot;cryoExampleData.tar.bz&quot; to the directory where you want to 
+        work on it.&nbsp; Its contents will unpack into a subdirectory named &quot;cryo&quot;.</li>
+        <LI>cd to the directory with the downloaded file</li>
+        <LI>Enter the command:<br />
+&nbsp;&nbsp;&nbsp; imoduntar cryoExampleData.tar.bz<br />
+          or, anywhere except on Windows without Cygwin, you can use<br />
+&nbsp;&nbsp;&nbsp; tar -xjf cryoExampleData.tar.bz</li>
+        <LI>Enter the dataset directory with:<br />
+&nbsp;&nbsp;&nbsp; cd cryo</li>
+        <LI>Now you need to redefine the environment variable IMOD_CALIB_DIR to be the 
+          current directory, which is simply &quot;.&quot; (a period or dot), so that Etomo can find 
+          some microscope-specific files used in the processing.&nbsp;Thus, you need to 
+          enter a period at the end of all the command below to represent 
+          the current directory.
+          <ul> <li>On Linux, Mac OS X, 
+          or Windows with Cygwin, first give this command so that you will still have access 
+            to parallel processing resources in case they are defined in a
+          system file:<br />
+&nbsp;&nbsp; cp $IMOD_CALIB_DIR/cpu.adoc .<br>
+            Do not worry if there is an error; that just means you were not
+          using resources defined in such a file.</LI>
+          
+          </ul>
+        </li>
+        <ul>
+          <li>On Linux, Mac OS X, or Windows with Cygwin, if you are using the bash shell or a related shell, 
+          enter:<br />&nbsp;&nbsp;&nbsp; export IMOD_CALIB_DIR=.<br />Or, if you are use tcsh as the shell, enter:<br />&nbsp;&nbsp;&nbsp; setenv IMOD_CALIB_DIR .<br />
+          </LI>
+          <li>On Windows without Cygwin, enter:<br />&nbsp;&nbsp;&nbsp; set IMOD_CALIB_DIR=.<br />
+          </li>
+        </ul>
+        <LI>Start the Etomo interface with:<br />&nbsp;&nbsp;&nbsp; etomo</li>
+        </ul>
+      <p class="style1">
+        &nbsp;</p>
+  <p class="style1">
+    <u>Tomogram setup:</u></p>
+      <p class="style1">
+        In this initial step, we define some features of the data set and create the 
+        files needed for processing.</p>
+  <ul>
+  <li>
+    Press <b>Build Tomogram</b> in the Etomo "Front Page"</li>
+  <li>
+    Press the yellow file chooser icon on the <b>Datatset name</b> line and select the stack file.</li>
+  <li>
+    For <b>SystemTemplate</b>, select
+    <i>cryoSample.adoc</i>.  This will set several parameters appropriately for cryo 
+    reconstructions; you should generally select a template.</li>
+  <li>
+    Press <b>Scan Header</b> to retrieve the pixel size and rotation angle of 
+    the tilt axis from the image file.</li>
+  <li>
+    Enter <i>15</i> for <b>Fiducial diameter</b></li>
+    <li>
+      Select <b>Parallel Processing</b> if you have more than one CPU core.</li>
+  <li>
+    Select <b>Graphics card processing</b> if you have an Nvidia card with a GPU that can be used with IMOD.</li>
+  <li>
+    For <b>Image distortion field file</b>, 
+    select <i>27.5kGIF2007-03-24.idf</i>.  Data were taken with an energy filter which introduces significant geometric distortions. 
+    The distortions were measured and can be corrected with this file.</li>
+  <li>
+    Press <b>View Raw Stack</b> and scroll 
+    through the images to see that they are not well-aligned.
+    &nbsp; Notice the 4 contrast control sliders, which are present because the 
+    data have been loaded as integers.&nbsp; 
+    The top two sliders are very close together, which means the image data occupy a 
+    very small fraction of the full data range; the rest of the data range is taken 
+    up by image artifacts due to X-rays.  In general, if you see bad views that you know
+    that you want to exclude from alignment and reconstruction, you can list
+    these in the <b>Exlcude views</b> box.</li>
+  <li>
+    Press <b>Create Com Scripts</b></li>
+  </ul>
+  <p class="style1">
+    <u>Pre-processing:</u></p>
+      <p class="style1">
+        This step is needed to remove artifacts in the images, generally produced by 
+        X-ray events in the camera.&nbsp; These artifacts will produce streaks in a 
+        reconstruction and can also make it harder to see the image features, which have 
+        a much smaller dynamic range than the artifacts.</p>
+  <ul>
+  <li>
+    Press <b>Show Min/Max for Raw Stack</b> to 
+    see the range of the data; both a plot of minimum and maximum values and a table 
+    with more detailed information will open.&nbsp; Every view has a large negative minimum because there 
+    was an X-ray artifact in the dark reference.</li>
+  <li>
+    Press <b>Create Fixed Stack</b> to run the program that finds and erases 
+    artifacts.</li>
+  <li>
+    Press <b>View Fixed Stack</b>.&nbsp; Now there are only 2 contrast sliders because data 
+    can be loaded as bytes after removing most of the artifacts.</li>
+  <li>
+    Press <b>Show Min/Max for Fixed Stack</b> to 
+    see the new range of data.&nbsp; 
+    Deviations of 50-100 from the rest of the data will not matter in the 
+    reconstruction.</li>
+    <li>Press <b>Use Fixed Stack</b>.</li>
+    <li>Press <b>Done</b> to advance to the next step.</li>
+  </ul>
+  <p class="style1">
+    <u>Coarse Alignment</u></p>
+      <p class="style1">
+        In this step, we use image cross-correlation to align successive images, which 
+        makes it easier to track fiducial markers.</p>
+  <ul>
+  <li>
+    Press <b>Calculate Cross-Correlation</b></li>
+  <li>
+    When done, press <b>Generate Coarse Aligned Stack</b></li>
+  <li>
+    When done, press <b>View Aligned Stack in 
+    3dmod</b>.&nbsp; Scroll through the images 
+    to see that they now look aligned</li>
+    <li>
+      Press <b>Done</b> to go on.</li>
+  </ul>
+  <p class="style1">
+    <u>Fiducial Model Generation:</u></p>
+      <p class="style1">
+        In this step, the positions of selected gold markers are found on all of the 
+        images, which allows a more accurate alignment to be obtained.</p>
+  <ul>
+  <li>
+    Use <b>Make seed and track</b> and
+    <b>Make seed model manually</b> options.&nbsp; The option to make the seed model 
+    automatically works quite well; we are not using it so that you learn how to do 
+    this step manually if necessary.</li>
+  <li>
+    Press <b>Seed Fiducial Model</b>. The Bead Fixer window opens in <b>Make seed</b> 
+    mode with most of the settings that you need for adding seed points.</li>
+      <li>
+        Turn on <b>Automatic new contour</b> in the Bead Fixer window if it is not on already.&nbsp; A contour is 
+        a set of connected points.&nbsp; We need to put these points in separate 
+        contours because a) we don't want to see them connected and b) each contour will 
+        be added to with the corresponding points on other views.&nbsp; </li>
+      <li>
+        Place the cursor very near each bead and add a point with the second mouse 
+        button.&nbsp; It will be automatically centered (the <b>Autocenter</b> option is 
+        turned on by Etomo in seeding mode).</li>
+      <li>
+        Press the S key to save the model.</li>
+      <li>
+        Switch to the <b>Track Beads</b> tab and press <b>Track Seed Model</b>.</li>
+      <li>
+        The Project Log window shows the number of missing points when done.&nbsp; It 
+        may be 0.</li>
+      <li>
+        Press Fix Fiducial Model, which will load the tracked model into 3dmod and 
+        switch the Bead Fixer to <b>Fill gaps</b> mode.&nbsp; You can scroll through the 
+        views and also press the V key to see the tracks of the beads in 3D.</li>
+      <li>
+        If there are missing points, you can now use the Bead Fixer to step from one gap 
+        to the next (using the space bar as a hot key) and add a point, if appropriate.&nbsp; <i>A bead does not need to be 
+        marked on every view, and you should not add a point if the bead's position is 
+        not clear</i>.&nbsp; If you add points, be sure to save the model with the S 
+        key.</li>
+      <li>
+        Another way to complete the model is to press <b>Track with Fiducial Model as 
+        Seed</b>.&nbsp; It is a good idea to look at the model in 3D first and make sure 
+        there are not deviant points at the ends of contours that should be
+        fixed first.</li>
+    <li>
+        Press <b>Done</b> to go on.</li>
+      </ul>
+      <p class="style1">
+        <u>Fine Alignment:</u></p>
+      <p class="style1">
+        Next the bead positions are fit to a mathematical model of specimen movements.&nbsp; 
+        The model predicts a position for each bead on each view, and the mean distance 
+        between the predicted and actual positions is referred to as the &quot;mean residual 
+        error&quot;.&nbsp; These errors will let you find and correct badly modeled points.&nbsp; 
+        The need to do so has been much reduced by the recent addition of a method 
+        called &quot;robust fitting&quot;, which automatically gives less weight or even 
+        eliminates the points most likely to be at incorrect positions.&nbsp; However, 
+        it is good to learn how positions can be fixed manually.</p>
+      <ul>
+      <li>
+        Select <b>Do not sort fiducials into 2 surfaces for analysis</b></li>
+      <li>
+        Press <b>Compute Alignment</b>.&nbsp; When it is done, the Mean residual error 
+        will appear in the Project Log.</li>
+      <li>
+        Press <b>View 3D Model</b> to open the model of solved positions in 3D and 
+        assess whether to solve for distortion (stretching and skew).&nbsp; Press the R 
+        key in the Model View window for a side-view of the model.&nbsp; If you press the 
+        middle mouse button and move the mouse to the right, the model will rotate until 
+        the three lower beads are very close together.</li>
+      <li>
+        To solve for distortion, fiducials should be well-distributed in Z: not all on 
+        one plane, more than a few at a different Z height, and the ones at a different 
+        height distributed over the area.&nbsp; This is not often the case for cryo data 
+        sets, and this one fails the latter two tests.</li>
+      <li>
+        Press <b>View/Edit Fiducial Model.</b> The Bead Fixer will open in (or 
+        be switched to) <b>Fix big 
+        residuals</b> 
+        mode and read in the log from alignment.&nbsp; Zoom up in the Zap window to 2 or 
+        so.&nbsp; It is also helpful to switch the Zap window to keeping the current 
+        model point centered, by pressing the concentric squares in the toolbar.</li>
+      <li>
+        If you press <b>Go to Next Big Residual</b> or the single quote (') key, it will 
+        move to each point with a big residual in order by decreasing value.&nbsp; If a 
+        point is not centered on the gold bead, you can move it to the correct position 
+        by clicking with the third mouse button.&nbsp; The red arrow points to the 
+        position predicted by the alignment solution; it is not based on any knowledge 
+        of what is in the image.&nbsp; <i>This position may not be 
+        correct</i>, but if it is, you can move the point to that position with <b>
+        Move Point by Residual</b> or the semicolon (;) key.&nbsp; </li>
+      <li>
+        All of the biggest residuals occur at very high tilt, and each point has been 
+        correctly modeled, so there is nothing to fix.&nbsp; The reason for this is 
+        evident if you examine the output from the alignment program.</li>
+      <li>
+        Right-click in Etomo over the <b>Fine Alignment</b> panel and select <b>Align 
+        log file</b>.&nbsp; The error summary and the ratio of measured values to 
+        variables solved for are in the <b>Errors</b> tab.&nbsp; Switch to the <b>
+        Solution</b> tab to see the alignment parameters.</li>
+      <li>
+        Various columns from the solution table can be plotted by right-clicking in 
+        Etomo and selecting a particular parameter.&nbsp; Right-click and select <b>Plot 
+        global mean residual</b>.&nbsp; Notice that the mean residual gets much higher 
+        at high tilt, which is why we saw only those points having the biggest 
+        residuals.</li>
+      <li>
+        To find possible erroneous points at lower tilts in this case, under <b>Residual 
+        Reporting</b>, select <b>Relative to Neighboring views</b>.&nbsp; 
+        Press <b>Compute Alignment</b> again.</li>
+      <li>
+        There are no new points to fix.</li>
+        <li>
+          Press <b>Done</b> to go on.</li>
+      </ul>
+      <p class="style1">
+        <u>Tomogram Positioning</u></p>
+      <p class="style1">
+        The goal of this step is to set angles and an offset in Z so that the specimen 
+        is flat and centered in Z in the computed volume, thus minimizing the 
+        computational effort.</p>
+      <ul>
+      <li>
+        Set <b>Sample tomogram thickness</b> to <i>500</i>.</li>
+      <li>
+        Press <b>Create Whole Tomogram</b> to build a whole, binned-down tomogram.</li>
+      <li>
+        Press <b>Create Boundary Model</b> to open the tomogram</li>
+      <li>
+        Open a Slicer window with <b>Image-Slicer</b>.&nbsp; Set X-rotation to <i>90</i> 
+        and <b>Thick: Img</b> to <i>20,</i> which makes it average 20 slices.</li>
+      <li>
+        The goal is to draw a pair of lines enclosing the sample at ~3 different Y 
+        locations in the tomogram. For this specimen we can see the boundaries of the 
+        sample well in cross-section, so this is the easiest way to draw them.</li>
+      <li>
+        Use the <b>View axis position</b> slider to scroll through Y and get a sense of 
+        how the boundaries change.</li>
+      <li>
+        Go to the middle (~340) and draw two lines.&nbsp; 3dmod will automatically start 
+        a new contour after two points.&nbsp; Move the current point with the third 
+        mouse button; use the first mouse button to select a new current point. See the 
+        image below.</li>
+      <li>
+        Do the same near the lower end of the tomogram (axis position ~70) and the upper 
+        end (~610).&nbsp; Your final model should 6 contours with 2 points each.</li>
+      <li>
+        Save the model with the S key.</li>
+      <li>
+        Press <b>Compute Z Shift &amp; Pitch Angles</b>.&nbsp; The angle offset, Z shift, X-axis 
+        tilt and tomogram thickness are shown; these will give the thinnest, most level 
+        tomogram containing the area you outlined.&nbsp; The required thickness is also 
+        shown.</li>
+      <li>
+        Press <b>Create Final Alignment</b>, which reruns the fine
+        alignment.</li>
+        <li>
+          Press <b>Done</b> to go on.</li>
+      </ul>
+      <p class="style1" align=center>
+        &nbsp;<img src="miscImages/cryoSlicer2lines.jpg"/></p>
+      <p class="style1">
+        <u>Final Aligned Stack Creation and CTF Correction:</u></p>
+      <ul>
+      <li>
+        Press <b>Create Full Aligned Stack</b>.</li>
+      <li>
+        Switch to <b>Correct CTF</b> tab.&nbsp; Set <b>Voltage (KV)</b> to <i>300</i>.</li>
+      <li>
+        Press the file chooser icon on <b>Config file</b> and select <i>F30_UltraCam_2008.cfg</i>. </li>
+      <li>
+        The <b>Expected defocus</b> of <i>8.0</i> happens to be correct.</li>
+      <li>
+        Press <b>Run CTF Plotter</b>. Ctfplotter loads the noise files and
+        then displays the power spectrum.  The features of Ctfplotter are
+        explained in detail in the <a href="ctfHelp/ctfguide.html#TOP">Guide
+        to Ctfplotter</a>.  In brief, the X axis is spatial frequency in
+        cycles per pixel, thus running from 0 to 0.5.  The Y axis is the
+        logarithm of a rotationally averaged power spectrum, summed from
+        overlapping subareas referred to as tiles.  The red or magenta curve
+        is the actual power spectrum; the green curve is a curve fit to it
+        based on equation that behaves like the CTF.  The defocus value that
+        results from this fitting is shown in the top line after <b>D:</b>.
+        </li>
+      <li>
+        The low frequencies always dominate these power spectra, so the curve
+        has to be zoomed up to see the regions of interest properly.  Draw a
+        rubber band to zoom up on part of the curve, such as frequency from
+        0.1 to 0.5, log power from -0.2 to 0.4.</li>
+      <li>
+        The power spectrum originally has just the tiles in each image that
+        are within 0.2 &mu;m of the center of the image in Z height.  Switch
+        to <b>All tiles</b> to include all of the tiles in the images.</li>
+      <li>
+        Press <b>Fitting</b> to open the Fitting Range &amp; Method dialog and
+        adjust the range of points that will be fit.&nbsp; The <b>X1 Starts</b> 
+        value of <i>0.13</i> is reasonable; the <b>X2 Ends</b> value of <i>0.275</i> is 
+        based on the expected position of the second zero.  Since there is
+        clearly good information out to at least the third zero, the end of
+        the second hump after the first minimum in the curve), this limit
+        can be set to <i>0.33</i>.</li>
+      <li>
+        Set <b>Baseline fitting order</b> to <i>2</i> make the baseline flatter out to 
+        0.4 and make it easier to fit to the peaks. (Not available before
+        IMOD 4.8.17.)</li>
+      <li>
+        Select <b>Vary exponent of CTF function</b>; it does not affect the fit much 
+        here but will give a better fit at other angles.</li>
+      <li>
+        Now that fitting is set up, switch to<b> Current defocus estimate</b> in the 
+        Angle Range dialog.</li>
+      <li>
+        Set <b>Starting tilt angle</b> to <i>-61</i>, <b>Ending tilt angle</b> to <i>-31</i>, 
+        and <b>Step angle range</b> <b>by</b> to <i>15</i>, and press <b>Apply</b>.</li>
+      <li>
+        The fitting is good here, so press <b>Store Defocus in Table</b>.</li>
+      <li>
+        Press <b>Step Up</b> and store the result repeatedly until the highest 
+        positive angle is reached.</li>
+      <li>
+        The same result can be obtained by pressing <b>Autofit all Steps</b>, but if you 
+        did that, you would want to check the fitting by double-clicking on each row of 
+        the table. </li>
+ 
+      <li>
+        Press <b>Save to File</b> and exit Ctfplotter.</li>
+      <li>
+        Select up to 12 CPUs in the parallel processing table.</li>
+      <li>
+        Press <b>Correct CTF</b> then <b>Use CTF Correction</b> when it is
+        done.</li>
+      </ul>
+      <p class="style1">
+        <u>Gold Erasing:</u> </p>
+      <p class="style1">
+        Gold beads are by far the densest items in cryo-reconstructions and they 
+        cast artifactual rays that are about as dense as the biological features.&nbsp; 
+        To minimize this effect, it is often desirable to remove the beads from the 
+        projection images before reconstruction.</p>
+      <ul>
+      <li>To erase gold, select the <b>Erase Gold</b> tab.</li>
+        <li>Select <b>Use findbeads3d</b> to find the locations of the gold in a 
+          binned-down tomogram and project their positions onto the tilt series images.</li>
+      <li>
+        Set the <b>Thickness</b> to <i>220</i>.</li>
+      <li>
+        Press <b>Align and Build Tomogram</b>.</li>
+      <li>
+        When it is done, select <b>Store only points above threshold</b> and press <b>
+        Run Findbeads3d</b>.&nbsp; This will find the beads in the tomogram as well as 
+        it can, and only put the points into the model that have &quot;peak strengths&quot; above 
+        what it thinks is the best threshold between beads and non-beads.</li>
+      <li>
+        When it is done, press <b>View 3D Model on Tomogram</b>.&nbsp; The Bead Fixer 
+        opens with some special controls for adjusting the threshold peak strength, in 
+        case we had stored more points in the model.
+      </li>
+      <li>
+        Press the V key to open the Model View.&nbsp; If you see only 10 of the 11 model 
+        points (because of a bug in Findbeads3d) push the <b>Threshold</b> slider to the 
+        left.&nbsp;&nbsp; Put the mouse near one of them and click the right button; the 
+        Zap window will change to show that model point on the image.&nbsp; If 
+        necessary, you could add or delete points in this model.&nbsp; Close 3dmod.</li>
+      <li>
+        Press <b>Reproject Model</b> then <b>View 2D Model on Aligned Stack</b>.&nbsp; 
+        Look at the high tilt views; you will see that some of the points are not 
+        well-centered.</li>
+      <li>
+        Change two parameters to compensate for this poor centering: set <b>Diameter to 
+        erase</b> to <i>26</i>, and turn on <b>Iterations to grow circular areas</b> and 
+        set the value to <i>3</i>.</li>
+      <li>
+        Press <b>Erase Beads</b>.&nbsp; When it is done, press <b>View Erased Stack</b> 
+        to see the result.</li>
+      <li>
+        Press <b>Use Erased Stack</b>.</li>
+        <li>
+          Press <b>Done</b> to go on.</li>
+      </ul>
+      <p class="style1">
+        <u>Tomogram generation:</u></p>
+      <p class="style1">
+        At last, you can compute the tomogram.</p>
+        <ul>
+      <li>
+        Make sure only one of the two choices <b>Use the GPU</b> and <b>Parallel 
+        processing</b> is selected, and press <b>Generate Tomogram</b>.
+      </li>
+      <li>
+        Press <b>View Tomogram in 3dmod</b> when it is done.</li>
+          <li>
+            Press <b>Done</b> to go on.</li>
+      </ul>
+      <p class="style1">
+        <u>Post-processing:</u></p>
+      <p class="style1">
+        In this step, you can trim away unneeded regions, convert the tomogram to bytes 
+        to save time and space, and reorient the tomogram so that the slices stored in 
+        the file are in X/Y planes instead of X/Z planes.&nbsp; <i>Even if you do not 
+        want to trim or convert to bytes, you should always go through this step to get a 
+        reoriented tomogram, which will work better with other
+          programs.</i></p>
+      <ul>
+      <li>
+        Turn on the rubber band in the Zap window and select an area of about 1500x1500 
+        pixels, i.e., at a window zoom of 0.5, the rubber band size on the screen of 
+        about 750x750 pixels, as shown in the Zap toolbar.</li>
+      <li>
+        You can move an edge or corner of the rubber band with the first mouse button, 
+        or shift the whole band by pressing the second mouse button with the cursor over 
+        an edge.</li>
+      <li>
+        Scroll to the first slice that you want to keep and press <b>Lo</b>, then find the last 
+        slice you want to keep and press <b>Hi</b>.&nbsp; To make a file suitable for 
+        practicing NAD filtering, keep 60 slices or less.</li>
+      <li>
+        In Etomo, press <b>Get XYZ Volume Range from 3dmod</b> to import these limits.</li>
+      <li>
+        In the Zap window, select a narrower range of slices with <b>Lo</b> and <b>Hi</b> 
+        that will be used to determine scaling; exclude the dense contamination on the 
+        surface.</li>
+      <li>
+        In Etomo, press <b>Get XYZ Sub-Area from 3dmod</b> in the <b>Scaling</b> section 
+        to import these limits.</li>
+      <li>
+        Press <b>Trim Volume</b>.&nbsp; When done, press <b>3dmod Trimmed Volume</b> to 
+        see the result.</li>
+        <li>
+          Press <b>Done</b> to go on.</li>
+      </ul>
+      <p class="style1">
+        <u>Automatic Seed Model Generation:</u></p>
+      <p class="style1">
+        Making the seed model manually was just an training exercise; you should be able 
+        to make this model automatically with almost all of your own data sets.&nbsp; 
+        For an example of doing this, return to the <b>Fiducial Model Generation</b> 
+        page.</p>
+      <ul>
+        <li>
+          
+            You may first wish to save the files from your manual work (cryo.seed and 
+            cryo.fid) by copying them to a different name.
+        </li>
+        <li>
+            Switch to the <b>Seed Model</b> tab and select <b>Generate Seed Model</b> 
+            automatically.
+        </li>
+        <li>
+            The one required entry is either a number or density of beads to select.&nbsp; 
+            Enter <i>25</i> for <b>Total number</b>.&nbsp; You can enter a standard number 
+            appropriate for the size of the images, even there are not nearly that many 
+            beads.&nbsp; It will find as many as it can, but not select more than the 
+            indicated number.
+        </li>
+        <li>
+            The option to <b>Use boundary model</b> is available in cases where you do not 
+            want fiducials outside of a defined area.&nbsp; In cryoET, it is usually 
+            desirable to avoid using beads over the carbon, if possible.
+        </li>
+        <li>
+            Press <b>Generate Seed Model</b>.
+        </li>
+        <li>
+            When it is done, the project log shows the essential results: there were 10 
+            candidate beads, 1 was considered too elongated to use, and it thus picked 9.
+        </li>
+        <li>
+            Press <b>Open Seed Model</b> to see the points picked.&nbsp; You will have to 
+            page up one view to see them.&nbsp; One bead was eliminated from consideration 
+            because it was too near the left edge.&nbsp; The other bead skipped is in the 
+            upper left quadrant.&nbsp; It looks fine at zero degrees but is actually two 
+            beads on top of each other and tracks poorly at higher tilts.&nbsp; The program 
+            eliminated it because it detected sufficient elongation in the lower tilts that 
+            it examined.
+        </li>
+      </ul>
+      <p class="style1">
+        <u>Clean Up:</u></p>
+      <p class="style1">
+        In most cases, there is no need for the intermediate files from processing.&nbsp; 
+        This step allows you to remove these files and leave all of the information from 
+        which they could easily be recreated if necessary.&nbsp; The original raw tilt 
+        series stack can also &quot;archived&quot; by compressing its difference from the current 
+        stack; this operation is reversible.</p>
+        <ul>
+        <li>Press <b>Archive Original Stack</b> and confirm the deletion of the original 
+          stack when it is done.</li>
+          <li>All intermediate files are now shown in the box.&nbsp; Click in the box and 
+            type Ctrl-A to select all files.&nbsp; You could then click on individual files 
+            while holding down the Ctrl key to unselect them.&nbsp; You might wish to leave 
+            cryo.preali (coarse aligned stack), cryo.ali (final aligned stack), or 
+            cryo_full.rec (raw reconstruction, which could be trimmed differently).</li>
+          <li>Press <b>Delete Selected</b> to remove the intermediate files that are still 
+            selected.</li>
+        </ul>
+      <p class="style1">
+        &nbsp;</p>
+ 
+  </basefont>
+</body>
+</html>

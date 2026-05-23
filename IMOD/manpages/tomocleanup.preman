@@ -1,0 +1,39 @@
+.na
+.nh
+.TH tomocleanup 1 4.10.44 IMOD
+.SH NAME
+tomocleanup \- Remove or list intermediate files in a tilt series data set
+.SH SYNOPSIS
+tomocleanup  options  directory ...
+.SH DESCRIPTION
+Tomocleanup removes intermediate files from a tilt series data set
+directory, similar to the cleanup operation in Etomo(1).  It can also
+provide a list of the files without removing them.  Selected kinds of files can
+be retained if desired.  If none of the options for keeping files are
+given, all large files will be removed except the raw stack and the
+latest stage of reconstruction: for single axis, either the "_full"
+reconstruction file or the final trimmed reconstruction file; for dual-axis, either the
+single-axis reconstructions, or the combined volume, or final trimmed
+reconstruction file.
+.SH OPTIONS
+Tomocleanup uses the PIP package for input (see the manual page
+for pip(1)).  Options can be specified either as command line
+arguments (with the -) or one per line in a command file
+(without the -).  Options can be abbreviated to unique letters; the currently
+valid abbreviations for short names are shown in parentheses.
+INSERT OPTION TEXT HERE
+.TP
+.B -StandardInput
+Read parameter entries from standard input
+
+.SH FILES
+When files are actually removed, the program writes leaves a complete list of
+the files removed in a file "cleanedUpFiles".
+.SH AUTHOR
+.nf
+David Mastronarde
+.fi
+.SH SEE ALSO
+sirtsetup(1), multifiltsetup(1)
+.SH BUGS
+Email bug reports to mast@colorado.edu.

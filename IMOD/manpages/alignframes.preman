@@ -1,0 +1,627 @@
+.na
+.nh
+.TH alignframes 1 4.8.45 IMOD
+.SH NAME
+alignframes \- Aligns and sums camera movie frames and stacks sums
+.SH SYNOPSIS
+alignframes options
+.SH DESCRIPTION
+Alignframes aligns frames from direct electron detectors and other
+cameras that can output a set of frames from an acquisition.  It can
+take input from multiple frame files and produce a single stack that is
+ready to use for tilt series processing.  It implements two basic alternatives
+for an initial alignment that can optionally be refined: aligning each
+frame to a reference accumulated from previously aligned frames; or
+solving for the shifts of individual
+images by fitting to shifts measured between many pairs of frames.
+The latter approach has several advantages and can be applied in
+various ways.  The advantages are:
+  1) It involves multiple measurements for every image and
+thus can average over more information for aligning the
+first few frames than the cumulative method can.
+  2) Robust regression is used for the fitting, so a
+small proportion of bad alignments can be tolerated and should not
+degrade the result.  Thus, this method should be more resistant to
+occasional failed correlations due to fixed pattern noise.
+  3) The fitting yields an estimate of the residual
+error for each measurement, from which it is possible to derive an
+error measure that reflects the overall quality of the alignment and
+that can be used to compare results with different parameters.
+.P
+The fitting to shifts between pairs of frames is done for successive
+sets of frames, 7 by default.  With that setting, each frame is
+aligned to all preceding frames for the first 7 frames, then the first
+fit is done and a best shift determined for the first frame.  The 8th
+frame is then aligned to frames 2 through 7, and the next fit yields a
+shift for the second frame.  It is possible to align every frame to
+every other one and do one fit to find all of the shifts at once, but
+this approach does not seem to give any advantage in the typical case, and
+the number of correlations can become quite large because it is
+proportional to the square of the number of frames.  When pairwise fits
+with sets of more than 7 frames are indicated, another alternative
+strategy is to do pairwise fits with sets of half the frames (see
+below).
+.P
+The program allows one to test the quality of the fits with different
+high frequency filter cutoffs, and even with different binnings.
+Multiple filters can be tested quickly in one run through the data,
+but testing multiple binnings require multiple runs through the data.
+.P
+After the initial alignment, it is possible to
+realign each frame to a reference consisting of all other aligned
+frames.  (For high-noise data, it is essential to leave the frame being
+aligned out of the reference, or it would dominate the alignment.)
+This refinement can help with after alignment to a cumulative
+reference, but has seemed superfluous in most tests with initial
+alignments from pairwise shifts.
+.P
+All frame data are maintained as Fourier transforms, so each additional
+alignment only involves one inverse FFT.  Frames are shifted into
+alignment in Fourier space to avoid losses from interpolation, and they
+are reduced in size for the final sum (if at all) by cropping in Fourier space to
+avoid aliasing.  
+.P
+If you want to compute a Fourier ring correlation, enter either the
+\fB-lines\fR option with a value of 3 or the \fB-frc\fR option with a
+filename.  Fourier transforms of even and odd frames are summed
+separately and a Fourier ring correlation is computed.  The program
+reports the frequencies at which
+the FRC crosses 0.5 and 0.25 in cycles/pixel of the summed images, and
+also reports the mean value around a frequency of 0.25/pixel
+(half-Nyquist).  The FRC is the only tool for comparing results with
+the cumulative alignment to those with pairwise alignment or for
+assessing the change from refining a pairwise alignment at the
+end. The FRC can also be used for validating the choice of filter or
+binning suggested by trying multiple values.  However, changes in the
+FRC may generally be quite small, so it will usually be helpful to
+assess a change a parameters with a number of frame stacks.  The
+program Subtractcurves(1) can help in this assessment as described below.
+.P
+Quite strong high-frequency filtering is needed for typical frame
+alignments.  The filter cutoff is entered in frequency units of the
+unbinned data so that a particular value has about the same effect at
+different binnings.  The default filter (0.06/pixel) is close to
+what is typically needed, but smaller values (down to 0.05)
+or possibly larger values (up to ~0.1) may give
+better results.  Binning (actually antialiased reduction in size)
+accomplishes most of the removal of high-frequency noise prior to the
+application of the frequency filter, so these two operations are partly
+redundant.  Most of the motivation for binning is to speed up the
+alignment; however, after a certain point, additional binning will
+somewhat reduce the accuracy with which the correlation peak position
+can be measured.  Thus, the program facilitates testing with different
+binnings, although such testing is probably only needed when getting
+started with a particular class of data, whereas testing with multiple
+filters is likely to be used more routinely.
+.SS Alignment Strategies
+The big challenges in aligning frames are the low signal-to-noise ratio
+and interference from fixed pattern noise.  There are some significant
+distinctions between tilt series and single particle data when
+considering what methods to apply.  First, tilt series may have a
+lower dose per frame, but they are likely to have more features in the
+image than some single-particle images, and thus more signal to align
+with.  Second, there can be beam damage such as doming of the ice within
+a series of single-particle frames, which would never happen for a set
+a tilt series frames.  
+.P
+One can think of a series of possible strategies for dealing with
+increasingly difficult data:
+   1) When there is strong signal and no appreciable fixed pattern
+noise, the simple method of aligning to a cumulative reference of already
+aligned frames may be adequate.  Here, refinement at the end may 
+help if it improves the shifts for the first few frames, which were
+subject to the noisiest correlations.
+2) Images with reasonable SNR and little fixed pattern noise should work
+with the default method of aligning all pairs among successive sets of
+7 frames.
+3) If the noise is higher or signal lower, or if there is serious fixed
+pattern noise, then pairwise alignment among much larger sets of
+frames will be needed.  
+   3A) For tilt series data, using all pairs of frames
+would generally be appropriate.  
+   3B) For single particle data, it is better to do pairwise alignment
+among half the
+total number of frames, to avoid correlating across large changes in the
+specimen.  However, if fixed pattern noise is a problem, it may be
+necessary to use all pairs instead, so that some correlations with large
+shifts will be available for all frames.  (Fixed pattern noise makes
+the correlations unreliable or inaccurate for small shifts; even when
+the filtered peak at the origin is smaller than the true correlation
+peak, it can displace the peak position if the two peaks overlap.)
+   3C) Refinement at the end is risky if there is serious fixed pattern
+noise.
+   4) If the noise is just too high for alignments between single frames
+to work, then grouping can be used.  A group size of 3 can help
+considerably.  Refinements can be done at the end by correlating either
+single frames or, if necessary, just the grouped frames with sums of
+other frames.
+.SS Text Output with Single Parameter Settings
+In all cases, output for a file starts with a line like
+  File 1  (Feb21_10.12.15.mrc): 11 frames
+.br
+When there is only one filter and binning being used,
+the following two lines present summary statistics for the results of
+the doing robust fitting to the shifts for each set of pairwise
+alignments.  All of the values and distances are in unbinned pixels.
+The first line has these items:
+  \fIWeighted residual mean\fR: The mean residual error value, averaged over
+all of the fits.  This is a weighted error, so aberrant shifts that
+are completely down-weighted are not reflected here.
+  \fISD\fR: The standard deviation of those weighted mean errors.
+  \fImean max\fR: The mean value of the maximum weighted residual, averaged
+over all the fits
+  \fImax max\fR: The maximum weighted residual seen in any of the fits
+.br
+The second line has these items:
+  \fIMax unweighted resid mean\fR: The average of the maximum unweighted
+residual values seen in the fits
+  \fImax\fR: The maximum unweighted residual seen in any fit
+  \fIDist\fR: Raw sum of distances from one frame position to the next
+  \fIsmoothed\fR: Sum of smoothed distances.  If spline smoothing is used,
+this is the distance for the smoothed shifts that are used to sum
+the images.  Otherwise, this is based on a local polynomial
+smoothing that is not very good.
+.br
+Finally, there is a summary of the output from Fourier ring
+correlation.  This line reports the frequencies (in cycles/pixel) at
+which the curve crosses below 0.5, 0.25, and 0.125.  The last number on
+the line is the mean value of the curve around 0.25/pixel
+(half-Nyquist).  If the sum is reduced in size, these frequencies are
+in terms of the binned pixels.
+.P
+The most important value on the first line is the \fIweighted residual
+mean\fR.  After each fit, the shift between each pair of images is computed
+from the solved shifts of the individual images, and the residual for
+that shift is
+the difference between the computed and measured values, multiplied by
+the weighting factor applied to the measurement.  The mean of these
+errors gives an indication of how accurate the shifts should
+be, on average.  Good values are in the range of 0.05 to ~0.3, but some sets
+may give values in the range of 1-3.  The latter cases are a sign that
+one should try analyzing a higher number of pairwise shifts or even try
+grouping.  Using more pairwise shifts will not improve the mean
+residual but will allow greater averaging over these random errors;
+grouping should improve the residual.
+.P
+The maximum residual values on the first line should not be many times
+larger than the mean; these values indicate that there may be a shift
+in error by that amount.
+.P
+The \fIMax unweighted resid mean\fR on the second line reflects how
+often there are bad shifts measured between pairs of images.  With no
+bad shifts, it should be not very much bigger than the maximum weighted
+residual; values above a few pixels may indicate that there are bad
+correlations in most fits.  Reducing the filter cutoff, reducing the
+maximum allowed shift, and grouping may improve this value; increasing
+the number pairs being fit will increase the ability of the program to
+reject the bad shifts as outliers.  (As long as the weighted maximum
+residuals are not high, the program is already able to reject the bad
+shifts.)
+.P
+The distance values on the second line reflect the total specimen
+movement, and comparison between raw and smoothed distances gives some
+indication of how jittery the solved shifts are.  They become more
+important when trying different filter settings, as explained below.
+.SS Text Output with Tests of Binning and/or Filters
+If you specify either multiple filters with the \fB-vary\fR option or
+multiple binnings with the \fB-test\fR option, there will be output
+similar to what was just described for each condition being tested.
+An initial line for each condition shows 
+the binning, the filter cutoff value, and the sigma for the
+filter falloff.  The latter is varied in proportion to the cutoff value.
+.P 
+When there are multiple
+filters, the program will compose a "hybrid" solution that is based on
+the filter that gives the lowest residual error after each fit to a set
+of pairwise shifts.  The set of results from this hybrid solution
+appear after the ones for the various filters, with an initial line
+showing \fIHybrid results, bin =\fR.  This solution
+is not used by default, only if the \fB-hybrid\fR option is given.
+.P
+After all of the results, there will be a line indicating which condition is
+considered best, such as:
+.nf
+File 1: Best at bin = 8  rad2 = 0.060  sig2 = 0.0086  mean res = 0.121
+.fi
+.P
+However, the selection of a best solution must be treated with
+caution.  If fixed pattern noise is significant, the fit may improve
+dramatically with high filter cutoffs.  One sign that fixed pattern
+noise could be taking over is a substantial decline in the distance
+travelled with higher filter settings.
+.P
+If the program is run on more than one file, then at the end there will
+be a report of the number of times each combination of binning and
+filter cutoff gave the best solution.  For example:
+.nf
+Number of times each condition is best  (rad2 in parentheses):
+bin = 6      3 (0.050)    1 (0.060)    0 (0.080)
+bin = 8      3 (0.050)    1 (0.060)    1 (0.080)
+.fi
+This indicates that a cutoff of 0.05 is generally better than 0.06, and
+that there is not much difference between binnings 6 and 8.
+.P
+Not all combinations of binning and filter cutoff are meaningful.
+Filter cutoffs that are at or above the Nyquist frequency for a particular
+binning will have little or no effect.  Here are the Nyquist
+frequencies for common binnings:
+
+.nf
+   Binning   Nyquist frequency
+      2           0.25
+      3           0.167
+      4           0.125
+      6           0.083
+      8           0.062
+.fi
+.SS Support for Frame Files with Extended Header Data
+If the frame files have an extended header (as files saved by UCSFtomo
+do), the program will look for several features:
+  1) If the header is large enough to contain a gain reference, then
+these data will be extracted and used to gain-normalize the frames,
+unless a different gain reference is supplied with the \fB-gain\fR
+option.  The reference will be assumed to be in the correct orientation
+to apply to the frames; but if it is not, the \fB-rotation\fR option
+can be used to reorient it.
+  2) If the header appears to contain valid tilt angles, the program
+will use these values to break the frames into separate sets for
+aligning and summing, unless the \fB-break\fR option is given.  It will
+recognize one place where there are two sets at the same angle and make
+two sums there, provided that there are at least 5 sets of frames of
+the same size prior to that place.  This, if you use \fB-frame\fR to
+try aligning a subset of tilt angles right around the starting point of
+a tilt series, you may have to use \fB-break\fR to prevent these two
+images from being combined.  The tilt angles will be placed into the
+extended header of the output file unless provided by another source
+(the \fB-tilt\fR or \fB-stack\fR options).
+  3) If the extended header contains valid entries for pixel size and
+tilt axis rotation angle, the pixel size will be placed into the
+standard header location and a title will be added with the rotation
+angle.
+.P
+Note that although multiple files can still be entered when there is an
+extended header, the program will insist that their properties match.
+.SS Dose Weight Filtering
+The program can do dose weight-filtering of frames before summing for
+sets of frames from either tilt series or single-particle acquisition.
+The filter is as described in Grant and Grigorieff, 2015 
+(DOI:10.7554/eLife.06980) and the
+implementation follows that in their "unblur" program.  At any
+frequency, the filter follows an exponential decay with dose, where the
+exponential is of the dose divided by 2 times a "critical dose" for
+that frequency.  This critical dose was empirically found to be
+approximated by a * k^b + c, where k is frequency; the values of a, b,
+c in that paper are used by default but can be modified with the
+\fB-critical\fR option.  This filter
+function is applied for all frequencies (complete attenuation above the 
+"optimal dose" is no longer considered appropriate).  For each
+set of frames, the program will apply a weighting that changes through
+the set of frames as dose accumlates.  If just an overall dose for the
+image is specified, this dose is divided equally among the frames.
+However, if frames are not of equal duration, it is possible to specify
+the different doses of the frames.  For a tilt series, the weighting
+also changes through the frame sets according to the amount of dose prior to
+each set of frames.  
+.P
+A variety of options are described below for providing dose information
+to the program.  The ".mdoc" file from SerialEM can be a convenient
+source of such information, particularly if frames are not of equal
+duration.  For tilt series, it provides cumulative dose information.
+If an ".mdoc" is supplied for single particle data with the
+\fB-dfile\fR option, it can contain entries for many images; the
+program will pick out the dose information that applies to the frame
+sets being aligned.
+.SS Computer and GPU Memory Usage
+The amount of computer memory required for this processing depends
+mostly on the size of the images and whether all of the frames will
+be held in memory until all alignments are completed.  Each frame held in
+memory requires 4 times as many bytes as pixels.  Frames will be held
+in memory if only one binning is used and any of the following options
+are used: multiple filters (unless the \fB-hybrid\fR option is used to
+allow the final setting of one shift after each pairwise fit), pairwise
+alignment among all frames, refinement after initial alignment, or
+smoothing of shifts (which occurs by default with 15 or more frames).  Otherwise,
+the number of frames held until the end will equal the number of frames
+used for pairwise fits (plus the group size minus one, if grouping).
+However, when more than one binning is tested, the program will not
+hold any frames but instead read them in again on a second pass.
+.P
+The amount of memory needed for the binned images being aligned can also become large
+if the binning is small.  These images are all held until the end if
+there is refinement of the initial alignment; otherwise the number
+retained will be the number used for pairwise fits.
+.P
+When using a GPU, the size of unbinned images dominates the usage, but
+space is needed for only 3 or 4 image-sized arrays.  This can approach
+1 GB for ~8K images.  The frames are actually held in computer memory
+until their shifts are finalized.  Binned images for alignment will
+also consume significant amounts of the GPU memory; these images stay
+on the GPU instead of in computer memory, and the requirements there
+are the same as they would be in computer memory.  If binning is only
+to ~2Kx2K and there are 60 frames, with refinement at the end, then 1
+GB would be needed; fewer frames or more binning (both typical) would
+result in half this requirement for the aligned frames.  Thus, 2GB of
+memory should suffice for typical usage, but 4 GB would handle almost
+any anticipated need.
+.SH OPTIONS
+Alignframes uses the PIP package for input (see the manual page
+for pip(1)).  Options can be specified either as command line
+arguments (with the -) or one per line in a command file
+(without the -).  Options can be abbreviated to unique letters; the currently
+valid abbreviations for short names are shown in parentheses.
+INSERT OPTION TEXT HERE
+.TP
+.B -StandardInput
+Read parameter entries from standard input
+
+.SH EXAMPLES
+The example commands below would all be entered in one line, or as
+multiple lines with a backslash at the end of every line except the
+last, as they are shown here due to line length limits. Most options
+could be abbreviated more than they are.
+.SS Frames from Tilt Series
+An image from a tilt series with ~4Kx~4K images might align well with a
+command as simple as
+
+  alignframes Feb21_10.43.50.mrc Feb21_10.43.50_ali.mrc
+
+where you can add "-gpu 0" to use a GPU on this or any of the
+following commands.  This will use a default
+binning of 3 and filter cutoff of 0.06/pixel.  If you already know that you
+want a different binning (say, 4) or filter (say, 0.05), then the
+easiest way to enter this is with
+
+  alignframes -bin 4,1 -vary 0.05 Feb21_10.43.50.mrc \\
+    Feb21_10.43.50_ali.mrc 
+
+where using \fB-vary\fR will scale the sigma for the filter rolloff
+automatically.
+.P
+If the frame files for your tilt series list in order from one high
+tilt to the other and the tilt series file is available (say, cell4.mrc),
+
+   alignframes -bin 4,1 -vary 0.05 -stack cell4.mrc Feb21_*.mrc \\
+     cell4_ali.mrc
+
+will process the entire tilt series and move information from the
+header of the tilt series file into the new file.  However, if the tilt
+series was taken bidirectionally and the frames files do not list in order,
+or if the there were any duplicate images taken, then you want to
+supply the .mdoc file instead of the stack and input files:
+
+   alignframes -bin 4,1 -vary 0.05 -mdoc cell4.mrc.mdoc cell4_ali.mrc
+
+which will process the frames in the right order and place essential
+information in the output file header.
+.P
+To explore filter settings, it is best to run on a collection of files,
+perhaps about 20.  Suppose "Feb21_10.4*.mrc" lists the desired number
+of files, you could explore a range of filters at binning 3 with
+
+   alignframes -vary 0.05,.06,.08,.1 -nosum Feb21_10.4*.mrc
+
+The summary at the end will tell which filter gave the lowest mean
+residual.  Be sure to scan through the results and look at whether
+either the mean residual or the distance moved declines a lot with
+increased filtering, which may be a sign that fixed pattern noise is a
+problem.  Also note whether the maximum unweighted residual is high.
+If it goes over 5-10 pixels, you can problem reduce the occurrence of
+bad fits by restricting the allowed shift with "-shift 10" or even
+"-shift 5".  Obviously, you do not want to set this limit lower than
+the maximum possible shift from one frame to the next.
+.SS Evaluating and Visualizing Differences with FRC Curves
+Suppose you want to use FRCs to evaluate the difference between two
+conditions, such as filter 0.05 versus 0.06, or with and without
+refinement.  You need to make output sums to get an FRC.
+
+   alignframes -vary 0.05 -frc sample.frc Feb21_10.4*.mrc sample.mrc
+
+   alignframes -vary 0.05 -ref 5 -frc sample-refine.frc \\
+      Feb21_10.4*.mrc sample.mrc 
+
+The ".frc" files have all of the FRC curves for a run, each with a
+"type" number equal to its file number in the alignframes text output.
+You can plot one curve (say, the fourth one) with 
+
+   onegenplot -ty 4 -sym 0 sample.frc
+
+To compare FRC's, run
+
+  subtractcurves -ave 10 -rad 2 sample-refine.frc sample.frc \\
+     refine-diff.dat 
+
+which will subtract each pair of corresponding curves and average over
+10 points to reduce the noise in the differences.  You could have
+avoided the averaging here with the option "-ring .05" to alignframes,
+which will make the FRC curve much less noisy in Onegenplot(1).  
+(The default FRC output is good for seeing the CTF oscillations in
+single-particle data, but a larger ring size will often be more
+appropriate for tilt series.)
+You could examine each difference in a separate graph with
+
+   onegenplot -ty 1 -sym 0 refine-diff.dat &
+   onegenplot -ty 2 -sym 0 refine-diff.dat &
+   etc.
+
+But to assess the overall benefit of the difference in conditions, it
+is more efficient to look at a lot of points at once:
+
+   onegenplot -ty 1,2,3,4,5,6,7,8,9,10 refine-diff.dat &
+   onegenplot -ty 11,12,13,14,15,16,17,18,19,20 refine-diff.dat &
+   etc.
+
+When looking at these curves, treat any improvements below about 1.3
+times the cutoff frequency with caution because they could arise from
+overfitting.  Improvements past this point would not reflect
+overfitting, although if the fit is locking in on fixed pattern noise,
+it would boost high frequency correlations.
+.SS Frames for Single-Particle Reconstruction
+For single-particle data, the best initial approach is to fit to
+pairwise shifts among about half of the frames.  So for a set of 34
+frames, if you wanted to do an initial assessment with two filters
+and look at the FRC, 
+
+   alignframes -vary 0.05,.06 -pair 17 -frc test.frc \\
+      Feb15_10.13.15.mrc test.mrc
+
+which will use a default binning of 6 for ~8K frames.  A more flexible
+command for fitting to shifts among half the frames, regardless of the
+exact frame count, is
+
+   alignframes -vary 0.05,.06 -pair -2 -frc test.frc \\
+      Feb15_10.13.15.mrc test.mrc
+
+If you had some
+indication that fixed pattern noise was a problem, or if the data
+seemed particularly noisy, giving mean residuals above 1, you could use
+pairwise shifts among all frames with
+
+   alignframes -vary 0.05 -pair -1 -frc test.frc Feb15_10.13.15.mrc \\
+      test.mrc
+.P
+For even noisier situations, you can use grouping to reduce the mean
+residual and improve the fits:
+
+   alignframes -vary 0.05 -pair -1 -group 3 -refine 5 -frc test.frc \\
+      Feb15_10.13.15.mrc test.mrc
+
+where the refinement at the end may or may not be beneficial, depending
+on just how noisy the single frames are.  The option specifies up to 5
+iterations of refinement, which is almost always sufficient unless
+refining the data as groups with the \fB-rgroup\fR option.
+.SS Processing of Raw Frames
+If you have collected dark-subtracted data from a K2 camera into MRC or
+compressed TIFF files, you can process them with
+
+   alignframes -gain SuperRef_Feb20_20.26.21.dm4 -scale 39.3 -rot -1 \\
+      -defect defects_Feb20_20.26.21.txt -pair 17 Feb21_10.32.56.tif \\
+      Feb21_10.32.56_ali.mrc 
+
+using the gain reference copied into the data directory and the defect
+file written there by SerialEM.  The option "-rot -1" specifies that
+the gain reference needs to be rotated by the value for rotation and
+flip indicated by "r/f" in a label in the file header.  MRC files
+started having this label in SerialEM 3.4, TIFF files in SerialEM 3.5, so
+check either kind of file by running "header" on the file.  If the
+label does not show "r/f", the number to use in the "-rot" entry would
+be the RotationAndFlip value in the SerialEM properties file.  If
+frames were saved without rotation, do not include this option.
+.P
+Either the "-scale" option as shown here, or the "-total" option with a
+total scaling, or the option "-mode 2", should be
+entered to preserve the precision of the data when they are
+written. The program will use a default total scaling of 30 when
+normalizing if the input data
+are byte values and data are not being written as floating point with
+"-mode 2".  However, it is probably better not to rely on the default
+and instead scale the electron counts by the same factor that is
+applied in SerialEM (39.3 in this example, a typical value when not
+dividing by 2).
+.P
+You could add an option such as "-trunc 7" to replace values above 7
+with the local mean.  Use the command
+
+   clip hist Feb21_10.32.56.tif
+
+to see the distribution of pixel values.  There will be a point at
+which the values stop falling rapidly and then have a long tail;
+removal of values above there is indicated.
+.SS Assessing Fixed Pattern Noise
+This procedure is not convenient, but does work.  The first step when
+fixed pattern noise is suspected to affect the correlations is to
+output the individual shifts with the option "-deb 2".  Use only a
+single filter for simpler output.  You will see a series of
+lines like
+
+.nf
+1 to 0  -1.95  -0.17   near 0.00  0.00
+2 to 0  -1.57  0.02   near -1.95  -0.17
+2 to 1  -0.60  -0.77   near 0.00  0.00
+3 to 0  -1.79  0.44   near -1.90  -0.30
+3 to 1  0.44  -1.32   near -0.28  -0.45
+3 to 2  0.36  0.02   near 0.00  0.00
+.fi
+
+Each line shows a shift between a pair of frames (numbered from
+0), then the shift that it was assumed to be "near" when comparing with
+the maximum allowed shift.  If you see many shifts close to 0
+(but not exactly 0), then they could be due to fixed pattern noise.
+(shifts of exactly 0 might indicated thatthe maximum shift was too low.
+.P
+Try with some higher filter values and see if the incidence of
+near-zero values increases.  Set a binning lower than
+the default (e.g., 4 instead of 6, 2 instead of 3) if necessary to make
+a filter value be below Nyquist.  In the above example, a higher filter
+gave:
+
+.nf
+1 to 0  -0.80  -0.22   near 0.00  0.00
+2 to 0  -0.71  0.07   near -0.80  -0.22
+2 to 1  -0.08  -0.38   near 0.00  0.00
+3 to 0  -0.92  0.42   near -0.77  -0.15
+3 to 1  0.17  -0.81   near -0.02  -0.15
+3 to 2  0.30  -0.29   near 0.00  0.00
+.fi
+.P
+To visualize the correlation peak from fixed pattern noise, you need to run the
+program with options that will make it
+save unbinned correlations with no high-frequency filtering.  This is
+available only when not using a GPU and when specifying more than one filter.
+
+   alignframes -bin 1,1 -vary 0.05,0.06 -deb 102 -frame 1,5 -nosum \\
+      Feb15_10.13.15.mrc
+
+There will be series of lines indicating the names of saved images and
+the measured shift between a pair of frames.  Pick one with more than a
+few pixels of shift, which may end up being the one between frames 0
+and 4.  For example:
+
+.nf
+Saved lf correlation image frame 4 in ./faimg-18.mrc    mean -0.00
+Saved correlation image frame 4 in ./faimg-19.mrc    mean -0.03
+4 to 0  -0.59  -2.70   near -1.90  0.14
+.fi
+
+The last line shows the shift between frames 4 and 0, then the shift
+that it was assumed to be "near" when comparing with the maximum
+allowed shift.  You want to examine the "lf correlation image" in
+"faimg-18.mrc" ("faimg-19.mrc" is a small subarea with high-frequency
+filtering, centered on the expected shift, so is not suitable).  You
+can open this file directly in 3dmod, but it will easier to load a
+centered subarea.  Run "header faimg-18.mrc" to see its size, NX and
+NY.  Determine these values:
+.nf
+    xst = NX / 2 - 200
+    xnd = NX / 2 + 199
+    yst = NY / 2 - 200
+    ynd = NY / 2 + 199
+.fi
+and open the file with
+
+   3dmod -x xst,xnd -y yst,ynd  faimg-18.mrc
+
+Open a slicer window and close it; this will place the current point
+marker on the middle pixel.  Zoom the Zap window up to about 6 and turn off the
+high-quality display (the checkerboard) to see individual pixels.
+Adjust black and white levels to 0 and 255.  The degree to which this
+central pixel stands out indicates the amount of fixed pattern noise.
+Increase the black level to see just how much it stands out.  If you
+can see 4 brighter pixels around the central one, the situation is
+particularly bad.
+.P
+You may wonder where the real correlation peak went!  It is very
+diffuse and the high-frequency filtering is essential.  Use
+Edit-Image-Process to open the processing dialog and select the Fourier
+filtering panel.  Set the high frequency cutoff to your filter
+value and the falloff to one-seventh of that and press "Apply" to
+filter.  The real peak will now be prominent.  If it is close to the
+origin, you might see its position change with different filters as it
+merges with the fixed pattern peak.
+.SH AUTHOR
+.nf
+David Mastronarde
+.fi
+.SH SEE ALSO
+
+.P
+Email bug reports to mast@colorado.edu.

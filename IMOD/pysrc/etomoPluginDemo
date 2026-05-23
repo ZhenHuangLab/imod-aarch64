@@ -1,0 +1,62 @@
+#!/usr/bin/env python
+# etomoPluginDemo - sample script for running from etomo demo plugin
+#
+# Author: David Mastronarde and maybe Sue!
+#
+# $Id$
+#
+
+progname = 'etomoPluginDemo'
+prefix = 'ERROR: ' + progname + ' - '
+
+# load System Libraries
+import os, sys, time
+
+#
+# Setup runtime environment
+if os.getenv('IMOD_DIR') != None:
+   sys.path.insert(0, os.path.join(os.environ['IMOD_DIR'], 'pylib'))
+   from imodpy import *
+   addIMODbinIgnoreSIGHUP()
+else:
+   sys.stdout.write(prefix + " IMOD_DIR is not defined!\n")
+   sys.exit(1)
+
+#
+# load IMOD Libraries
+from pip import *
+
+# Fallbacks from ../manpages/autodoc2man 3 1 etomoPluginDemo
+options = ["sleep:SleepTime:F:", "message:Message:CH:"]
+
+# Save old autodoc directory
+oldAutoDir = ''
+if os.getenv('AUTODOC_DIR') != None:
+   oldAutoDir = os.environ['AUTODOC_DIR']
+os.environ['AUTODOC_DIR'] = os.path.join(os.environ['IMOD_DIR'], 'Plugins')
+
+# Get the options using the autodoc here
+(numOpts, numNonOpts) = PipReadOrParseOptions(sys.argv, options, progname, 1, 0, 0)
+
+# restore the old directory  or remove this one
+if oldAutoDir:
+   os.environ['AUTODOC_DIR'] = oldAutoDir
+else:
+   del os.environ['AUTODOC_DIR']
+
+sleepTime = PipGetInteger('SleepTime', -1.)
+message = PipGetString('Message', 'Hello world')
+if sleepTime <= 0.:
+   exitError('You must enter a positive sleep time')
+
+time.sleep(sleepTime)
+
+# After restoring the AUTODOC_DIR, IMOD programs can use autodocs properly
+try:
+   runcmd('binvol -h', None, 'stdout')
+except ImodpyError:
+   exitFromImodError(progname)
+
+prnstr(message)
+sys.exit(0)
+

@@ -1,0 +1,89 @@
+#!/usr/bin/env python
+# b3dremove - Utility to remove files, for use in com files.  The argument -g
+# makes it glob all the filenames.  Will try numerous times with a wait and not
+# exit with an error if there is a failure.  Works with nonexistent files or no files 
+# in the argument list at all
+#
+# Author: David Mastronarde
+#
+# $Id$
+
+retryWait = 0.5
+maxTrials = 10
+
+import sys, os, os.path, time
+
+if len(sys.argv) < 2:
+   sys.stdout.write("""Usage: b3dremove [-e] [-g] filenames OR -r directories
+    Removes files with optional -g to glob on wild cards in the filenames, or
+    removes directory trees with the -r option.  In either case -e makes it
+    exit with an error if it fails to remove a file or directory.\n""")
+   sys.exit(0)
+
+numStart = 1
+doglob = False
+dotree = False
+failExitVal = 0
+failPref = 'WARNING'
+while numStart < len(sys.argv):
+   if sys.argv[numStart] == '-g':
+      import glob
+      doglob = True
+      numStart += 1
+   elif sys.argv[numStart] == '-r':
+      import shutil
+      dotree = True
+      numStart += 1
+   elif sys.argv[numStart] == '-e':
+      failExitVal = 1
+      numStart += 1
+      failPref = 'ERROR'
+   else:
+      break
+
+if len(sys.argv) <= numStart:
+   sys.exit(0)
+
+if doglob and dotree:
+   sys.stdout.write('ERROR: b3dremove - You cannot enter both -r and -g\n')
+   sys.exit(1)
+
+files = []
+for arg in sys.argv[numStart:]:
+   if doglob:
+      files += glob.glob(arg)
+   elif os.path.exists(arg):
+      files.append(arg)
+
+numToDel = len(files)
+trial = 0
+exitVal = 0
+failMess = ''
+while numToDel and trial < maxTrials:
+   trial += 1
+   for ind in range(len(files)):
+      onef = files[ind]
+      if onef:
+         try:
+            if dotree:
+               shutil.rmtree(onef)
+            else:
+               os.remove(onef)
+            numToDel -= 1
+            files[ind] = None
+            if trial > 1:
+               sys.stdout.write('It took ' + str(trial) + ' tries to remove ' + onef+'\n')
+         except Exception:
+            if trial == maxTrials:
+               if failMess:
+                  failMess += ', '
+               failMess += onef
+   
+   if numToDel:
+      time.sleep(retryWait)
+
+if failMess:
+   sys.stdout.write(failPref + ': b3dremove - Could not remove: ' + failMess + '\n')
+   exitVal = failExitVal
+      
+sys.exit(exitVal)

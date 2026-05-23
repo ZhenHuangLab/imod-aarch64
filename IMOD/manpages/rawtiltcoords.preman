@@ -1,0 +1,82 @@
+.na
+.nh
+.TH rawtiltcoords 1 4.8.7 IMOD
+.SH NAME
+rawtiltcoords \- Get positions and angles of tomogram points in raw tilt series
+.SH SYNOPSIS
+rawtiltcoords  options
+.SH DESCRIPTION
+Rawtiltcoords produces an IMOD model with points at the coordinates
+in the raw tilt series corresponding to points in a tomogram.
+Optionally, it can also make a list of the projection angles 
+and the computed defocus at each point.  
+Its main use is to allow subvolume averages to be computed from raw tilt
+series images after appropriate modification of angles.  The program
+shares much code and many options with Subtomosetup(1).
+.P
+The program allows considerable flexibility as long as several
+restrictions are followed.  Note that it does not currently operate on
+any image data, but it needs to read file headers.  Each of those
+required files could be replaced with a stub produced by the script
+Copyheader.
+  1) The program must be run from the dataset reconstruction directory.
+  2) The raw tilt series stack must still be present or its header
+must be present under the same name.
+  3) The tomogram on which points were selected for reconstruction must
+be available and entered with the \fB-volume\fR option, although it
+need not be in the current directory.
+  4) The original full reconstruction produced by Tilt(1), or a copy of
+its header, must be present.
+  5) The aligned stack used to generate that reconstruction, or a copy of
+its header, must be present.
+  6) The unmodified command file used to generate the reconstruction
+must be supplied.  In other words, either 
+the tilt series alignment, tomogram positioning parameters, the
+X-axis tilt, and the tilt angle offset and subarea selections in the
+Tomogram Generation panel of Etomo must not be changed, or else a copy
+of the correct command file must be supplied with the \fB-command\fR
+option.
+  7) If you apply any processing to the volume that was modeled outside
+of Etomo, the header entries for pixel spacing, origin, and tilt angles must be
+preserved in the file entered with the \fB-volume\fR option.  If you need to
+trim some more, use Trimvol(1); if you need to bin, use Binvol(1).  
+  8) If you need to apply other software that does not preserve these
+header entries, follow these procedures: Make sure that the file
+analyzed has the same dimensions as the IMOD-based file from which it
+was derived.  Enter the name of the IMOD-based file instead of the
+analyzed file with the \fB-volume\fR option.  Supply a point coordinate
+file instead of a model file for the \fR-center\fR option (use
+Model2Point(1) with the \fB-float\fR option to make such a file).
+Other alternatives are to
+load a model onto the IMOD-based file with the \fB-m\fR option and save
+it again, or to run Imodtrans(1) on a model with the \fB-image\fR
+option and the name of the IMOD-based files, and use
+the resulting model.
+.P
+You are free to make an aligned stack from a centered subarea or
+an over-sized area and to change this area between the binned and
+subvolume reconstructions.  You can apply any trimming options in the
+Post-processing panel in Etomo. 
+.P
+See the \fB-AngleOutputFile\fR option in the Tilt(1) man page for the
+format and conventions of the projection angle file.
+.SH OPTIONS
+Rawtiltcoords uses the PIP package for input (see the manual page
+for pip(1)).  Options can be specified either as command line
+arguments (with the -) or one per line in a command file
+(without the -).  Options can be abbreviated to unique letters; the currently
+valid abbreviations for short names are shown in parentheses.
+INSERT OPTION TEXT HERE
+.TP
+.B -StandardInput
+Read parameter entries from standard input
+
+.SH AUTHOR
+.nf
+David Mastronarde
+.fi
+.SH SEE ALSO
+tilt(1), boxstartend(1), trimvol(1),
+binvol(1), model2point(1), imodtrans(1)
+.SH BUGS
+Email bug reports to mast@colorado.edu.

@@ -1,0 +1,133 @@
+Version = 1.0
+Pip = 1
+
+[Field = InputFile]
+short = input
+type = FN
+usage = Input image file to warp
+tooltip = 
+manpage = 
+
+[Field = OutputFile]
+short = output
+type = FN
+usage = Output file for warped volume
+tooltip = 
+manpage = 
+
+[Field = TransformFile]
+short = xforms
+type = FN
+usage = File with inverse transforms used for warping
+tooltip = 
+manpage = File with matrix of inverse transforms produced by Findwarp
+
+[Field = ScaleTransforms]
+short = scale
+type = F
+usage = Factor by which to scale transforms
+tooltip = 
+manpage = Factor by which to scale transforms, to account for the input image
+file having a different binning or scaling than the file on which transforms
+were derived.  For example, if transforms were found on files binned by 2,
+enter 2 to apply the transforms to an unbinned file.
+
+[Field = TemporaryDirectory]
+short = tempdir
+type = CH
+usage = Directory to use for temporary files (default is current directory)
+tooltip = 
+manpage = Directory to use for temporary files.  The default is that the
+temporary files will be placed in the current directory.
+
+[Field = OutputSizeXYZ]
+short = size
+type = IT
+usage = X, Y, Z dimensions of the output file (Default is Z, Y, X size of
+input file)
+tooltip = 
+manpage = 
+
+[Field = SameSizeAsInput]
+short = same
+type = B
+usage = Make default size of output file be same size as input file
+tooltip = 
+manpage = Make default size of output file be same size as input file.  One or
+more of the dimensions can be overridden by a value in a -size entry.
+
+[Field = InterpolationOrder]
+short = order
+type = I
+usage = "Order of interpolation to use (1 = linear, 2 = quadratic; default = 2)"
+tooltip = 
+manpage = Order of interpolation to use.  Currently only quadratic (2) and
+linear (1) interpolation are available; the default is quadratic.
+
+[Field = ChunkSizesForHDF]
+short = chunk
+type = IT
+usage = Size of chunks in X, Y, Z for chunked HDF output, 0,0,0 for default
+tooltip = 
+manpage = Size of chunks in X, Y, and Z for output to an HDF file organized in
+chunks.  Storing data this way will prevent the need to output cubes of
+transformed data to scratch files and read them back in to make the final
+output, when the volume is too large to fit in the allowed memory.  Enter
+0,0,0 for the default size, which is for chunks the same size as the cubes
+that would ordinarily be written to scratch files, and
+for no chunks at all if data are being handled in one cube per layer.  If a
+specific size is entered for one or more axes, then the program will first
+determine the division into cubes, and then make the chunk size be the minimum
+of the cube size and the specified value for each axis.  When using chunks,
+the memory is limited to 15000 megabytes even if a larger value is entered.
+
+[Field = MemoryLimit]
+short = memory
+type = I
+usage = Memory to use for major arrays, in megabytes
+tooltip = 
+manpage = Amount of memory to allocate for the major arrays needed by the
+program, in megabytes.  This always includes memory for input images and may
+include memory for a plane of transformations or for a stack of output slices,
+depending on whether transformations rotate the data by 90 degrees.  The
+default is the minimum of system memory minus 1 GB, 60% of system memory, and
+12 GB for system memory up to 30 GB, and 40% of system memory above 30 GB, but
+at least 768 MB.
+
+[Field = VerboseOutput]
+short = verbose
+type = I
+usage = 1 for diagnostic output; 2 for output as each slice is loaded
+tooltip = 
+manpage = 
+
+[Field = PatchOutputFile]
+short = patch
+type = FN
+usage = Output text file for patch vectors at each transform
+tooltip = 
+manpage = Output text file for vectors representing the displacement produced
+by each transform.  It can be converted to a model with patch2imod(1).
+The program will exit without making an output file if this option is given.
+
+[Field = FilledInOutputFile]
+short = filled
+type = FN
+usage = Output file for warping transforms after filling in empty positions
+tooltip = 
+manpage = Output file for warping transforms after filling in empty positions.
+The program will exit without making an output image file if this option is given.
+
+[Field = ParameterFile]
+short = param
+type = PF
+usage = Read parameter entries from file
+tooltip = 
+manpage = Read parameter entries as keyword-value pairs from a parameter file.
+
+[Field = usage]
+short = help
+type = B
+usage = Print help output
+tooltip = 
+manpage = 

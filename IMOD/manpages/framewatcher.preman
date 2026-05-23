@@ -1,0 +1,99 @@
+.na
+.nh
+.TH framewatcher 1 4.8.46 IMOD
+.SH NAME
+framewatcher \- watch for command files or stacks to run with alignframes
+.SH SYNOPSIS
+framewatcher  [options]
+.SH DESCRIPTION
+Framewatcher is a Python program that can watch for either command
+files or frame stacks appearing in a directory.  The command files are
+expected to run the program Alignframes(1) and to have extension .pcm,
+the extension on files produced by the SerialEMCCD plugin to
+DigitalMicrograph.  The program can modify a few of the parameters in
+such a file with the options below.  The frame stacks must have
+extension .mrc or .tif.  Output files with aligned sums can be placed
+in a different directory.  Stacks and command files can be moved to
+another directory when they are finished.  Whole tilt series can be
+processed when a command file specifies the metadata (.mdoc) file for
+the tilt series stack.
+.P
+To process frame stacks, either a master command file for alignment must be
+supplied or the \fB-nocom\fR option must be entered; in either case,
+the program will watch only for stacks, not for
+command files.  It will avoid moving an image file that has no images
+in it yet and a tilt series file that is not yet finished.  
+The master command file can run Alignframes(1), in
+which case the same parameters can be modified before running on each
+stack as
+when watching for command files.  Alternatively, the command file can
+run other software, in which case it should contain the text
+"INPUTFILE" and "OUTPUTFILE" wherever the input and output filenames
+are needed, respectively.  The name of the stack will be substituted
+for "INPUTFILE", and the name of the output file for the aligned sum,
+including the optional output directory, will be substituted for
+"OUTPUTFILE".  A command file will be written with the root name of the
+stack plus the extension ".pcm".
+.P
+In either case, the command file is run with Vmstopy(1) in the
+directory where it is located and produces a log file there.  If files
+are not being moved elsewhere when done, the
+command file is renamed with ".done" added at the end, which is how the
+program keeps from rerunning stacks or command files even if restarted.
+If no command file at all is run, ".done" will be added to the stack
+name itself unless it is moved elsewhere.
+.P
+An arbitrary command can be run before or after the command file is run
+(or a stack is moved or renamed, when there is no command file).
+Items such as the root name of the data can be substituted into the
+command, as described below.  This may provide a more flexible way to
+run other alignment software than the master command file.
+.P
+The program works by looking in the directory for eligible files and
+running all of the ones that it sees.  When it sees no files, it waits 5
+seconds before scanning the directory again.  When it see stacks, it
+runs all but the last one immediately, then waits until the last one
+(which typically would be the only one seen) has not changed for at
+least 15 seconds.
+.P
+Entrl Ctrl C to terminate the program.  This will kill any running
+alignment operation.
+.SH OPTIONS
+Framewatcher uses the PIP package for input (see the manual page
+for pip(1)).  Options can be specified either as command line
+arguments (with the -) or one per line in a command file
+(without the -).  Options can be abbreviated to unique letters; the currently
+valid abbreviations for short names are shown in parentheses.
+INSERT OPTION TEXT HERE
+.TP
+.B -StandardInput
+Read parameter entries from standard input
+
+.SH EXAMPLES
+To run command files that appear in the current directory with no
+optional modifications, enter
+
+   framewatcher
+.P
+To watch for files in a directory "X:\\MyFrames" and move them to a
+subdirectory "Processed" when done, enter (in a DOS terminal on Windows)
+
+   framewatcher -watch X:\\MyFrames -proc Processed
+
+where the directory would be entered as "X:/MyFrames" in a Cygwin
+window.
+.P
+To make sums with image reduction by 2 and run on a specific GPU, say # 2, enter
+
+   framewatcher -bin 2 -gpu 2
+
+where you could enter "-gpu 0" to run on the best available GPU even if the
+command file does not specify using a GPU.
+.SH AUTHOR
+.nf
+David Mastronarde
+.fi
+.SH SEE ALSO
+alignframes(1)
+.P
+Email bug reports to mast@colorado.edu.

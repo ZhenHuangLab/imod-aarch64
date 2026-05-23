@@ -1,0 +1,148 @@
+.na
+.nh
+.TH cryoposition 1 4.8.43 IMOD
+.SH NAME
+cryoposition \- Find angles and Z positioning for a cryo-tomogram
+.SH SYNOPSIS
+cryoposition  [options]  rootname
+.SH DESCRIPTION
+The goal of this program is to create a model for positioning a
+cryo-tomogram with Tomopitch(1).  It uses Findsection(1) to analyze the presence
+of structure in the tomogram, solve for the best orientation and limits
+of the volume, and create the positioning model.  However, the tomogram
+cannot be used directly for this analysis because the artifactual rays
+from the densest particles in a cryo-tomogram (i.e., gold fiducials or
+particles of contamination) are as dense as the biological structure of
+interest.  This program thus runs a series of operations to produce a
+volume without these extreme densities and their artifacts; only such a
+volume is suitable for analysis in Findsection(1).  Because of this, it
+is important to use the \fBfind\fR option to find the gold beads
+whenever they are present even if fiducials were not used for
+alignment.
+
+The detection of structure in cryo-tomograms is challenging, and
+Findsection(1) cannot find boundaries nearly as well as it can for
+stained, sectioned material.  To have a reconstruction that contains
+all material of interest in nearly all cases, two things are advisable:
+1) If there are gold beads, use them to set boundaries; i.e., use
+\fB-find\fR option with 2 instead of 1.  2) When generating a
+tomogram without checking the model for Tomopitch(1), make the
+thickness be 50 pixels bigger by setting the \fB-extra\fR option to
+Tomopitch(1) to 25.
+
+This program picks a binning to use by default, and generates binned
+tomograms for analysis with no X-axis tilt, regardless of the current
+value in tilt.com.  It does not modify the tomopitch.com command file
+to insert the binning or zero out the old X-axis tilt entry there.
+
+The steps followed by this program are as follows:
+
+1) The program picks a binning suitable for finding beads, or to
+bring the volume down to a small size if not finding beads.
+
+2) An aligned stack is created at that binning, with its size
+increased sufficiently to reduce edge effects when erasing high
+densities from this stack.
+
+3) An oversized reconstruction is built from that aligned stack.
+
+4) Beads are found in the subset of that reconstruction corresponding
+to the size of an unexpanded aligned stack.  The program uses fallback
+entries to Findbeads3d(1) so a usable result will be produced even if
+beads cannot be well-distinguished.
+
+5) The program uses Boxstartend(1) to extract boxes around all of the
+found beads into a single stack for analysis.
+
+6) The histogram of densities in the extracted boxes consists of a
+central peak dominated by the background density.  The beads or other
+extreme densities create an excess of counts on one side of that peak.
+The "histogram" operation of Clip(1) is used with the -E option to analyze
+these excess counts and find the density level that 95% of them are beyond.
+
+7a) If such a threshold is found, then the program makes sure that
+the threshold is not too lenient; i.e., that it will not cause too
+large a fraction of voxels to be selected.  The acceptable fraction of
+voxels is determined from the bead size and the number of beads found.
+The program runs "clip hist" with the -t option to determine the
+threshold corresponding to the acceptable fraction, and revises the
+threshold to be applied if necessary.
+
+7b) If a threshold could not be found, or beads are not being found,
+the program runs "clip hist" with the -t option to determine the
+threshold corresponding to the fraction entered with the \fB-erase\fR
+option, which is 0.002 by default.
+
+8) The "threshold" operation of Clip(1) is used to
+produce a binary volume in which points are marked as beyond the
+threshold only if they are part of a contiguous set of points of a
+minimum size set with the -M option.  The default minimum size is one
+third of the bead volume.  This special thresholding is needed to keep
+many very small features from being erased.
+
+9) This thresholded volume is reprojected by Tilt(1) with a special
+mode that produces binary projection images.  The marking of projection
+points as beyond threshold is generous.  The projection from a voxel is
+divided among 4 pixels in the projection image by interpolation, and
+any pixel with an interpolation fraction of at least 0.05 is marked as
+beyond threshold.
+
+10) Contours are generated around the points beyond threshold in the
+reprojections with Imodauto(1).
+
+11) Ccderaser(1) is then run on the aligned stack to erase inside
+those contours. Large regions are tapered to their edges when erasing
+within contours; this is why the reprojection itself was not used as a
+mask for pixels to erase.
+
+12) A regular-sized reconstruction is generated from the erased
+aligned stack by restricting the width and slice numbers in Tilt(1).
+
+13) Findsection(1) is run in a mode that analyzes the location of
+regions with high SD values, without attempting to find upper and lower
+surfaces at all positions.  See that man page for details.
+
+.SH OPTIONS
+Cryoposition uses the PIP package for input (see the manual page
+for pip(1)).  Options can be specified either as command line
+arguments (with the -) or one per line in a command file
+(without the -).  Options can be abbreviated to unique letters; the currently
+valid abbreviations for short names are shown in parentheses.
+INSERT OPTION TEXT HERE
+.TP
+.B -StandardInput
+Read parameter entries from standard input
+.SH EXAMPLE
+When there are gold beads present in the sample, a command like this
+can be used:
+   cryoposition -find 2 -thick 800 setname
+.br
+where "setname" is the name of the files in the data set without the
+extension, and you would use a thickness substantially bigger than you
+expect the sample to be.  Add the option "-leave -1" if you want to use
+the initial binned oversized reconstruction (setname_cpos.rec) to check the result, or
+"-leave -2" if you want to use the reconstruction with beads erased
+(setname_cposErase.rec).
+.SH FILES
+All temporary files produced by this procedure can be 
+are placed into the current directory and named with _cpos in their names.
+They are all deleted when the program exits unless the
+\fB-leave\fR option is used to retain them.  The files are:
+.nf
+  _cpos.ali        Oversized binned aligned stack
+  _cpos.rec        Oversized binned reconstruction
+  _cpos.pkmod      Model of beads found with Findbead3d(1)
+  _cposBox.st      Stack of extracted boxes around beads
+  _cposThresh.rec  Thresholded volume made from oversized reconstruction
+  _cpos.reproj     Binary reprojection of thresholded volume
+  _cposAuto.mod    Contour model of binary reprojection
+  _cposErase.ali   Erased aligned stack
+  _cposErase.rec   Reconstruction built from erased aligned stack
+.SH AUTHOR
+.nf
+David Mastronarde
+.fi
+.SH SEE ALSO
+binvol(1), xyzproj(1), matchrotpairs(1), corrsearch3d(1), refinematch(1), matchvol(1)
+.SH BUGS
+Email bug reports to mast@colorado.edu.

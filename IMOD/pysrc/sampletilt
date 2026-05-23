@@ -1,0 +1,60 @@
+#!/usr/bin/env python
+# sampletilt - to run tilt for a sample tomogram
+#
+# $Id$
+#
+
+progname = 'sampletilt'
+prefix = 'ERROR: ' + progname + ' - '
+
+
+#### MAIN PROGRAM  ####
+#
+# load System Libraries
+import os, sys
+
+#
+# Setup runtime environment
+if os.getenv('IMOD_DIR') != None:
+   sys.path.insert(0, os.path.join(os.environ['IMOD_DIR'], 'pylib'))
+   from imodpy import *
+   addIMODbinIgnoreSIGHUP()
+else:
+   sys.stdout.write(prefix + " IMOD_DIR is not defined!\n")
+   sys.exit(1)
+
+#
+# load IMOD Libraries
+from pysed import *
+
+if len(sys.argv) != 7:
+   prnstr(prefix + 'Need 6 params: slice start & end, ystart, set name, rec name, ' + \
+          'com file name')
+   sys.exit(1)
+
+slstart = sys.argv[1]
+slend = sys.argv[2]
+ystart = sys.argv[3]
+setname = sys.argv[4]
+recname = sys.argv[5]
+tiltname = sys.argv[6]
+
+sedcom = ['/^[$#]/d',
+          fmtstr("/^SUBSETSTART.*/s//SUBSETSTART 0 {}/", ystart),
+          fmtstr("/^OutputFile/s/[ 	]{}.*/ {}/", setname, recname),
+          '/^SLICE/d',
+          '/^WIDTH/d',
+          '/^AdjustOrigin/d',
+          fmtstr('/^THICKNESS/a/SLICE {} {} 1/', slstart, slend)]
+
+tiltLines = readTextFile(tiltname)
+for ind in range(len(tiltLines)):
+   tiltLines[ind] = tiltLines[ind].lstrip()
+tiltcom = pysed(sedcom, tiltLines, None, True)
+
+try:
+   runcmd('tilt -StandardInput', tiltcom, 'stdout')
+except ImodpyError:
+   exitFromImodError(progname)
+
+sys.exit(0)
