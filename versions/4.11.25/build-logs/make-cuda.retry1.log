@@ -1,0 +1,236 @@
+cd libxml   ; make all
+make[1]: Entering directory '/home/zhenh/software/imod-aarch64/IMOD/libxml'
+make[1]: Nothing to be done for 'all'.
+make[1]: Leaving directory '/home/zhenh/software/imod-aarch64/IMOD/libxml'
+cd libcfshr  ; make all
+make[1]: Entering directory '/home/zhenh/software/imod-aarch64/IMOD/libcfshr'
+make[1]: Nothing to be done for 'all'.
+make[1]: Leaving directory '/home/zhenh/software/imod-aarch64/IMOD/libcfshr'
+cd libimod   ; make all
+make[1]: Entering directory '/home/zhenh/software/imod-aarch64/IMOD/libimod'
+make[1]: Nothing to be done for 'all'.
+make[1]: Leaving directory '/home/zhenh/software/imod-aarch64/IMOD/libimod'
+cd libiimod  ; make all
+make[1]: Entering directory '/home/zhenh/software/imod-aarch64/IMOD/libiimod'
+make[1]: Nothing to be done for 'all'.
+make[1]: Leaving directory '/home/zhenh/software/imod-aarch64/IMOD/libiimod'
+cd libmesh   ; make all
+make[1]: Entering directory '/home/zhenh/software/imod-aarch64/IMOD/libmesh'
+make[1]: Nothing to be done for 'all'.
+make[1]: Leaving directory '/home/zhenh/software/imod-aarch64/IMOD/libmesh'
+cd libdiaqt  ; make all
+make[1]: Entering directory '/home/zhenh/software/imod-aarch64/IMOD/libdiaqt'
+make[1]: Nothing to be done for 'all'.
+make[1]: Leaving directory '/home/zhenh/software/imod-aarch64/IMOD/libdiaqt'
+cd libfft    ; make all
+make[1]: Entering directory '/home/zhenh/software/imod-aarch64/IMOD/libfft'
+make[1]: Nothing to be done for 'all'.
+make[1]: Leaving directory '/home/zhenh/software/imod-aarch64/IMOD/libfft'
+cd libwarp   ; make all
+make[1]: Entering directory '/home/zhenh/software/imod-aarch64/IMOD/libwarp'
+make[1]: Nothing to be done for 'all'.
+make[1]: Leaving directory '/home/zhenh/software/imod-aarch64/IMOD/libwarp'
+cd librgctf  ; make all
+make[1]: Entering directory '/home/zhenh/software/imod-aarch64/IMOD/librgctf'
+make[1]: Nothing to be done for 'all'.
+make[1]: Leaving directory '/home/zhenh/software/imod-aarch64/IMOD/librgctf'
+cd Etomo      ; make all
+make[1]: Entering directory '/home/zhenh/software/imod-aarch64/IMOD/Etomo'
+make[1]: Nothing to be done for 'all'.
+make[1]: Leaving directory '/home/zhenh/software/imod-aarch64/IMOD/Etomo'
+cd flib       ; make all
+make[1]: Entering directory '/home/zhenh/software/imod-aarch64/IMOD/flib'
+if [ ! -e configure ] ; then ln -s ../configure configure ; fi
+cd subrs;     make all
+make[2]: Entering directory '/home/zhenh/software/imod-aarch64/IMOD/flib/subrs'
+make[2]: Nothing to be done for 'all'.
+make[2]: Leaving directory '/home/zhenh/software/imod-aarch64/IMOD/flib/subrs'
+cd image;     make all
+make[2]: Entering directory '/home/zhenh/software/imod-aarch64/IMOD/flib/image'
+make[2]: Nothing to be done for 'all'.
+make[2]: Leaving directory '/home/zhenh/software/imod-aarch64/IMOD/flib/image'
+cd model;     make all
+make[2]: Entering directory '/home/zhenh/software/imod-aarch64/IMOD/flib/model'
+make[2]: Nothing to be done for 'all'.
+make[2]: Leaving directory '/home/zhenh/software/imod-aarch64/IMOD/flib/model'
+cd blend;     make all
+make[2]: Entering directory '/home/zhenh/software/imod-aarch64/IMOD/flib/blend'
+make[2]: Nothing to be done for 'all'.
+make[2]: Leaving directory '/home/zhenh/software/imod-aarch64/IMOD/flib/blend'
+cd tiltalign; make all
+make[2]: Entering directory '/home/zhenh/software/imod-aarch64/IMOD/flib/tiltalign'
+make[2]: Nothing to be done for 'all'.
+make[2]: Leaving directory '/home/zhenh/software/imod-aarch64/IMOD/flib/tiltalign'
+cd beadtrack; make all
+make[2]: Entering directory '/home/zhenh/software/imod-aarch64/IMOD/flib/beadtrack'
+make[2]: Nothing to be done for 'all'.
+make[2]: Leaving directory '/home/zhenh/software/imod-aarch64/IMOD/flib/beadtrack'
+cd tilt;      make all
+make[2]: Entering directory '/home/zhenh/software/imod-aarch64/IMOD/flib/tilt'
+make[2]: Nothing to be done for 'all'.
+make[2]: Leaving directory '/home/zhenh/software/imod-aarch64/IMOD/flib/tilt'
+cd graphics;  make all
+make[2]: Entering directory '/home/zhenh/software/imod-aarch64/IMOD/flib/graphics'
+make[2]: Nothing to be done for 'all'.
+make[2]: Leaving directory '/home/zhenh/software/imod-aarch64/IMOD/flib/graphics'
+cd ndasda;    make all
+make[2]: Entering directory '/home/zhenh/software/imod-aarch64/IMOD/flib/ndasda'
+make[2]: Nothing to be done for 'all'.
+make[2]: Leaving directory '/home/zhenh/software/imod-aarch64/IMOD/flib/ndasda'
+cd distort;   make all
+make[2]: Entering directory '/home/zhenh/software/imod-aarch64/IMOD/flib/distort'
+make[2]: Nothing to be done for 'all'.
+make[2]: Leaving directory '/home/zhenh/software/imod-aarch64/IMOD/flib/distort'
+make[1]: Leaving directory '/home/zhenh/software/imod-aarch64/IMOD/flib'
+cd 3dmod      ; make all
+make[1]: Entering directory '/home/zhenh/software/imod-aarch64/IMOD/3dmod'
+make[1]: Nothing to be done for 'all'.
+make[1]: Leaving directory '/home/zhenh/software/imod-aarch64/IMOD/3dmod'
+cd imodutil   ; make all
+make[1]: Entering directory '/home/zhenh/software/imod-aarch64/IMOD/imodutil'
+make[1]: Nothing to be done for 'all'.
+make[1]: Leaving directory '/home/zhenh/software/imod-aarch64/IMOD/imodutil'
+cd qttools    ; make all
+make[1]: Entering directory '/home/zhenh/software/imod-aarch64/IMOD/qttools'
+cd qtassist;      make all
+make[2]: Entering directory '/home/zhenh/software/imod-aarch64/IMOD/qttools/qtassist'
+make[2]: Nothing to be done for 'all'.
+make[2]: Leaving directory '/home/zhenh/software/imod-aarch64/IMOD/qttools/qtassist'
+cd sourcedoc;     make all
+make[2]: Entering directory '/home/zhenh/software/imod-aarch64/IMOD/qttools/sourcedoc'
+make[2]: Nothing to be done for 'all'.
+make[2]: Leaving directory '/home/zhenh/software/imod-aarch64/IMOD/qttools/sourcedoc'
+cd mrc2tif;       make all
+make[2]: Entering directory '/home/zhenh/software/imod-aarch64/IMOD/qttools/mrc2tif'
+make[2]: Nothing to be done for 'all'.
+make[2]: Leaving directory '/home/zhenh/software/imod-aarch64/IMOD/qttools/mrc2tif'
+cd processchunks; make all
+make[2]: Entering directory '/home/zhenh/software/imod-aarch64/IMOD/qttools/processchunks'
+make[2]: Nothing to be done for 'all'.
+make[2]: Leaving directory '/home/zhenh/software/imod-aarch64/IMOD/qttools/processchunks'
+cd sendevent;     make all
+make[2]: Entering directory '/home/zhenh/software/imod-aarch64/IMOD/qttools/sendevent'
+make[2]: Nothing to be done for 'all'.
+make[2]: Leaving directory '/home/zhenh/software/imod-aarch64/IMOD/qttools/sendevent'
+make[1]: Leaving directory '/home/zhenh/software/imod-aarch64/IMOD/qttools'
+cd ctfplotter ; make all
+make[1]: Entering directory '/home/zhenh/software/imod-aarch64/IMOD/ctfplotter'
+make[1]: Nothing to be done for 'all'.
+make[1]: Leaving directory '/home/zhenh/software/imod-aarch64/IMOD/ctfplotter'
+cd mrc        ; make all
+make[1]: Entering directory '/home/zhenh/software/imod-aarch64/IMOD/mrc'
+make[1]: Nothing to be done for 'all'.
+make[1]: Leaving directory '/home/zhenh/software/imod-aarch64/IMOD/mrc'
+cd clip       ; make all
+make[1]: Entering directory '/home/zhenh/software/imod-aarch64/IMOD/clip'
+make[1]: Nothing to be done for 'all'.
+make[1]: Leaving directory '/home/zhenh/software/imod-aarch64/IMOD/clip'
+cd midas      ; make all
+make[1]: Entering directory '/home/zhenh/software/imod-aarch64/IMOD/midas'
+make[1]: Nothing to be done for 'all'.
+make[1]: Leaving directory '/home/zhenh/software/imod-aarch64/IMOD/midas'
+cd raptor     ; make all
+make[1]: Entering directory '/home/zhenh/software/imod-aarch64/IMOD/raptor'
+make[1]: Nothing to be done for 'all'.
+make[1]: Leaving directory '/home/zhenh/software/imod-aarch64/IMOD/raptor'
+cd pysrc      ; make all
+make[1]: Entering directory '/home/zhenh/software/imod-aarch64/IMOD/pysrc'
+make[1]: Nothing to be done for 'all'.
+make[1]: Leaving directory '/home/zhenh/software/imod-aarch64/IMOD/pysrc'
+cd plugs      ; make all
+make[1]: Entering directory '/home/zhenh/software/imod-aarch64/IMOD/plugs'
+cd beadfix        ;    make all
+make[2]: Entering directory '/home/zhenh/software/imod-aarch64/IMOD/plugs/beadfix'
+make[2]: Nothing to be done for 'all'.
+make[2]: Leaving directory '/home/zhenh/software/imod-aarch64/IMOD/plugs/beadfix'
+cd noskecommon    ;    make includes
+make[2]: Entering directory '/home/zhenh/software/imod-aarch64/IMOD/plugs/noskecommon'
+make[2]: Nothing to be done for 'includes'.
+make[2]: Leaving directory '/home/zhenh/software/imod-aarch64/IMOD/plugs/noskecommon'
+cd beadhelper     ;    make all
+make[2]: Entering directory '/home/zhenh/software/imod-aarch64/IMOD/plugs/beadhelper'
+make[2]: Nothing to be done for 'all'.
+make[2]: Leaving directory '/home/zhenh/software/imod-aarch64/IMOD/plugs/beadhelper'
+cd drawingtools   ;    make all
+make[2]: Entering directory '/home/zhenh/software/imod-aarch64/IMOD/plugs/drawingtools'
+g++ -fPIC -shared -o drawingtools.so ../noskecommon/icontextra.o ../noskecommon/customdialog.o \
+drawingtools.o moc_drawingtools.o ../noskecommon/moc_customdialog.o \
+livewire/LivewireCalculator.o livewire/moc_LivewireCalculator.o livewire/PointPriorityQueue.o livewire/Threaded.o livewire/moc_Threaded.o livewire/Weights.o livewire/moc_Weights.o livewire/general.o
+make[2]: Leaving directory '/home/zhenh/software/imod-aarch64/IMOD/plugs/drawingtools'
+cd interpolator   ;    make all
+make[2]: Entering directory '/home/zhenh/software/imod-aarch64/IMOD/plugs/interpolator'
+\cp -f ../../3dmod/imod.h .
+\cp -f ../../3dmod/imodview.h .
+\cp -f ../../3dmod/imodplug.h .
+\cp -f ../../3dmod/control.h .
+\cp -f ../../3dmod/undoredo.h .
+\cp -f ../../3dmod/dockingdialog.h .
+\cp -f ../noskecommon/icontextra.h .
+\cp -f ../noskecommon/_common_functions.h .
+\cp -f ../noskecommon/customdialog.h .
+/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/bin/moc interpolator.h -o moc_interpolator.cpp
+g++ -fPIC    -O3 -w -D_FILE_OFFSET_BITS=64 -DH5_USE_110_API -I. -I/home/zhenh/software/imod-aarch64/IMOD/include -I/usr/lib/aarch64-linux-gnu -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include  -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt/QtCore -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt/QtOpenGL -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt/QtGui -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt/QtSql -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt/QtWidgets -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt/QtPrintSupport   -c -o interpolator.o interpolator.cpp
+g++ -fPIC    -O3 -w -D_FILE_OFFSET_BITS=64 -DH5_USE_110_API -I. -I/home/zhenh/software/imod-aarch64/IMOD/include -I/usr/lib/aarch64-linux-gnu -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include  -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt/QtCore -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt/QtOpenGL -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt/QtGui -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt/QtSql -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt/QtWidgets -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt/QtPrintSupport   -c -o moc_interpolator.o moc_interpolator.cpp
+g++ -fPIC -shared -o interpolator.so ../noskecommon/icontextra.o ../noskecommon/customdialog.o \
+interpolator.o moc_interpolator.o ../noskecommon/moc_customdialog.o
+make[2]: Leaving directory '/home/zhenh/software/imod-aarch64/IMOD/plugs/interpolator'
+cd analysistools  ;    make all
+make[2]: Entering directory '/home/zhenh/software/imod-aarch64/IMOD/plugs/analysistools'
+\cp -f ../../3dmod/imod.h .
+\cp -f ../../3dmod/imodview.h .
+\cp -f ../../3dmod/imodplug.h .
+\cp -f ../../3dmod/control.h .
+\cp -f ../../3dmod/undoredo.h .
+\cp -f ../noskecommon/icontextra.h .
+\cp -f ../noskecommon/_common_functions.h .
+\cp -f ../noskecommon/customdialog.h .
+/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/bin/moc analysistools.h -o moc_analysistools.cpp
+g++ -fPIC    -O3 -w -D_FILE_OFFSET_BITS=64 -DH5_USE_110_API -I. -I/home/zhenh/software/imod-aarch64/IMOD/include -I/usr/lib/aarch64-linux-gnu -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include  -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt/QtCore -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt/QtOpenGL -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt/QtGui -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt/QtSql -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt/QtWidgets -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt/QtPrintSupport   -c -o ivector.o ivector.cpp
+g++ -fPIC    -O3 -w -D_FILE_OFFSET_BITS=64 -DH5_USE_110_API -I. -I/home/zhenh/software/imod-aarch64/IMOD/include -I/usr/lib/aarch64-linux-gnu -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include  -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt/QtCore -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt/QtOpenGL -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt/QtGui -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt/QtSql -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt/QtWidgets -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt/QtPrintSupport   -c -o idgrid.o idgrid.cpp
+g++ -fPIC    -O3 -w -D_FILE_OFFSET_BITS=64 -DH5_USE_110_API -I. -I/home/zhenh/software/imod-aarch64/IMOD/include -I/usr/lib/aarch64-linux-gnu -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include  -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt/QtCore -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt/QtOpenGL -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt/QtGui -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt/QtSql -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt/QtWidgets -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt/QtPrintSupport   -c -o analysistools.o analysistools.cpp
+g++ -fPIC    -O3 -w -D_FILE_OFFSET_BITS=64 -DH5_USE_110_API -I. -I/home/zhenh/software/imod-aarch64/IMOD/include -I/usr/lib/aarch64-linux-gnu -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include  -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt/QtCore -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt/QtOpenGL -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt/QtGui -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt/QtSql -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt/QtWidgets -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt/QtPrintSupport   -c -o moc_analysistools.o moc_analysistools.cpp
+g++ -fPIC -shared -o analysistools.so ivector.o idgrid.o ../noskecommon/icontextra.o \
+../noskecommon/customdialog.o analysistools.o moc_analysistools.o ../noskecommon/moc_customdialog.o
+make[2]: Leaving directory '/home/zhenh/software/imod-aarch64/IMOD/plugs/analysistools'
+cd namewizard     ;    make all
+make[2]: Entering directory '/home/zhenh/software/imod-aarch64/IMOD/plugs/namewizard'
+\cp -f ../../3dmod/imod.h .
+\cp -f ../../3dmod/imodview.h .
+\cp -f ../../3dmod/imodplug.h .
+\cp -f ../../3dmod/control.h .
+\cp -f ../../3dmod/undoredo.h .
+\cp -f ../noskecommon/icontextra.h .
+\cp -f ../noskecommon/_common_functions.h .
+\cp -f ../noskecommon/customdialog.h .
+/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/bin/moc namewizard.h -o moc_namewizard.cpp
+g++ -fPIC    -O3 -w -D_FILE_OFFSET_BITS=64 -DH5_USE_110_API -I. -I/home/zhenh/software/imod-aarch64/IMOD/include -I/usr/lib/aarch64-linux-gnu -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include  -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt/QtCore -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt/QtOpenGL -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt/QtGui -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt/QtSql -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt/QtWidgets -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt/QtPrintSupport   -c -o namewizard.o namewizard.cpp
+g++ -fPIC    -O3 -w -D_FILE_OFFSET_BITS=64 -DH5_USE_110_API -I. -I/home/zhenh/software/imod-aarch64/IMOD/include -I/usr/lib/aarch64-linux-gnu -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include  -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt/QtCore -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt/QtOpenGL -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt/QtGui -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt/QtSql -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt/QtWidgets -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt/QtPrintSupport   -c -o moc_namewizard.o moc_namewizard.cpp
+g++ -fPIC -shared -o namewizard.so ../noskecommon/icontextra.o ../noskecommon/customdialog.o \
+namewizard.o moc_namewizard.o ../noskecommon/moc_customdialog.o
+make[2]: Leaving directory '/home/zhenh/software/imod-aarch64/IMOD/plugs/namewizard'
+cd stereology     ;    make all
+make[2]: Entering directory '/home/zhenh/software/imod-aarch64/IMOD/plugs/stereology'
+\cp -f ../../3dmod/imod.h .
+\cp -f ../../3dmod/imodview.h .
+\cp -f ../../3dmod/imodplug.h .
+\cp -f ../../3dmod/control.h .
+\cp -f ../../3dmod/undoredo.h .
+\cp -f ../noskecommon/icontextra.h .
+\cp -f ../noskecommon/_common_functions.h .
+\cp -f ../noskecommon/customdialog.h .
+/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/bin/moc stereology.h -o moc_stereology.cpp
+g++ -fPIC    -O3 -w -D_FILE_OFFSET_BITS=64 -DH5_USE_110_API -I. -I/home/zhenh/software/imod-aarch64/IMOD/include -I/usr/lib/aarch64-linux-gnu -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include  -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt/QtCore -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt/QtOpenGL -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt/QtGui -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt/QtSql -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt/QtWidgets -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt/QtPrintSupport   -c -o stereology.o stereology.cpp
+g++ -fPIC    -O3 -w -D_FILE_OFFSET_BITS=64 -DH5_USE_110_API -I. -I/home/zhenh/software/imod-aarch64/IMOD/include -I/usr/lib/aarch64-linux-gnu -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include  -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt/QtCore -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt/QtOpenGL -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt/QtGui -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt/QtSql -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt/QtWidgets -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt/QtPrintSupport   -c -o moc_stereology.o moc_stereology.cpp
+g++ -fPIC -shared -o stereology.so ../noskecommon/icontextra.o ../noskecommon/customdialog.o \
+stereology.o moc_stereology.o ../noskecommon/moc_customdialog.o
+make[2]: Leaving directory '/home/zhenh/software/imod-aarch64/IMOD/plugs/stereology'
+cd grabslicer     ;    make all
+make[2]: Entering directory '/home/zhenh/software/imod-aarch64/IMOD/plugs/grabslicer'
+g++ -fPIC    -O3 -w -D_FILE_OFFSET_BITS=64 -DH5_USE_110_API -I. -I/home/zhenh/software/imod-aarch64/IMOD/include -I/usr/lib/aarch64-linux-gnu -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt/QtCore -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt/QtOpenGL -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt/QtGui -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt/QtSql -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt/QtWidgets -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt/QtPrintSupport   -c -o grabslicer.o grabslicer.cpp
+/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/bin/moc grabslicer.h -o moc_grabslicer.cpp
+g++ -fPIC    -O3 -w -D_FILE_OFFSET_BITS=64 -DH5_USE_110_API -I. -I/home/zhenh/software/imod-aarch64/IMOD/include -I/usr/lib/aarch64-linux-gnu -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt/QtCore -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt/QtOpenGL -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt/QtGui -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt/QtSql -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt/QtWidgets -I/home/zhenh/software/imod-aarch64/.conda/imod-build-4.11.25/include/qt/QtPrintSupport   -c -o moc_grabslicer.o moc_grabslicer.cpp
+g++ -fPIC -shared -o grabslicer.so grabslicer.o moc_grabslicer.o
+make[2]: Leaving directory '/home/zhenh/software/imod-aarch64/IMOD/plugs/grabslicer'
+make[1]: Leaving directory '/home/zhenh/software/imod-aarch64/IMOD/plugs'
+
+make_exit=0

@@ -1,0 +1,30 @@
+List	of	packages	in	environment:	"/home/zhenh/software/imod-aarch64/.conda/cuda-11.8"
+
+	Name	Version	Build	Channel	
+───────────────────────────────────────────────────────────────────────
+	_openmp_mutex	4.5	20_gnu	conda-forge
+	binutils_impl_linux-aarch64	2.40	hf54a868_7	conda-forge
+	binutils_linux-aarch64	2.40	h1f91aba_4	conda-forge
+	cuda-cccl	11.8.89	0	nvidia	
+	cuda-cudart	11.8.89	0	nvidia	
+	cuda-cudart-dev	11.8.89	0	nvidia	
+	cuda-driver-dev	11.8.89	0	nvidia	
+	cuda-nvcc	11.8.89	0	nvidia	
+	gcc_impl_linux-aarch64	11.4.0	h4c5f72d_13	conda-forge
+	gcc_linux-aarch64	11.4.0	h7e71246_4	conda-forge
+	gxx_impl_linux-aarch64	11.4.0	h203c958_13	conda-forge
+	gxx_linux-aarch64	11.4.0	ha01a0ef_4	conda-forge
+	kernel-headers_linux-aarch64	4.18.0	h05a177a_18	conda-forge
+	ld_impl_linux-aarch64	2.40	h9fc2d93_7	conda-forge
+	libcufft	10.9.0.58	0	nvidia	
+	libcufft-dev	10.9.0.58	0	nvidia	
+	libgcc	15.2.0	h8acb6b2_19	conda-forge
+	libgcc-devel_linux-aarch64	11.4.0	h896a78c_113	conda-forge
+	libgcc-ng	15.2.0	he9431aa_19	conda-forge
+	libgomp	15.2.0	h8acb6b2_19	conda-forge
+	libsanitizer	11.4.0	hc29431e_13	conda-forge
+	libstdcxx	15.2.0	hef695bb_19	conda-forge
+	libstdcxx-devel_linux-aarch64	11.4.0	h896a78c_113	conda-forge
+	libstdcxx-ng	15.2.0	hdbbeba8_19	conda-forge
+	sysroot_linux-aarch64	2.17	h68829e0_18	conda-forge
+	tzdata	2025c	hc9c84f9_1	conda-forge

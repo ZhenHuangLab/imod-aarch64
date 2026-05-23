@@ -1,0 +1,869 @@
+IMOD 4.11.25 Linux aarch64 CUDA smoke test
+date=2026-05-24T00:47:52+08:00
+IMOD_DIR=/home/zhenh/software/imod-aarch64/versions/4.11.25/install/cuda
+CUDA_DIR=/home/zhenh/software/imod-aarch64/.conda/cuda-11.8
+IMOD_CUDA_ARCH_OPTS=-gencode arch=compute_90,code=compute_90
+IMOD_CUDA_CCBIN=/home/zhenh/software/imod-aarch64/.conda/cuda-11.8/bin/aarch64-conda-linux-gnu-g++
+DISPLAY=localhost:11.0
+
+== GPU ==
+NVIDIA GB10, 580.142, 12.1
+
+== toolchain ==
+nvcc: NVIDIA (R) Cuda compiler driver
+Copyright (c) 2005-2022 NVIDIA Corporation
+Built on Wed_Sep_21_10:34:49_PDT_2022
+Cuda compilation tools, release 11.8, V11.8.89
+Build cuda_11.8.r11.8/compiler.31833905_0
+aarch64-conda-linux-gnu-g++ (conda-forge gcc 11.4.0-13) 11.4.0
+
+== file checks ==
+/home/zhenh/software/imod-aarch64/versions/4.11.25/install/cuda/bin/tilt:         ELF 64-bit LSB pie executable, ARM aarch64, version 1 (SYSV), dynamically linked, interpreter /lib/ld-linux-aarch64.so.1, BuildID[sha1]=5d014f8866f30137440e6d60b9013d15b955d1b7, for GNU/Linux 3.7.0, stripped
+/home/zhenh/software/imod-aarch64/versions/4.11.25/install/cuda/bin/ctfphaseflip: ELF 64-bit LSB pie executable, ARM aarch64, version 1 (SYSV), dynamically linked, interpreter /lib/ld-linux-aarch64.so.1, BuildID[sha1]=95239d95cf934318073825e249082fe551179b53, for GNU/Linux 3.7.0, stripped
+/home/zhenh/software/imod-aarch64/versions/4.11.25/install/cuda/bin/alignframes:  ELF 64-bit LSB pie executable, ARM aarch64, version 1 (SYSV), dynamically linked, interpreter /lib/ld-linux-aarch64.so.1, BuildID[sha1]=1c0c44be50332bf204b74283faa4f0e3731fe035, for GNU/Linux 3.7.0, stripped
+/home/zhenh/software/imod-aarch64/versions/4.11.25/install/cuda/bin/3dmod:        ELF 64-bit LSB pie executable, ARM aarch64, version 1 (SYSV), dynamically linked, interpreter /lib/ld-linux-aarch64.so.1, BuildID[sha1]=891656c3bc53040baabd51071baa6126e6d0e8f0, for GNU/Linux 3.7.0, stripped
+/home/zhenh/software/imod-aarch64/versions/4.11.25/install/cuda/bin/newstack:     ELF 64-bit LSB pie executable, ARM aarch64, version 1 (SYSV), dynamically linked, interpreter /lib/ld-linux-aarch64.so.1, BuildID[sha1]=25c47ad5eda9b1d011fb674813af062c3173d38a, for GNU/Linux 3.7.0, stripped
+/home/zhenh/software/imod-aarch64/versions/4.11.25/install/cuda/bin/header:       ELF 64-bit LSB pie executable, ARM aarch64, version 1 (SYSV), dynamically linked, interpreter /lib/ld-linux-aarch64.so.1, BuildID[sha1]=df879ddc35055f35d1bd3fad4115c46442d247b1, for GNU/Linux 3.7.0, stripped
+/home/zhenh/software/imod-aarch64/versions/4.11.25/install/cuda/bin/gputilttest:  Python script, ASCII text executable
+
+== ldd checks ==
+-- tilt --
+	libcudart.so.11.0 => /home/zhenh/software/imod-aarch64/.conda/cuda-11.8/lib/libcudart.so.11.0 (0x0000e0ef9c660000)
+	libcufft.so.10 => /home/zhenh/software/imod-aarch64/.conda/cuda-11.8/lib/libcufft.so.10 (0x0000e0ef934e0000)
+-- ctfphaseflip --
+	libcudart.so.11.0 => /home/zhenh/software/imod-aarch64/.conda/cuda-11.8/lib/libcudart.so.11.0 (0x0000edef886c0000)
+	libcufft.so.10 => /home/zhenh/software/imod-aarch64/.conda/cuda-11.8/lib/libcufft.so.10 (0x0000edef7f540000)
+-- alignframes --
+	libcudart.so.11.0 => /home/zhenh/software/imod-aarch64/.conda/cuda-11.8/lib/libcudart.so.11.0 (0x0000e44880a10000)
+	libcufft.so.10 => /home/zhenh/software/imod-aarch64/.conda/cuda-11.8/lib/libcufft.so.10 (0x0000e44877890000)
+-- 3dmod --
+-- newstack --
+-- header --
+missing_libs=0
+
+== CUDA-linked binaries ==
+tilt: CUDA libraries resolved
+ctfphaseflip: CUDA libraries resolved
+alignframes: CUDA libraries resolved
+
+== timeout 20 /home/zhenh/software/imod-aarch64/versions/4.11.25/install/cuda/bin/header -help ==
+Usage: header [Options] input_files...
+Options can be abbreviated, current short name abbreviations are in parentheses
+Options:
+ -input (-i)  OR  -InputFile   File
+    Input image file
+    (Successive entries accumulate)
+ -size (-s)  OR  -Size
+    Output image dimensions
+ -mode (-mo)  OR  -Mode
+    Output data mode
+ -pixel (-p)  OR  -PixelSize
+    Output pixel spacing in angstroms
+ -origin (-o)  OR  -Origin
+    Output origin values
+ -minimum (-mi)  OR  -Minimum
+    Output minimum value of data
+ -maximum (-ma)  OR  -Maximum
+    Output maximum value of data
+ -mean (-me)  OR  -Mean
+    Output mean value of data
+ -rms (-r)  OR  -RootMeanSquare
+    Output RMS deviation from mean of the data
+ -volume (-v)  OR  -VolumeNumber   Int
+    Volume number (from 1) of multi-volume HDF file to output header for
+ -brief (-b)  OR  -Brief
+    Output brief header
+ -eer (-e)  OR  -FullSizeOfEERFile
+    Output full super-resolution size and number of frames in an EER file
+ -help (-h)  OR  -usage
+    Print help output
+exit=0
+
+== timeout 20 /home/zhenh/software/imod-aarch64/versions/4.11.25/install/cuda/bin/newstack -help ==
+Usage: newstack [Options] input_files... output_file
+Options can be abbreviated, current short name abbreviations are in parentheses
+Options:
+
+INPUT AND OUTPUT FILE OPTIONS
+ -input (-in)  OR  -InputFile   File
+    Input image file
+    (Successive entries accumulate)
+ -output (-ou)  OR  -OutputFile   File
+    Output image file
+    (Successive entries accumulate)
+ -fileinlist (-filei)  OR  -FileOfInputs   File
+    Name of file with list of input files and sections to read
+ -fileoutlist (-fileo)  OR  -FileOfOutputs   File
+    Name of file with list of output files and number of sections in each
+ -reverse (-rev)  OR  -ReverseInputFileOrder   Int
+    Process files in inverted order (0: all, N>0: first N, N<0: last N)
+ -split (-sp)  OR  -SplitStartingNumber   Int
+    Starting number for series of numbered output files, one section each
+ -append (-appe)  OR  -AppendExtension   String
+    Extension to append to series of numbered filenames
+ -format (-fo)  OR  -FormatOfOutputFile   String
+    Type of output file: MRC, TIF or TIFF, HDF, JPEG or JPG (or lower case)
+ -compression (-com)  OR  -HDFCompressionIndex   Int
+    Sets the level of ZIP compression when writing to an HDF file (1-9)
+ -volumes (-vo)  OR  -VolumesToRead   List
+    List of volume numbers to read from multi-volume HDF files
+ -3d (-3)  OR  -Store3DVolumes   Int
+    Controls whether to store 3D volume in new or existing file
+ -chunk (-ch)  OR  -ChunkSizesInXYZ   3 ints
+    Set target chunk sizes in X, Y, and Z for 3D volumes in HDF files
+ -mdoc (-md)  OR  -UseMdocFiles
+    Copy metadata from .mdoc files associated with input files, if any
+ -tilt (-ti)  OR  -TiltAngleFile   File
+    Name of file with tilt angles to substitute or insert into output
+ -reorder (-reo)  OR  -ReorderByTiltAngle   Int
+    Reorder sections by increasing (+) or decreasing (-) tilt angle
+ -angle (-ang)  OR  -AngleFileToReorder   File
+    File with tilt angles to use for reordering sections by angle
+ -newangle (-new)  OR  -NewAngleOutputFile   Int
+    File for output of tilt angles after reordering
+
+SECTION SELECTION OPTIONS
+ -secs (-se)  OR  -SectionsToRead   List
+    List of sections to read from input file, numbered from 0.  The default is
+    all sections.  Ranges are allowed.
+    (Successive entries accumulate)
+ -samesec (-sa)  OR  -SameSectionsToRead
+    Read the same set of sections from all input files
+ -fromone (-fr)  OR  -NumberedFromOne
+    Section and line numbers are entered numbered from 1, not 0
+ -exclude (-exc)  OR  -ExcludeSections   List
+    List of sections to exclude from input file, numbered from 0
+ -twodir (-tw)  OR  -TwoDirectionTiltSeries
+    Combine two files from bidirectional tilt series
+ -skip (-sk)  OR  -SkipSectionIncrement   Int
+    Increment for reading regularly spaced subset of sections in the list
+ -numout (-nu)  OR  -NumberToOutput   Ints
+    Number of sections to write to an output file
+    (Successive entries accumulate)
+ -replace (-rep)  OR  -ReplaceSections   List
+    List of sections to replace in existing output file, numbered from 0
+ -blank (-bl)  OR  -BlankOutput
+    Output blank sections for nonexistent section numbers in input file
+
+OPTIONS FOR OPERATING ON IMAGES
+ -offset (-of)  OR  -OffsetsInXandY   Floats
+    X and Y center offsets for each section, or one X,Y pair to apply to all
+    sections
+    (Successive entries accumulate)
+ -applyfirst (-appl)  OR  -ApplyOffsetsFirst
+    Apply offsets in X and Y before transforming image (default is after)
+ -xform (-x)  OR  -TransformFile   File
+    File with linear transformations to apply to images
+ -uselines (-use)  OR  -UseTransformLines   List
+    List of line numbers of transforms to apply, numbered from 0.
+    (Successive entries accumulate)
+ -onexform (-on)  OR  -OneTransformPerFile
+    Apply one transform line for each input file
+ -phase (-ph)  OR  -PhaseShiftFFT
+    Shift images by changing phase in Fourier space instead of interpolating
+ -rotate (-ro)  OR  -RotateByAngle   Float
+    Rotate all images by the given angle
+ -expand (-exp)  OR  -ExpandByFactor   Float
+    Scale all images up in size by the given factor
+ -shrink (-sh)  OR  -ShrinkByFactor   Float
+    Scale all images down in size by the given factor with antialias filtering
+ -antialias (-ant)  OR  -AntialiasFilter   Int
+    Type of antialiasing filter to use when shrinking images (default 5)
+ -bin (-bi)  OR  -BinByFactor   Int
+    Use binning to reduce images in size by the given factor
+ -ftreduce (-ftr)  OR  -FourierReduceByFactor   Float
+    Scale all images down in size by the given factor with Fourier cropping
+ -ftexpand (-fte)  OR  -FourierExpandByFactor   Float
+    Scale all images up in size by the given factor with Fourier padding
+ -noise (-no)  OR  -NoisePadForFFT
+    Pad for reduction and/or shifting in Fourier space with tapered noise
+ -distort (-d)  OR  -DistortionField   File
+    Image distortion field file to use for undistorting images
+ -imagebinned (-im)  OR  -ImagesAreBinned   Float
+    The current binning of the images
+ -fields (-fie)  OR  -UseFields   List
+    List of distortion fields to apply, numbered from 0
+    (Successive entries accumulate)
+ -subarea (-su)  OR  -SubareaOffsetsXandY   Floats
+    Offsets of each section from center of distortion field, or one X,Y pair
+    to use for all sections
+    (Successive entries accumulate)
+ -gradient (-g)  OR  -GradientFile   File
+    File with magnification gradients to be applied for each image
+ -origin (-or)  OR  -AdjustOrigin
+    Adjust the image origin for changes in image size and location
+ -linear (-l)  OR  -LinearInterpolation
+    Use linear instead of cubic interpolation to transform images
+ -nearest (-nea)  OR  -NearestNeighbor
+    Use nearest neighbor instead of cubic interpolation to transform images
+
+OUTPUT CONTROL OPTIONS
+ -size (-si)  OR  -SizeToOutputInXandY   2 ints
+    Size of output image in X and Y; default is size of first input file.
+ -mode (-mo)  OR  -ModeToOutput   Int
+    Storage mode of output file; 0 for byte, 1 or 6 for integer, 2 for real,
+    101 for 4-bit
+ -bytes (-by)  OR  -BytesSignedInOutput   Int
+    Output bytes as signed (1) or unsigned (0) regardless of other settings
+ -strip (-st)  OR  -StripExtraHeader
+    Do not transfer extra header information from input to output
+ -float (-fl)  OR  -FloatDensities   Int
+    Rescale densities of sections separately to fill data range (1), to bring
+    to common mean and SD (2), to shift to common mean (3), or to shift to
+    common mean and rescale (4)
+ -meansd (-mea)  OR  -MeanAndStandardDeviation   2 floats
+    Scale all images to the given mean and standard deviation
+ -contrast (-con)  OR  -ContrastBlackWhite   2 ints
+    Rescale densities to match contrast in 3dmod with the given black and
+    white values
+ -scale (-sc)  OR  -ScaleMinAndMax   2 floats
+    Apply one density scaling to all sections to map current min and max to
+    the given Min and Max
+ -map (-ma)  OR  -MapFromRange   2 floats
+    Rescale the given range of density with -scale or -contrast
+ -multadd (-mu)  OR  -MultiplyAndAdd   2 floats
+    Scale all sections by multiplying by first value then adding the second
+    (Successive entries accumulate)
+ -fixrange (-fix)  OR  -FixRangeIfNeeded   2 floats
+    SD limit for preventing truncation, and scale factor if data have low SD
+ -rfparam (-rf)  OR  -RangeFixingParams   2 floats
+    Criterion SD for scaling, and range expansion factor to assume
+ -fill  OR  -FillValue   Float
+    Value to fill empty image areas with, before scaling
+ -taper (-ta)  OR  -TaperAtFill   2 ints
+    Distance to taper at fill border or 1 for default, and 0/1 for tapering
+    outside/inside
+
+OTHER OPTIONS
+ -memory (-mem)  OR  -MemoryLimit   Int
+    Total size of working array to allocate, in megabytes
+ -test (-te)  OR  -TestLimits   2 ints
+    Total size of working array, and size of binning array
+ -megasec (-meg)  OR  -MaxMegaSections   Int
+    Maximum number of millions of sections that will be processed
+ -quiet (-q)  OR  -QuietOutput
+    Suppress image file opening and min/max/mean output
+ -verbose (-ve)  OR  -VerboseOutput   Int
+    1 for diagnostic output
+ -param (-pa)  OR  -ParameterFile   File
+    Read parameter entries from file
+ -help (-h)  OR  -usage
+    Print help output
+exit=0
+
+== timeout 20 /home/zhenh/software/imod-aarch64/versions/4.11.25/install/cuda/bin/tilt -help ==
+Usage: tilt [Options]
+Options can be abbreviated, current short name abbreviations are in parentheses
+Options:
+
+General Reconstruction-Related File Options
+ -input (-inp)  OR  -InputProjections   File
+    Input image file with aligned projections
+ -output (-ou)  OR  -OutputFile   File
+    Output file for reconstruction or reprojection
+ -TILTFILE   File
+    File with list of tilt angles
+ -XTILTFILE   File
+    File with variable tilts around the X-axis
+ -ZFACTORFILE   File
+    File with Z-factors
+ -LOCALFILE   File
+    File with local tilt alignment information
+ -BoundaryInfoFile   File
+    File with information about boundaries when writing in parallel
+ -WeightAngleFile   File
+    File with full list of angles to use for weighting
+ -WeightFile   File
+    File with list of weighting factors for all views
+
+Geometry-Related Options
+ -WIDTH   Int
+    Width of output image
+ -SLICE   Ints
+    Starting and ending slice number, and interval between slices
+ -TOTALSLICES   2 ints
+    Starting and ending slices of entire reconstruction
+ -THICKNESS   Int
+    Thickness in Z of reconstructed volume
+ -OFFSET   Floats
+    Offsets for tilt angles and tilt axis
+ -SHIFT   Floats
+    Amount to shift reconstructed slice in X and Y
+ -ANGLES   Floats
+    Tilt angles of the views
+    (Successive entries accumulate)
+ -XAXISTILT   Float
+    Tilt about X-axis to correct in reconstruction
+ -COMPFRACTION   Float
+    Fraction of distance over which compression occurred
+ -COMPRESS   Floats
+    Compression factors of the views
+    (Successive entries accumulate)
+ -FULLIMAGE   2 ints
+    Full size of original, unaligned images
+ -SUBSETSTART   2 ints
+    Lower left X, Y coordinates of aligned stack within whole images
+ -IMAGEBINNED   Int
+    Binning of input images
+ -LOCALSCALE   Float
+    Factor by which images were scaled relative to local alignment data
+
+Reconstruction Control Options
+ -LOG   Float
+    Take the logarithm after adding the given base value
+ -RADIAL   2 floats
+    Cutoff and falloff of Gaussian filter for radial weighting function
+ -FalloffIsTrueSigma
+    Use the falloff value directly as the sigma of the Gaussian filter
+ -MultiplyByGaussian
+    Multiply radial function by Gaussian instead of replacing it
+ -HammingLikeFilter   Float
+    Cutoff radius for multiplying by Gaussian that falls off to Nyquist
+ -DENSWEIGHT   Floats
+    Weighting to compute local average tilt increment
+ -ExactFilterSize   Int
+    Object size for using "exact filters" instead of standard R-weighting
+ -FakeSIRTiterations   Int
+    Modify radial filter to match SIRT with given # of iterations
+ -INCLUDE   List
+    List of views to include in the reconstruction
+    (Successive entries accumulate)
+ -EXCLUDELIST2   List
+    List of views to exclude (comma-separated ranges allowed)
+    (Successive entries accumulate)
+ -COSINTERP   Ints
+    Interpolation order and sampling factor for cosine stretching
+ -XTILTINTERP   Int
+    Interpolation order for computing X-tilted slices from vertical ones
+ -SuperSampleFactor   Int
+    Compute slices in pixels smaller by this factor to reduce artifacts
+ -ExpandInputLines
+    Expand projection lines by Fourier padding when super-sampling
+ -UseGPU   Int
+    Use GPU for computation; 0 for best available one or number of GPU
+ -ActionIfGPUFails   2 ints
+    0 for no action, 1 for warning, 2 for error if GPU cannot be used
+
+Output Control Options
+ -MODE   Int
+    Output file mode (default 2)
+ -SCALE   2 floats
+    Values to add then scale reconstructed densities by
+ -MASK   Int
+    Mask regions with incomplete data; value is extra pixels to mask
+ -PERPENDICULAR
+    Output slices perpendicular to the plane of the specimen (default)
+ -PARALLEL
+    Output slices parallel to the plane of the specimen, inverting handedness
+ -RotateBy90
+    Output slices parallel to the plane of the specimen without inverting
+    handedness
+ -AdjustOrigin
+    Adjust origin for shifts and size changes
+ -TITLE   String
+    Title string for output file header
+
+Options for Incremental Reconstruction
+ -BaseRecFile   File
+    Previous reconstruction file to add to or subtract from
+ -BaseNumViews   Int
+    Number of views in previous reconstruction
+ -SubtractFromBase   List
+    Views to subtract from previous reconstruction (0 for all, -1 for SIRT)
+ -MinMaxMean   3 ints
+    Min, max, and mean densities to use instead of input file values
+
+Options for Reprojection
+ -REPROJECT   Floats
+    Angles for reprojections of reconstructed slices
+    (Successive entries accumulate)
+ -ViewsToReproject   List
+    List of views to reproject (0 for all, not just included ones)
+ -recfile (-rec)  OR  -RecFileToReproject   File
+    Reconstruction file to reproject or run SIRT with
+ -xminmax (-xm)  OR  -XMinAndMaxReproj   2 ints
+    Starting and ending X index coordinates to reproject
+ -yminmax (-y)  OR  -YMinAndMaxReproj   2 ints
+    Starting and ending Y index coordinates to reproject
+ -zminmax (-zm)  OR  -ZMinAndMaxReproj   2 ints
+    Starting and ending Z index coordinates to reproject
+ -threshold (-thr)  OR  -ThresholdedReproj   3 floats
+    Threshold, polarity, and summing value to reproject thresholded values
+
+SIRT-Related Options
+ -FlatFilterFraction   Float
+    Fraction of constant filter to mix with R-weighting, or > 1 for SIRT
+ -SIRTIterations   Int
+    Number of iterations to run SIRT procedure
+ -SIRTSubtraction
+    Subtract reprojections from original projections before writing
+ -StartingIteration   Int
+    Starting SIRT iteration number for reports of difference mean and SD
+ -VertBoundaryFile   File
+    File with information for writing vertical slice file in parallel
+ -VertSliceOutputFile   File
+    File for saving vertical slices when running SIRT internally
+ -VertForSIRTInput
+    The file being reprojected for resuming SIRT is a vertical slice file
+ -ConstrainSign   Int
+    Constrain sign of net output for SIRT to positive (1) or negative (-1)
+
+Model Projection Options
+ -ProjectModel   File
+    Model file with point positions to reproject (output is a model)
+ -SkipTurnedOffPoints
+    Skip points with values below threshold if they are turned off
+ -AngleOutputFile   File
+    Output file for projection angles when projecting model
+ -AlignTransformFile   File
+    Transforms applied to align images, used for getting projection angles
+ -DefocusFile   File
+    File of defocus values in nm for each view
+ -PixelForDefocus   2 floats
+    Pixel size for computing defocus, and 1 to invert angles or 0 not to
+
+Obsolete, Test, and General Options
+ -DONE
+    Terminate input to program
+ -FBPINTERP   Int
+    This option was discontinued in IMOD 4.0.20
+ -REPLICATE   2 floats
+    This option was discontinued in IMOD 4.0.21
+    (Successive entries accumulate)
+ -debug (-deb)  OR  -DebugOutput
+    Print output for debugging
+ -internal (-int)  OR  -InternalSIRTSlices   2 ints
+    Output reprojections (1-2) and/or internal reconstructions (1-4)
+ -texture (-te)  OR  -TextureType   Int
+    Type of texture to use on GPU: 0 for 2D, -1 for 2D layered, 1 for 3D
+ -param  OR  -ParameterFile   File
+    Read parameter entries from file
+ -help (-he)  OR  -usage
+    Print help output
+exit=0
+
+== timeout 20 /home/zhenh/software/imod-aarch64/versions/4.11.25/install/cuda/bin/ctfphaseflip -help ==
+Usage: ctfphaseflip [Options]
+Options can be abbreviated, current short name abbreviations are in parentheses
+Options:
+ -input (-inp)  OR  -InputStack   File
+    Input stack that will be corrected
+ -output (-o)  OR  -OutputFileName   File
+    Name of output file for the corrected views
+ -angleFn (-an)  OR  -AngleFile   File
+    File containing tilt angles for the input stack
+ -invert (-inv)  OR  -InvertTiltAngles
+    Invert the sign of the tilt angles
+ -axis (-ax)  OR  -AxisAngle   Float
+    Angle that the tilt axis is rotated from vertical
+ -xtilt (-xt)  OR  -XAxisTilt   Float
+    Angle that the specimen is tilted around the X axis
+ -defFn (-defF)  OR  -DefocusFile   File
+    File with list of tilt angle ranges and defocus values in nanometers
+ -zoff (-zo)  OR  -OffsetInZ   Float
+    Adjust defocus values for the given shift in Z, in pixels
+ -xform (-xf)  OR  -TransformFile   File
+    File with linear transformations used to align images
+ -defTol (-defT)  OR  -DefocusTol   Int
+    Defocus tolerance in nanometers, one factor governing the strip width
+ -maxWidth (-m)  OR  -MaximumStripWidth   Int
+    Maximum width of strips in pixels (disables dynamic width adjustment)
+ -iWidth (-iW)  OR  -InterpolationWidth   Int
+    The distance in pixels between two consecutive strips
+ -zero (-ze)  OR  -MinimumZeroSpacing   Float
+    Minimum spacing between zeros at 0.4/pixel (default 8)
+ -pixelSize (-pi)  OR  -PixelSize   Float
+    Image pixel size in nanometers
+ -volt (-vo)  OR  -Voltage   Int
+    Microscope voltage in kV
+ -cs  OR  -SphericalAberration   Float
+    Microscope spherical aberration in millimeters
+ -ampContrast (-am)  OR  -AmplitudeContrast   Float
+    The fraction of amplitude contrast
+ -degPhase (-deg)  OR  -PhaseShiftInDegrees   Float
+    A fixed value for phase shift from a phase plate, in degrees
+ -phase (-ph)  OR  -PhasePlateShift   Float
+    A fixed value for phase shift from a phase plate, in radians
+ -cuton (-cu)  OR  -CutOnFrequency   Float
+    A fixed value for cut-on frequency that attenuates phase at low frequency
+ -scale (-sc)  OR  -ScaleByCtfPower   Float
+    Scale frequency components by calculated CTF to the given power
+ -gpu (-g)  OR  -UseGPU   Int
+    Use GPU for computation; 0 for best available one or number of GPU
+ -action (-ac)  OR  -ActionIfGPUFails   2 ints
+    0 for no action, 1 for warning, 2 for error if GPU cannot be used
+ -views (-vi)  OR  -StartingEndingViews   2 ints
+    The starting and ending views to correct (numbered from 1)
+ -totalViews (-t)  OR  -TotalViews   2 ints
+    The starting and ending views that need to be corrected in all parallel
+    runs of the program.
+ -boundary (-b)  OR  -BoundaryInfoFile   File
+    Name of file with information about boundaries for parallel writing
+ -skipFlag (-sk)  OR  -SkipCorrectedFlag   Int
+    1 to not set flag that CTF was corrected, 2 to ignore flag if set, 3 for
+    both
+ -debug (-deb)  OR  -DebugOutput   Int
+    Type of debug output: 1 for timing, 2 for column detail
+ -param (-pa)  OR  -Parameter   File
+    Read parameter entries from file
+ -help (-h)  OR  -usage
+    Print help output
+exit=0
+
+== timeout 20 /home/zhenh/software/imod-aarch64/versions/4.11.25/install/cuda/bin/alignframes -help ==
+alignframes Version 4.11.25 May 24 2026 00:38:43
+Copyright (C) 1994-2021 by the Regents of the University of Colorado
+Usage: alignframes [Options] input_file output_file
+Options can be abbreviated, current short name abbreviations are in parentheses
+Options:
+
+INPUT CONTROL OPTIONS
+ -input (-in)  OR  -InputFile   File
+    Input image file
+    (Successive entries accumulate)
+ -output (-ou)  OR  -OutputImageFile   File
+    Output file for aligned, summed image
+ -list (-lis)  OR  -ListOfInputFiles   File
+    Name of file with list of input files
+ -break (-br)  OR  -BreakFramesIntoSets   Int
+    Number of successive frames to combine into one set to align and sum
+ -saved (-sa)  OR  -SavedFrameListFile   File
+    Name of file with list of frames saved from single exposure tilt series
+ -gap  OR  -MaxGapWithinFrameSet   Int
+    Maximum number of frames that might have been lost within a frame set
+ -skip (-sk)  OR  -SkipFileChecks
+    Skip initial check of file sizes and modes
+ -stack (-sta)  OR  -CorrespondingStack   File
+    Name of image stack of sums corresponding to the input files
+ -mdoc (-md)  OR  -MetadataFile   File
+    Metadata (mdoc) file with an entry for each input file or frame set
+ -path (-pat)  OR  -PathToFramesInMdoc   String
+    Current path to frame files listed in an ".mdoc" file
+ -ignore (-ig)  OR  -IgnoreZvaluesInMdoc
+    Take sections in order from ".mdoc" file instead of by Z value
+ -adjust (-ad)  OR  -AdjustAndWriteMdoc
+    Correct entries in the input ".mdoc" file and write new file
+ -reorder (-reo)  OR  -ReorderByTiltAngle   Int
+    Process in order by increasing (+) or decreasing (-) tilt angle (default
+    1)
+ -pixel (-pi)  OR  -PixelSize   Float
+    Pixel size in nm, overrides the pixel spacing from other sources
+ -eer (-e)  OR  -EERSuperResZSumPadding   3 ints
+    Super-resolution, frame summing, defect padding when reading EER file
+    (default 1,10,1)
+ -super (-su)  OR  -SuperGainFactorFile   File
+    File for correcting super-resolution bias in EER gain reference
+
+OUTPUT CONTROL OPTIONS
+ -binning (-bin)  OR  -AlignAndSumBinning   2 ints
+    Image reductions to apply when aligning (-1 for default) and when summing
+ -target (-tar)  OR  -TargetAlignSize   Int
+    Target size to reduce images to for aligning
+ -frames (-fra)  OR  -StartingEndingFrames   2 ints
+    First and last frame in each file to align and sum, numbered from 1
+ -partial (-par)  OR  -PartialFrameThresholds   2 floats
+    Relative thresholds for skipping frames at start and end of a frame set
+ -drift (-dr)  OR  -DriftLimitDistAndNumber   2 floats
+    Shift above which to drop initial frames, and max # or fraction to drop
+ -sets (-se)  OR  -RangeOfSetsToDo   2 ints
+    First and last frame set or file to process, numbered from 1 (default all)
+ -mode (-mo)  OR  -ModeToOutput   Int
+    Mode for output image file
+ -scale (-sc)  OR  -ScalingOfSum   Float
+    Amount to scale summed values before output
+ -total (-to)  OR  -TotalScalingOfData   Float
+    Scale by given amount divided by existing scaling from header
+ -meansd (-mea)  OR  -MeanAndSDtoScaleTo   2 floats
+    Scale to given mean and standard deviation, or to just to mean if SD 0
+ -rfsum (-rf)  OR  -SumRotationAndFlip   Int
+    Rotation and flip operation to apply to sum before output
+ -tilt (-til)  OR  -TiltAngleFile   File
+    File with tilt angles to insert into header of output file
+ -axis (-ax)  OR  -AxisRotationAngle   Float
+    Rotation angle of tilt axis to place in a title in the output file
+ -xfext (-x)  OR  -TransformExtension   String
+    Extension for output file(s) with image transformations (shifts)
+ -frc  OR  -FRCOutputFile   File
+    Output file for Fourier ring correlations
+ -ring (-ri)  OR  -RingSpacingForFRC   Float
+    Frequency spacing of rings in FRC (default 0.005).
+ -lines (-lin)  OR  -LinesOfAlignSummary   Int
+    Number of lines summarizing fitting/FRC results (1 to 3, default 2)
+ -plottable (-pl)  OR  -PlottableShiftFile   File
+    Filename for output file with raw and smoothed shifts
+ -nosum (-nos)  OR  -NoSumsOutput
+    Do alignments without making sum; omit output file
+
+PREPROCESSING OPTIONS
+ -titles (-tit)  OR  -RefAndDefectFromTitles
+    Take gain reference and defect file names from titles in header
+ -gain (-gai)  OR  -GainReferenceFile   File
+    Gain reference for gain-normalizing frames
+ -rotation (-ro)  OR  -RotationAndFlip   Int
+    Rotation and flip operation that needs to be applied to gain reference
+ -dark (-da)  OR  -DarkReferenceFile   File
+    Dark reference to be subtracted before gain-normalizing frames
+ -defect (-def)  OR  -CameraDefectFile   File
+    File of camera defects to correct
+ -double (-do)  OR  -DoubleDefectCoords
+    Scale camera defect coordinates by 2 if not already scaled
+ -imagebinned (-im)  OR  -ImagesAreBinned   Float
+    Binning of images, possibly needed for defect correction
+ -truncate (-tru)  OR  -TruncateAbove   Float
+    Replace values above a limit with surrounding mean
+
+ALIGNMENT OPTIONS
+ -pair (-pai)  OR  -PairwiseFrames   Int
+    # of frames for pairwise alignments (-1 for all), or 0 for cumulative
+    alignment (default 7)
+ -reverse (-rev)  OR  -ReverseOrder
+    Reverse order of processing
+ -shift (-shi)  OR  -ShiftLimit   Int
+    Limit on distance to search for correlation peak (default 20)
+ -group (-gr)  OR  -GroupSize   Int
+    # of frames to sum for correlations
+ -radius2  OR  -FilterRadius2   Float
+    Right cutoff radius for filter, in unbinned frequency units
+ -vary (-va)  OR  -VaryFilter   Floats
+    Set of radius2 filter values to test
+    (Successive entries accumulate)
+ -hybrid (-hy)  OR  -UseHybridShifts
+    Use shifts based on shifts from best filter for each fit
+ -refine (-ref)  OR  -RefineAlignment   Int
+    # of times to refine alignment by aligning each image to aligned sum
+ -rgroup (-rg)  OR  -RefineWithGroupSums
+    Refine with group sums if using groups for initial alignment
+ -stop (-sto)  OR  -StopIterationsAtShift   Float
+    Maximum change in shift at which to stop refining (default 0.1).
+ -rrad2 (-rr)  OR  -RefineRadius2   Float
+    High frequency filter cutoff (radius 2) for refining the alignment.
+ -smooth (-sm)  OR  -MinForSplineSmoothing   Int
+    Minimum # of frames for smoothing shifts with spline curve (default 20)
+ -gpu (-gp)  OR  -UseGPU   Int
+    Use GPU for computation; 0 for best available one or number of GPU
+ -memory (-mem)  OR  -MemoryLimitGB   Floats
+    Limit on CPU memory usage, and optionally on GPU memory usage
+
+DOSE WEIGHT FILTERING OPTIONS
+ -dtype (-dty)  OR  -TypeOfDoseFile   Int
+    Format of file with dose information (1: doses only, 2: prior dose and
+    dose, 3: prior and ending dose, 4: mdoc, 5: frame doses)
+ -dfile (-dfi)  OR  -DoseWeightingFile   File
+    Name of file with dose information for dose weighting
+ -dtotal (-dto)  OR  -FixedTotalDose   Float
+    Total dose for each set of frames, in electrons/square Angstrom
+ -dframe (-dfr)  OR  -FixedFrameDoses   Float
+    List of frame doses and numbers that applies to all frame sets
+ -dprior (-dp)  OR  -InitialPriorDose   Float
+    Dose applied before any of the images in each frame set were taken
+ -bidir (-bid)  OR  -BidirectionalNumViews   Int
+    Number of views in first part of bidirectional tilt series
+ -accum (-ac)  OR  -DoseAccumulates   Int
+    1 or 2 to accumulate dose from one frame set to the next, 0 not to
+ -normalize (-nor)  OR  -NormalizeDoseWeighting
+    Normalize the dose weight filters to sum to 1 within each frame set
+ -volt (-vo)  OR  -Voltage   Int
+    Microscope voltage in kV; must be either 200 or 300 (default 300)
+ -optimal (-op)  OR  -OptimalDoseScaling   Float
+    Factor by which to scale the computed optimal and critical doses
+ -critical (-c)  OR  -CriticalDoseFactors   3 floats
+    Replacement factors a, b, and c in the equation for critical dose
+ -unweight (-un)  OR  -UnweightedOutputFile   File
+    File name for summed images that have not been dose weighted
+
+OPTIONS FOR ASSESSING ALIGNMENT AND OTHER TEST PURPOSES
+ -test (-te)  OR  -TestBinnings   Ints
+    Set of binnings at which to test pairwise alignments
+ -assess (-as)  OR  -AssessWithFrames   2 ints
+    Starting and ending frame to use during testing of parameters
+ -good (-go)  OR  -GoodEnoughError   Float
+    Combined error measure that is sufficient to stop testing binnings
+ -weight (-w)  OR  -MaxResidualWeight   Float
+    Weight for maximum residual when computing single error measure
+ -trim (-tri)  OR  -TrimFraction   Float
+    Fraction of image size to trim off each edge for correlations
+ -taper (-tap)  OR  -TaperFraction   Float
+    Fraction of image size to taper on each edge for correlations
+ -antialias (-an)  OR  -AntialiasFilter   Int
+    Type of filter for image reduction when trimming or tapering
+ -radius1  OR  -FilterRadius1   Float
+    Left cutoff radius for filter
+ -sigma1  OR  -FilterSigma1   Float
+    Sigma for low-frequency inverted Gaussian filter (default 0.03)
+ -sigma2  OR  -FilterSigma2   Float
+    Sigma for Gaussian rolloff below radius1 and above radius2
+ -kfactor (-k)  OR  -KFactorForFits   Float
+    K factor for robust fitting to pairwise alignments
+ -debug (-deb)  OR  -DebugOutput   Int
+    Sum of 1 or 2 for debug output, 10 for timing, 100 for correlations, 1000
+    for refining correlations, 10000 for even/odd sums
+ -flags (-fl)  OR  -FlagsForGPU   Int
+    Flags to control which initial kinds of processing occur on the GPU
+ -shrmem (-shr)  OR  -ShrMemTest
+    Use shrmemframe to do align frames (special Windows build only)
+ -help (-he)  OR  -usage
+    Print help output
+exit=0
+
+== timeout 20 /home/zhenh/software/imod-aarch64/versions/4.11.25/install/cuda/bin/gputilttest -help ==
+gputilttest runs the tilt program repeatedly to test whether a GPU
+    gives reproducible results
+Usage:  gputilttest [-P[ID]] [-l] [#_of_minutes] [GPU_#]
+    #_of_minutes sets how long the test will run; the default
+        is 1 minute, fractional values are allowed
+   GPU_# is the # of the GPU to test, numbered from 1,
+        or 0 for the bext or only GPU
+   -l option will leave the log file gputest.log from the last run
+exit=0
+
+== QT_QPA_PLATFORM=offscreen timeout 20 /home/zhenh/software/imod-aarch64/versions/4.11.25/install/cuda/bin/3dmod -h ==
+3dmod Version 4.11.25 May 24 2026 00:38:43
+Copyright (C) 1994-2021 by the Regents of the University of Colorado
+Usage: 3dmod [options] <Image files> <model file>
+Options:
+   -xyz  Open xyz window first.
+   -S    Open slicer window first.
+   -V    Open model view window first.
+   -Z    Open Zap window (use with -S, -xyz, or -V).
+   -O    Set options with startup dialog box.
+   -x min,max  Load in sub image.
+   -y min,max  Load in sub image.
+   -z min,max  Load in sub image.
+   -s min,max  Scale input to range [min,max] (0,0 for all files the same).
+   -ic x,y,z   Set initial center position of slicer and/or Zap.
+   -ia x,y,z   Set initial angles of slicer window.
+   -iz #       Set initial zoom of slicer and/or Zap.
+   -I #  Load data as 16-bit integers (# = 1) or as bytes (# = 0).
+   -C #  Set # of sections or Mbytes to cache (#M or #m for Mbytes).
+   -CT # Set # of sections or Mbytes for cache of tiles or strips.
+   -F    Fill cache right after starting program.
+   -Y    Rotate volume around X to model planes normal to Y axis.
+   -B #  Bin images by # in X, Y, and Z.
+   -b nxy,nz  Bin images by nxy in X and Y, by nz in Z (nz default=1).
+   -es #  Set amount of super-resolution when reading EER files (1=2x, 2=4x).
+   -ez #  Set initial summing of frames (grouping in Z) when reading EER files.
+   -a <file name>  Load tilt angles from file.
+   -p <file name>  Load piece list file.
+   -A #  Use aligned piece coordinates from .mdoc file (1, or 2 for very sloppy)
+   -P nx,ny  Display images as montage in nx by ny array.
+   -o nx,ny  Set X and X overlaps for montage display.
+   -f    Load as frames even if image file has piece coordinates.
+   -py   Image files are a pyramid of same data at different resolutions.
+   -r nx,ny,nz  Dimensions for raw image files.
+   -ri   Raw file is inverted in Y.
+   -t #  Mode for raw files: -1/0=byte, 1/6=int, 2=float, 4=complex, 16=RGB,
+   -H #  Header size in bytes in raw image files.
+   -w    Swap bytes from raw image files.
+   -J #  Type of scanning to find unknown scaling limits (0-2).
+   -K    Store results of scanning for limits in MRC file header.
+   -R    Read image data from standard input, not from file.
+   -m    Load model with model coords (override scaling).
+   -2    Treat model as 2D only.
+   -T    Display multiple single-image files as times not sections.
+   -G    Display color file in gray-scale.
+   -M    Do not mirror FFT data around Y axis.
+   -ci   Display images in color index mode with colormap.
+   -cm <file name>  Load custom false color table.
+   -E <keys>  Open windows specified by key letters.
+   -h    Print this help message.
+exit=1
+
+== data workflow: raw2mrc/header/newstack/clip on generated 16x16 stack ==
+Min = 0, Max = 0, Mean = 0
+
+ RO image file on unit   1 : /tmp/tmp.I9hLYrfCi1/raw.mrc     Size=          1 K
+
+ Number of columns, rows, sections .....      16      16       1
+ Map mode ..............................    0   (bytes - signed in file)   
+ Start cols, rows, sects, grid x,y,z ...    0     0     0      16     16      1
+ Pixel spacing (Angstroms)..............   1.000      1.000      1.000    
+ Cell angles ...........................   90.000   90.000   90.000
+ Fast, medium, slow axes ...............    X    Y    Z
+ Origin on x,y,z .......................    0.000       0.000       0.000    
+ Minimum density .......................   0.0000     (  -128.00     in file)
+ Maximum density .......................   0.0000     (  -128.00     in file)
+ Mean density ..........................   0.0000     (  -128.00     in file)
+ tilt angles (original,current) ........   0.0   0.0   0.0   0.0   0.0   0.0
+ Space group,# extra bytes,idtype,lens .        0        0        0        0
+
+     1 Titles :
+raw2mrc: Converted to mrc format.                       24-May-26  00:47:52    
+
+
+ RO image file on unit   1 : /tmp/tmp.I9hLYrfCi1/raw.mrc     Size=          1 K
+
+ Number of columns, rows, sections .....      16      16       1
+ Map mode ..............................    0   (bytes - signed in file)   
+ Start cols, rows, sects, grid x,y,z ...    0     0     0      16     16      1
+ Pixel spacing (Angstroms)..............   1.000      1.000      1.000    
+ Cell angles ...........................   90.000   90.000   90.000
+ Fast, medium, slow axes ...............    X    Y    Z
+ Origin on x,y,z .......................    0.000       0.000       0.000    
+ Minimum density .......................   0.0000     (  -128.00     in file)
+ Maximum density .......................   0.0000     (  -128.00     in file)
+ Mean density ..........................   0.0000     (  -128.00     in file)
+ tilt angles (original,current) ........   0.0   0.0   0.0   0.0   0.0   0.0
+ Space group,# extra bytes,idtype,lens .        0        0        0        0
+
+     1 Titles :
+raw2mrc: Converted to mrc format.                       24-May-26  00:47:52    
+
+
+ NEW image file on unit   2 : /tmp/tmp.I9hLYrfCi1/raw-copy.mrc
+ section   input min&max       output min&max  &  mean
+       0      0.00      0.00      0.00      0.00      0.00
+
+ RO image file on unit   1 : /tmp/tmp.I9hLYrfCi1/raw-copy.mrc     Size=          1 K
+
+ Number of columns, rows, sections .....      16      16       1
+ Map mode ..............................    0   (bytes - signed in file)   
+ Start cols, rows, sects, grid x,y,z ...    0     0     0      16     16      1
+ Pixel spacing (Angstroms)..............   1.000      1.000      1.000    
+ Cell angles ...........................   90.000   90.000   90.000
+ Fast, medium, slow axes ...............    X    Y    Z
+ Origin on x,y,z .......................    0.000       0.000       0.000    
+ Minimum density .......................   0.0000     (  -128.00     in file)
+ Maximum density .......................   0.0000     (  -128.00     in file)
+ Mean density ..........................   0.0000     (  -128.00     in file)
+ tilt angles (original,current) ........   0.0   0.0   0.0   0.0   0.0   0.0
+ Space group,# extra bytes,idtype,lens .        0        0        0        0
+
+     2 Titles :
+raw2mrc: Converted to mrc format.                       24-May-26  00:47:52    
+NEWSTACK: Images copied                                 24-May-26  00:47:52    
+
+slice|   min   |(   x,   y)|    max  |(      x,      y)|   mean    |  std dev.
+-----|---------|-----------|---------|-----------------|-----------|----------
+   0     0.0000 (   0,   0)    0.0000 (   0.00,   0.00)    0.0000     0.0000
+ all     0.0000 (@ z=    0)    0.0000 (@ z=    0      )    0.0000     0.0000
+data_workflow_exit=0
+
+== gputilttest validation excerpt ==
+IMOD CUDA gputilttest validation run
+2026-05-24T00:46:16+08:00
+workdir=/tmp/tmp.wFUOw0wREm
+IMOD_DIR=/home/zhenh/software/imod-aarch64/versions/4.11.25/install/cuda
+CUDA_DIR=/home/zhenh/software/imod-aarch64/.conda/cuda-11.8
+NVIDIA GB10, 580.142, 12.1
+For usage information, enter:
+   gputilttest -h
+Setting up files for the tests...
+Nonlocal alignment run # 1 matched last run
+Nonlocal alignment run # 2 matched last run
+Nonlocal alignment run # 3 matched last run
+Nonlocal alignment run # 4 matched last run
+Nonlocal alignment run # 5 matched last run
+Nonlocal alignment run # 6 matched last run
+Nonlocal alignment run # 7 matched last run
+Nonlocal alignment run # 8 matched last run
+Nonlocal alignment run # 9 matched last run
+Nonlocal alignment run # 10 matched last run
+Local alignment run # 1 matched last run
+Local alignment run # 2 matched last run
+Local alignment run # 3 matched last run
+Local alignment run # 4 matched last run
+ 
+All 14 runs gave reproducible results; this GPU seems reliable
+gputilttest_exit=0
+
+smoke_result=PASS
