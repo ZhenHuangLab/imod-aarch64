@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # sorttiltframes - sort out filenames by tilt angles embedded in their names
 #
 # Author: David Mastronarde

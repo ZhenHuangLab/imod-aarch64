@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # b3dhostname - Utility to print hostname on all platforms
 #
 # Author: David Mastronarde

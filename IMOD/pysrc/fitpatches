@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # fitpatches - program to manage patch models and patch text files and do
 # global and local fitting to them
 #

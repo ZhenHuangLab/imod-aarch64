@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # supermont.py module
 # Functions for working with supermontage data
 #

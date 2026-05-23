@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # b3dcopy - Utility to copy file and make sure permission is set for the copy
 # If the output file is a directory, it copies the file into that directory
 #

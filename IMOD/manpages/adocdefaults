@@ -1,4 +1,4 @@
-#!/usr/bin/python -u
+#!/usr/bin/python3 -u
 # adocdefaults - Makes a master adoc with a list of default values
 #
 # Author: David Mastronarde

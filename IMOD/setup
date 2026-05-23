@@ -1,4 +1,4 @@
-#!/bin/csh -f
+#!/bin/tcsh -f
 #############################################################################
 # $Id$
 # Set up initialization file for building BL3DEMC Software.

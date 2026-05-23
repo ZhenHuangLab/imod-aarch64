@@ -24,7 +24,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #ifndef GENERAL_H
 #define GENERAL_H
 
-typedef unsigned char byte;
 typedef unsigned int uint;
 
 #include <stddef.h>
@@ -36,6 +35,8 @@ typedef unsigned int uint;
 
 namespace Livewire
 {
+	typedef unsigned char byte;
+
 	template<uint scale> inline static uint ScaleBack(uint x) { return (x + scale - 1) / scale; }
 	inline static uint ScaleBack(uint x, uint scale) { return (x + scale - 1) / scale; }
 

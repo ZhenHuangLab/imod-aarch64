@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # framewatcher - look for alignframes command files or frame stack files in a directory
 # and run them
 #

@@ -1,4 +1,4 @@
-#!/bin/csh -f
+#!/bin/tcsh -f
 #
 # Script to convert .preman files to .man files, and .man files to .1 files
 # then to .html files,
@@ -84,4 +84,3 @@ while ($ind <= $#prelist)
 end
 
 exit
-

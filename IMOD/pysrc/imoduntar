@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # imoduntar - Utility to list or extract all files from a tar file
 #
 # Author: David Mastronarde

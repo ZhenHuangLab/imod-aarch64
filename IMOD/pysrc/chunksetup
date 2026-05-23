@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Chunksetup - A script to set up command files to process volumes in chunks
 #
 # Author: David Mastronarde

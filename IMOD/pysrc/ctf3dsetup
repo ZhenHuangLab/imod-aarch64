@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # ctf3dsetup - program to setup command files for reconstruction with 3D CTF correction
 #
 # Author: David Mastronarde

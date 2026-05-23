@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # imodkillgroup - kill a process group given member PID or tree below given PID
 #
 # Author: David Mastronarde

@@ -1,4 +1,4 @@
-#!/usr/bin/python -u
+#!/usr/bin/python3 -u
 # makeqhp - script to build IMOD.qhp from qhpStub
 #
 # Author: David Mastronarde

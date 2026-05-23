@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # prochunks.py module
 # Functions for running processchunks in the background
 #

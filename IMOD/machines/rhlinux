@@ -203,6 +203,7 @@ else
         set fcomp = "gfortran"
         @ minorvers = $fortvers[2]
         if ($fortvers[1] != 4 || $minorvers > 2) set fcompFlags = "-fbackslash $fcompFlags"
+        if ($fortvers[1] >= 10) set fcompFlags = "-fallow-argument-mismatch $fcompFlags"
         echo "DATESRC   = compat/datetime.f" >> $configure
         echo "DIRDATEOBJ  = compat/datetime.o" >> $configure
         echo "DATEOBJ  = datetime.o" >> $configure

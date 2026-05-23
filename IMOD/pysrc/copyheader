@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # copyheader - copy the header from an MRC file
 #
 # Author: David Mastronarde

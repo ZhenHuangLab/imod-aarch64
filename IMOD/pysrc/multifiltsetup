@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # multifiltsetup - program to set up tilt command files for testing filter values
 #
 # Author: David Mastronarde

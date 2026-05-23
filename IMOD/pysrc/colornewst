@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # colornewst - Wrapper to newstack that will process a color file
 #
 # Author: David Mastronarde

@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # comchanger.py module
 # Functions for changing com files, and a template-related function
 #

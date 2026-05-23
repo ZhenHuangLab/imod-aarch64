@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # tomocoords.py module - used by subtomosetup, rawtiltcoords, and ctf3dsetup
 #
 # Author: David Mastronarde

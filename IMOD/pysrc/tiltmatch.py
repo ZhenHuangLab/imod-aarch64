@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # tiltmatch.py module - search pairs of tilts for best match and alignment
 #
 # Author: David Mastronarde

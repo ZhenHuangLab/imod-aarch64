@@ -1,4 +1,4 @@
-#!/usr/bin/python -u
+#!/usr/bin/python3 -u
 # csvtohtml - converts csv file to html table
 # The csv file must start with a title row, an html header row, and a table header row
 #

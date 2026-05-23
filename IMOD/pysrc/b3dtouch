@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # b3dtouch - Utility to do the equivalent of the Unix-type touch command
 #
 # Author: David Mastronarde

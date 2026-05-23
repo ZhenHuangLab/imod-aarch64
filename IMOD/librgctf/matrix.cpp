@@ -4,12 +4,14 @@
 // think i got it from a book i had about game programming in c.. it's probably slower than what the compiler would do these days.
 
 #define AL_PI        3.14159265358979323846
-#ifdef _WIN32
-#define  _AL_SINCOS(x, s, c) \
-  s = sin(x); \
-  c = cos(x);
-#else
+#if !defined(_WIN32) && (defined(__i386__) || defined(__x86_64__))
 #define _AL_SINCOS(x, s, c)  __asm__ ("fsincos" : "=t" (c), "=u" (s) : "0" (x))
+#else
+#define _AL_SINCOS(x, s, c) \
+  do { \
+    s = sin(x); \
+    c = cos(x); \
+  } while (0)
 #endif
 #define FLOATSINCOS(x, s, c)  _AL_SINCOS((x) * AL_PI / 128.0, s ,c)
 
@@ -263,4 +265,3 @@ void RotationMatrix::SetToValues(float m00, float m10, float m20, float m01, flo
 	this->m[1][2] = m12;
 	this->m[2][2] = m22;
 }
-

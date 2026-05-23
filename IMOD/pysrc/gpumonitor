@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # gpumonitor - a program to save information about GPUs being used on a set of
 # workstations per user, and return that information in response to a query.
 # The program needs to be run via ssh on a single "server" machine where there is a

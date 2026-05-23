@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # imodpy.py module
 #
 # Authors: Tor Mohling and David Mastronarde

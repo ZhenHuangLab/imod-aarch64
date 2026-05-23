@@ -1,4 +1,4 @@
-#!/bin/csh
+#!/bin/tcsh
 #############################################################################
 # $Id$
 # Set up configuration file for building BL3DEMC Software - the real one

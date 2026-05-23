@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # runraptor - Runs RAPTOR, taking care of several options and post-processing the model
 #
 # Author: David Mastronarde

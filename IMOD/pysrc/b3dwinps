@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # b3dwinps - Get a ps output on Windows either from cygwin or from psutil
 #
 # Author: David Mastronarde

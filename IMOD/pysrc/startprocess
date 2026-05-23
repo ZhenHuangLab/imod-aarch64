@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # startprocess - runs a process in background with redirection of output/error
 #
 # Author: David Mastronarde

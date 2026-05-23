@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # makepyramid - Make an image pyramid
 #
 # Author: David Mastronarde

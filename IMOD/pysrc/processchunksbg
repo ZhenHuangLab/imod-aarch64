@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # processchunksbg - runs processchunks in the background
 #
 # Author: David Mastronarde

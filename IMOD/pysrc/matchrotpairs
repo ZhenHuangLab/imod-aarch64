@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # matchrotpairs - Find best-matching pair between parts of two tilt series
 #
 # Author: David Mastronarde

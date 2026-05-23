@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # b3drename - Utility to rename file, deleting an existing file first
 # If the output file is a directory, it renames the file into that directory
 #

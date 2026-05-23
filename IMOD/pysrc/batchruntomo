@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # batchruntomo - run one or more data sets in batch mode
 #
 # Author: David Mastronarde

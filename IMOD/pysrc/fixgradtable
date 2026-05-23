@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # fixgradtable - to adjust a mag gradient table for a new crossover value
 #
 # Author: David Mastronarde

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # rawtiltcoords - produce coordinates and angles in original views for points in tomogram
 #
 # Author: David Mastronarde
