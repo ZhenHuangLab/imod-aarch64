@@ -1,4 +1,7 @@
 IMOD_VERSION 4.11.25
-WARNING: no definition for aarch64__Linux__6.17.0-1018-nvidia__all
-aarch64__Linux__6.17.0-1018-nvidia__all error
-You need to specify a machine; the generic settings are not usable
+aarch64__Linux__6.17.0-1018-nvidia__all is 64-bit Arm Linux
+find: '/usr/lib64': No such file or directory
+find: '/usr/lib64': No such file or directory
+find: '/usr/lib64': No such file or directory
+find: '/usr/lib64': No such file or directory
+find: '/usr/lib64': No such file or directory
