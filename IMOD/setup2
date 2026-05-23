@@ -496,6 +496,14 @@ switch($target_computer)
                 goto amd64linux
                 breaksw
 
+        # Linux on 64-bit Arm
+        case aarch64__Linux__*__*:
+        case arm64__Linux__*__*:
+                echo $target_computer is 64-bit Arm Linux
+                set machine = rhlinux
+                goto aarch64linux
+                breaksw
+
         case ia64__Linux__*__*:
                 echo $target_computer is Itanium running Linux
                 set machine = rhlinux
@@ -633,6 +641,14 @@ set m64bit = true
 set m64notIA = true
 
 rhlinux:
+source machines/rhlinux
+if ($?) exit 1
+
+goto standard_defines
+
+aarch64linux:
+set m64bit = true
+set machine = rhlinux
 source machines/rhlinux
 if ($?) exit 1
 
@@ -1194,7 +1210,8 @@ echo "Options are:"
 echo "   -help,-h     Print this message."
 echo "   -debug,-d    Set up with debug flags."
 echo "   -machine,-m  Set target machine to one of: (irix6-n32 | macosx |"
-echo "                rhlinux | amd64linux | itanium | cygwin | cygwin64)"
+echo "                rhlinux | amd64linux | aarch64linux | itanium |"
+echo "                cygwin | cygwin64)"
 echo "   -inst,-i     Set installation directory for bin and lib."
 echo "                e.g., /usr/local/IMOD"
 echo "   -name        Set architecture name of dist file"

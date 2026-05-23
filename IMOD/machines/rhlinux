@@ -17,6 +17,8 @@ set usrlibdir = /usr/lib
 if ($m64bit == true) then
     set lib64dir = /usr/lib64
     set alt64dir = /usr/lib/x86_64-linux-gnu
+    if ("$UMACHINE" == "aarch64") set alt64dir = /usr/lib/aarch64-linux-gnu
+    if ("$UMACHINE" == "arm64") set alt64dir = /usr/lib/aarch64-linux-gnu
     if (! -e /usr/lib64 && -e $alt64dir) set lib64dir = $alt64dir
     set usrlibdir = $lib64dir
 endif
@@ -706,4 +708,3 @@ else
     set qt4libstocopy = ""
 endif
 if (! $dllDestOut) echo "DLLDESTDIR = lib" >> $configure
-
