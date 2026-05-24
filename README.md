@@ -1,39 +1,97 @@
 # IMOD Linux aarch64 Downstream Fork
 
-This repository tracks a source-bearing downstream port of IMOD for Ubuntu Linux aarch64.
+This repository is a source-bearing downstream fork of IMOD for Linux aarch64.
+The tracked `IMOD/` tree contains the upstream source for the checked-out
+version branch plus the local aarch64 fixes needed by this fork.
 
-The tracked `IMOD/` tree contains the upstream source for the checked-out version branch plus any local aarch64 fixes.
+## Source Checkout
 
-The first two IMOD 4.11.25 milestones are complete:
+Clone the source fork with:
+
+```bash
+git clone https://github.com/ZhenHuangLab/imod-aarch64.git
+cd imod-aarch64
+```
+
+The prebuilt install trees are not stored in Git. A source checkout does not
+include `versions/*/install/cpu` or `versions/*/install/cuda`; those install
+products are distributed as GitHub Release assets.
+
+## Prebuilt Downloads
+
+Download prebuilt Linux aarch64 packages from the
+[GitHub Releases](https://github.com/ZhenHuangLab/imod-aarch64/releases) page.
+
+Current IMOD 4.11.25 assets:
 
 ```text
-CPU-only:      ~/software/imod-aarch64/versions/4.11.25/install/cpu
-CUDA-enabled:  ~/software/imod-aarch64/versions/4.11.25/install/cuda
+CPU release tag:   imod-4.11.25-aarch64.1
+CPU asset:         imod-4.11.25-linux-aarch64-cpu.tar.gz
+
+CUDA release tag:  imod-4.11.25-aarch64-cuda.1
+CUDA asset:        imod-4.11.25-linux-aarch64-cuda.tar.gz
+
+Checksums:         SHA256SUMS
 ```
 
-Use the CPU build from a shell with:
+Verify a downloaded package with:
 
 ```bash
-source ~/software/imod-aarch64/versions/4.11.25/env-cpu.sh
-3dmod -h
+sha256sum -c SHA256SUMS
+```
+
+## CPU Package
+
+Extract and use the CPU package with:
+
+```bash
+tar -xzf imod-4.11.25-linux-aarch64-cpu.tar.gz
+cd cpu
+source ./IMOD-linux.sh
 newstack -help
+3dmod -h
 ```
 
-Use the CUDA build from a shell with:
+After sourcing `IMOD-linux.sh`, `$IMOD_DIR` points at the extracted package,
+`bin` is added to `$PATH`, and `lib` is added to `$LD_LIBRARY_PATH`.
+
+## CUDA Package
+
+Extract and use the CUDA package with:
 
 ```bash
-source ~/software/imod-aarch64/versions/4.11.25/env-cuda.sh
+tar -xzf imod-4.11.25-linux-aarch64-cuda.tar.gz
+cd cuda
+source ./IMOD-linux.sh
 tilt -help
 gputilttest 0.1 0
 ```
 
-The CUDA build uses a user-local CUDA 11.8 conda toolchain under
-`.conda/cuda-11.8`, because IMOD 4.11.25 still uses CUDA texture references
-that CUDA 13 no longer supports. The generated GPU code is PTX for
-`compute_90`; on this host, NVIDIA driver 580.142 successfully JIT-runs it on
-the NVIDIA GB10 GPU with compute capability 12.1.
+The CUDA package expects CUDA 11.8 runtime libraries and cuFFT to be available
+on the host, for example through a CUDA 11.8 conda environment or another local
+CUDA 11.8 installation. Set `CUDA_DIR` before sourcing `IMOD-linux.sh` if the
+CUDA runtime is not in a standard location:
 
-Build notes and smoke-test results are recorded in:
+```bash
+export CUDA_DIR=/path/to/cuda-11.8
+source ./IMOD-linux.sh
+```
+
+IMOD 4.11.25 still uses legacy CUDA texture reference APIs that CUDA 13 no
+longer compiles directly, so the current CUDA binary is built against CUDA 11.8
+runtime/cuFFT.
+
+## Verification
+
+The IMOD 4.11.25 Linux aarch64 builds completed these checks:
+
+```text
+CPU smoke test:       pass
+CUDA smoke test:      pass
+CUDA gputilttest:     pass
+```
+
+Detailed build notes and smoke-test summaries are kept in:
 
 ```text
 versions/4.11.25/BUILD_NOTES.md
@@ -41,4 +99,4 @@ versions/4.11.25/build-logs/smoke-cpu.log
 versions/4.11.25/build-logs/smoke-cuda.log
 ```
 
-Newer IMOD 5.2.x builds can use the same versioned layout under `versions/`.
+Newer IMOD versions can use the same versioned layout under `versions/`.
