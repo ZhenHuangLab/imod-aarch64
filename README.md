@@ -34,6 +34,10 @@ CUDA asset:        imod-4.11.25-linux-aarch64-cuda.tar.gz
 Checksums:         SHA256SUMS
 ```
 
+The release packages include the non-CUDA runtime libraries used by the tested
+build, plus a bundled JRE for ETomo. CUDA runtime libraries are handled
+separately, as described below.
+
 Verify a downloaded package with:
 
 ```bash
@@ -69,8 +73,9 @@ gputilttest 0.1 0
 
 The CUDA package expects CUDA 11.8 runtime libraries and cuFFT to be available
 on the host, for example through a CUDA 11.8 conda environment or another local
-CUDA 11.8 installation. Set `CUDA_DIR` before sourcing `IMOD-linux.sh` if the
-CUDA runtime is not in a standard location:
+CUDA 11.8 installation. The host also needs a compatible NVIDIA driver. Set
+`CUDA_DIR` before sourcing `IMOD-linux.sh` if the CUDA runtime is not in a
+standard location:
 
 ```bash
 export CUDA_DIR=/path/to/cuda-11.8
