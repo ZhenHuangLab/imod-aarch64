@@ -1,0 +1,9 @@
+IMOD_VERSION 4.11.25
+aarch64__Linux__6.17.0-1018-nvidia__all is 64-bit Arm Linux
+find: '/usr/lib64': No such file or directory
+find: '/usr/lib64': No such file or directory
+find: '/usr/lib64': No such file or directory
+find: '/usr/lib64': No such file or directory
+find: '/usr/lib64': No such file or directory
+
+setup_exit=0

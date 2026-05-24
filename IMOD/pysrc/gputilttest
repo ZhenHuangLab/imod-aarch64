@@ -29,13 +29,30 @@ def cleanup():
             except Exception:
                pass
 
+def decodeUuFile(inputName, outputName):
+   if uu != None:
+      uu.decode(inputName, outputName)
+      return
+
+   with open(inputName, 'r') as inputFile:
+      header = inputFile.readline().split()
+      if len(header) < 3 or header[0] != 'begin':
+         raise binascii.Error('No valid uuencode begin line')
+      with open(outputName, 'wb') as outputFile:
+         for line in inputFile:
+            if line.strip() == 'end':
+               return
+            if line.strip():
+               outputFile.write(binascii.a2b_uu(line))
+   raise binascii.Error('No uuencode end line')
+
 # Do the operations in a function that is called after the global variables are defined
 def runTests():
    writeTextFile(uuname, localuu.splitlines())
    makeBackupFile(gzname)
    try:
-      uu.decode(uuname, gzname)
-   except uu.Error:
+      decodeUuFile(uuname, gzname)
+   except Exception:
       cleanup()
       exitError("uudecoding the local.xf file")
    try:
@@ -208,7 +225,11 @@ def runTests():
    
 
 # load System Libraries
-import os, sys, uu, gzip, random, struct, datetime, copy
+import os, sys, gzip, random, struct, datetime, copy, binascii
+try:
+   import uu
+except ModuleNotFoundError:
+   uu = None
 
 #
 # Setup runtime environment

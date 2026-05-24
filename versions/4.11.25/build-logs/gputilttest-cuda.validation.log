@@ -1,0 +1,26 @@
+IMOD CUDA gputilttest validation run
+2026-05-24T00:46:16+08:00
+workdir=/tmp/tmp.wFUOw0wREm
+IMOD_DIR=/home/zhenh/software/imod-aarch64/versions/4.11.25/install/cuda
+CUDA_DIR=/home/zhenh/software/imod-aarch64/.conda/cuda-11.8
+NVIDIA GB10, 580.142, 12.1
+For usage information, enter:
+   gputilttest -h
+Setting up files for the tests...
+Nonlocal alignment run # 1 matched last run
+Nonlocal alignment run # 2 matched last run
+Nonlocal alignment run # 3 matched last run
+Nonlocal alignment run # 4 matched last run
+Nonlocal alignment run # 5 matched last run
+Nonlocal alignment run # 6 matched last run
+Nonlocal alignment run # 7 matched last run
+Nonlocal alignment run # 8 matched last run
+Nonlocal alignment run # 9 matched last run
+Nonlocal alignment run # 10 matched last run
+Local alignment run # 1 matched last run
+Local alignment run # 2 matched last run
+Local alignment run # 3 matched last run
+Local alignment run # 4 matched last run
+ 
+All 14 runs gave reproducible results; this GPU seems reliable
+gputilttest_exit=0

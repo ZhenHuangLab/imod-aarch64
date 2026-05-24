@@ -13,6 +13,7 @@
   - `IMOD/Etomo/src/etomo/type/ImodVersion.java`: `4.11.25`
 - Host: Ubuntu 24.04.4 LTS aarch64
 - First target: CPU-only native aarch64 build
+- Second target: CUDA-enabled native aarch64 build
 - Source changes required: yes
 
 Note: the upstream revision name `IMOD_4-11-25` resolves on the remote repository to node `2cc6c43b0551bed0845bd4f7534d15addb3b5604`. After cloning with `hg clone -r IMOD_4-11-25`, the local narrow clone lists this node as `tip`; its local tag listing does not include `IMOD_4-11-25` because Mercurial tag metadata for a tag can live in a later changeset outside the cloned ancestor set. The source tree itself confirms version `4.11.25`.
@@ -63,6 +64,42 @@ make             4.3-4.1build2
 tcsh             6.24.10-4build1
 ```
 
+### CUDA dependency snapshot
+
+System CUDA 13.0.88 is installed under `/usr/local/cuda`, but IMOD 4.11.25's
+CUDA code still uses legacy texture references removed by CUDA 13. The
+successful CUDA build therefore uses a user-space CUDA 11.8 toolchain:
+
+```text
+/home/zhenh/software/imod-aarch64/.conda/cuda-11.8
+```
+
+Recorded CUDA toolchain package versions:
+
+- CUDA conda package versions: `build-logs/cuda-11.8-conda-packages.tsv`
+
+Key CUDA dependency choices:
+
+```text
+cuda-nvcc       11.8.89
+cuda-cudart     11.8.89
+libcufft        10.9.0.58
+gcc/g++         conda-forge 11.4.0 cross compiler wrappers
+sysroot         sysroot_linux-aarch64 2.17
+```
+
+The conda GCC 11 wrapper and `sysroot_linux-aarch64=2.17` are used as the
+`nvcc` host compiler/sysroot because CUDA 11.8's front-end does not parse the
+host's Ubuntu 24.04 glibc 2.39 `_Float*` header declarations cleanly.
+
+CUDA hardware/runtime observed during validation:
+
+```text
+GPU:     NVIDIA GB10
+Driver:  580.142
+Compute: 12.1
+```
+
 ## Configure Attempts
 
 ### Clean baseline
@@ -93,6 +130,38 @@ aarch64__Linux__6.17.0-1018-nvidia__all is 64-bit Arm Linux
 
 The setup log still contains nonfatal `find: '/usr/lib64': No such file or directory` messages from legacy Linux library probing.
 
+### CUDA 13 configure/build attempt
+
+- Toolchain: system `/usr/local/cuda`, CUDA 13.0.88.
+- Result: configure succeeded after allowing an explicit CUDA architecture,
+  but build failed in `flib/tilt/gpubp.cu`.
+- Failure cause: IMOD 4.11.25 uses CUDA legacy texture references such as
+  `texture<float, ...>` and `tex2D(...)`; CUDA 13 has removed support for this
+  API.
+- Conclusion: a CUDA 13 build would require a larger source port to texture
+  objects. For this native aarch64 release, the lower-risk path is CUDA 11.8.
+
+### Successful CUDA 11.8 configure
+
+- Command: `./setup -c gfortran -i "$IMOD_CUDA_PREFIX"`
+- Environment: `source versions/4.11.25/env-cuda.sh`
+- Log: `build-logs/setup-cuda.log`
+- Result: success, `setup_exit=0`.
+
+Generated CUDA settings in `IMOD/configure`:
+
+```text
+NVCC_FLAGS = -gencode arch=compute_90,code=compute_90 ... -ccbin /home/zhenh/software/imod-aarch64/.conda/cuda-11.8/bin/aarch64-conda-linux-gnu-g++
+CUDALIBS = -L/home/zhenh/software/imod-aarch64/.conda/cuda-11.8/lib -lcudart -lcufft
+TILTGPUOBJ = gpubp.$(OBJEXT)
+CTFGPUOBJ = gpuctf.$(OBJEXT)
+FRAMEGPUOBJ = gpuframe.$(OBJEXT)
+```
+
+CUDA 11.8 does not know Blackwell/GB10 `sm_121`, so this build emits
+`compute_90` PTX. The NVIDIA 580.142 driver successfully JIT-compiled and ran
+that PTX on the local GB10 GPU during `gputilttest`.
+
 ## Local Source Fixes
 
 The successful native aarch64 build required these downstream source changes:
@@ -106,6 +175,14 @@ The successful native aarch64 build required these downstream source changes:
 - `plugs/drawingtools/livewire/general.h`: move the `byte` typedef into the `Livewire` namespace to avoid ambiguity with `std::byte` in modern C++ headers.
 - `setup`, `setup2`, and `manpages/convert`: use `/bin/tcsh` shebangs; Ubuntu's `/bin/csh` points to `bsd-csh`, while these scripts use tcsh-compatible behavior.
 - `pysrc/`, `html/makeqhp`, `manpages/adocdefaults`, and `manpages/csvtohtml`: update legacy Python shebangs to Python 3.
+- `machines/rhlinux`: allow `IMOD_CUDA_ARCH`, `IMOD_CUDA_ARCH_OPTS`, and
+  `IMOD_CUDA_CCBIN` overrides; detect CUDA conda environments that use `lib`
+  rather than `lib64`; add a CUDA 13 `sm_121` fallback for future experiments.
+- `plugs/drawingtools/livewire/Colors.h` and `FilterBase.h`: explicitly use
+  `Livewire::byte` so the drawingtools livewire plugin builds with modern
+  C++ headers.
+- `pysrc/gputilttest`: add a local uuencode decoder fallback because Python
+  3.13 removed the standard-library `uu` module.
 
 ## Build and Install
 
@@ -129,6 +206,24 @@ Nonfatal warnings observed during install:
 
 After installation, `make clean` was run in the source tree to remove in-tree build products. The installed CPU prefix is the retained runnable artifact.
 
+### CUDA build
+
+- Command: `make -j"$(nproc)"`
+- Initial CUDA 13 full log: `build-logs/make-cuda.full.log` (ignored by Git)
+- Successful CUDA 11.8 retry log: `build-logs/make-cuda.retry1.log`
+- Result: success, `make_exit=0`.
+
+### CUDA install
+
+- Command: `make install`
+- Install prefix: `/home/zhenh/software/imod-aarch64/versions/4.11.25/install/cuda`
+- Full log: `build-logs/install-cuda.full.log` (ignored by Git)
+- Result: success, `install_exit=0`.
+
+The installed CUDA-enabled binaries include `tilt`, `ctfphaseflip`, and
+`alignframes`; all resolve `libcudart.so.11.0` and `libcufft.so.10` from
+`.conda/cuda-11.8/lib` when `env-cuda.sh` is sourced.
+
 ## Smoke Tests
 
 - Log: `build-logs/smoke-cpu.log`
@@ -151,3 +246,42 @@ Smoke coverage:
 - A small generated 16x16 raw byte stack was converted with `raw2mrc`, inspected with `header`, copied with `newstack`, and summarized with `clip stats`.
 
 During this run, `$DISPLAY` was set to `localhost:11.0`; `3dmod -h` printed usage successfully and exited with its normal help-style nonzero status.
+
+### CUDA smoke tests
+
+- Log: `build-logs/smoke-cuda.log`
+- GPU validation log: `build-logs/gputilttest-cuda.validation.log`
+- Result: pass.
+
+Summary from the CUDA smoke log:
+
+```text
+missing_libs=0
+tilt: CUDA libraries resolved
+ctfphaseflip: CUDA libraries resolved
+alignframes: CUDA libraries resolved
+data_workflow_exit=0
+gputilttest_exit=0
+smoke_result=PASS
+```
+
+CUDA smoke coverage:
+
+- `file` reports representative installed programs as `ELF 64-bit ... ARM aarch64`.
+- `ldd` reports no missing dynamic libraries for representative CLI, Qt, and
+  CUDA-linked entry points.
+- `tilt`, `ctfphaseflip`, and `alignframes` resolve CUDA runtime/cuFFT from
+  the user-local CUDA 11.8 conda environment.
+- Help/usage checks were run for `header`, `newstack`, `tilt`,
+  `ctfphaseflip`, `alignframes`, `gputilttest`, and `3dmod`.
+- `3dmod -h` was checked with `QT_QPA_PLATFORM=offscreen` because the current
+  shell had a stale `DISPLAY=localhost:11.0`.
+- A small generated 16x16 raw byte stack was converted with `raw2mrc`,
+  inspected with `header`, copied with `newstack`, and summarized with
+  `clip stats`.
+- `gputilttest 0.1 0` ran real GPU `tilt UseGPU` tests on NVIDIA GB10:
+
+```text
+All 14 runs gave reproducible results; this GPU seems reliable
+gputilttest_exit=0
+```
