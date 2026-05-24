@@ -4,6 +4,10 @@
 # Local user-space dependency environments
 /.conda/
 
+# Local planning and release staging files
+/INIT.md
+/dist/
+
 # IMOD generated build files and binaries inside the tracked source tree
 /IMOD/bin/
 /IMOD/buildlib/
